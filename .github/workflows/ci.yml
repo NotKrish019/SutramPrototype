@@ -1,0 +1,82 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend-ci:
+    name: Backend Lint & Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Set up Python 3.12
+        run: uv python install 3.12
+
+      - name: Install Backend Dependencies
+        run: uv sync
+
+      - name: Run Backend Tests
+        run: uv run pytest
+
+  frontend-ci:
+    name: Frontend Lint, Test & Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install Frontend Dependencies
+        run: npm ci
+
+      - name: Run Type Check & Tests
+        run: |
+          npm run test
+          npm run build
+
+  decision-service-ci:
+    name: Decision Service Test & Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: decision-service
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: decision-service/package-lock.json
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Tests & Build
+        run: |
+          npm run test
+          npm run build
