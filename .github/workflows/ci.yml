@@ -31,7 +31,7 @@ jobs:
           sudo apt-get install -y ffmpeg
 
       - name: Install Backend Dependencies
-        run: uv sync
+        run: uv sync --extra dev
 
       - name: Run Backend Tests
         run: uv run pytest
