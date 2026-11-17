@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 from unittest.mock import MagicMock, patch
 from zoneinfo import ZoneInfo
@@ -23,6 +24,14 @@ import pytest
 
 # Store real subprocess.run before any mocking in tests
 _REAL_SUBPROCESS_RUN = subprocess.run
+
+# Check if system ffmpeg & ffprobe binaries are available
+_FFMPEG_AVAILABLE = shutil.which("ffmpeg") is not None and shutil.which("ffprobe") is not None
+
+pytestmark = pytest.mark.skipif(
+    not _FFMPEG_AVAILABLE,
+    reason="System binaries 'ffmpeg' and 'ffprobe' are required for video reconstruction tests",
+)
 
 from app.modules.reconstruction.video import (
     CorruptVideoError,
