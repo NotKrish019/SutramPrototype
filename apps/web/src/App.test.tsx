@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
 import App from './App';
 
@@ -7,16 +7,18 @@ describe('App', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockImplementation(() =>
-        Promise.resolve({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              status: 'ok',
-              project: 'sutram-digital-forensics',
-            }),
-        })
-      )
+        Promise.resolve(
+          new Response(
+            JSON.stringify({ status: 'ok', project: 'sutram-digital-forensics' }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } },
+          ),
+        ),
+      ),
     );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it('renders project name and subtitle accurately', async () => {

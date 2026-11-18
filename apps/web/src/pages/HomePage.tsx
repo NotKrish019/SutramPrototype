@@ -1,26 +1,23 @@
-import React, { useEffect, useState } from 'react';
-import { fetchHealth } from '../services/api';
-import { HealthCheckResponse } from '../types';
+import React from 'react';
 import { Network, Clock, FileCheck } from 'lucide-react';
+import { useBackendHealth } from '../hooks/useBackendHealth';
+import { HEALTH_PATH } from '../services/api';
+import { buildApiUrl } from '../services/config';
+
+/** Configured health URL for display; never throws during render. */
+function describeHealthUrl(): string {
+  try {
+    return buildApiUrl(HEALTH_PATH);
+  } catch {
+    return 'an invalid VITE_API_URL';
+  }
+}
 
 export const HomePage: React.FC = () => {
-  const [backendHealth, setBackendHealth] = useState<HealthCheckResponse | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetchHealth()
-      .then((data) => {
-        setBackendHealth(data);
-        setError(null);
-      })
-      .catch((err) => {
-        setError(err.message || 'Backend unreachable');
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, []);
+  const health = useBackendHealth();
+  const loading = health.status === 'loading';
+  const backendHealth = health.status === 'success' ? health.data : null;
+  const error = health.status === 'error' ? health.message : null;
 
   return (
     <div className="space-y-8 py-4">
@@ -60,16 +57,23 @@ export const HomePage: React.FC = () => {
             }`}
           />
           <div className="text-sm">
-            {loading && <span className="text-slate-400">Pinging backend at http://localhost:8000/health...</span>}
+            {loading && (
+              <span className="text-slate-400">Pinging backend at {describeHealthUrl()}...</span>
+            )}
             {!loading && backendHealth && (
               <span className="text-emerald-400 font-mono">
                 Connected: {backendHealth.project} (Status: {backendHealth.status})
               </span>
             )}
             {!loading && error && (
-              <span className="text-slate-400 font-mono">
-                Backend Status: Offline (Run <code className="text-sky-400">uv run uvicorn app.main:app</code> in <code className="text-slate-300">backend/</code>)
-              </span>
+              <div className="space-y-1">
+                <span className="block text-slate-400 font-mono">
+                  Backend Status: Offline (Run <code className="text-sky-400">uv run uvicorn app.main:app</code> in <code className="text-slate-300">backend/</code>)
+                </span>
+                <span role="alert" className="block text-xs text-rose-400 font-mono break-all">
+                  {error}
+                </span>
+              </div>
             )}
           </div>
         </div>

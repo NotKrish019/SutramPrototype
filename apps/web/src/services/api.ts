@@ -1,11 +1,15 @@
-import { HealthCheckResponse } from '../types';
+import type { HealthCheckResponse } from '../types';
+import { requestJson, type RequestOptions } from './http';
+import { parseHealthCheckResponse } from './validators';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+export const HEALTH_PATH = '/health';
 
-export async function fetchHealth(): Promise<HealthCheckResponse> {
-  const response = await fetch(`${API_BASE_URL}/health`);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch health check: ${response.statusText}`);
-  }
-  return response.json();
+/**
+ * Fetch backend health. Rejects with an `ApiError` (network/http/timeout/parse),
+ * or with an `AbortError` DOMException if `options.signal` is aborted.
+ */
+export function fetchHealth(
+  options: Pick<RequestOptions, 'signal' | 'timeoutMs'> = {},
+): Promise<HealthCheckResponse> {
+  return requestJson(HEALTH_PATH, parseHealthCheckResponse, options);
 }

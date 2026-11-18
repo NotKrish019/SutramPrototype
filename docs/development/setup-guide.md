@@ -62,16 +62,22 @@ Ensure your machine has the following tools installed:
    ```bash
    npm ci
    ```
-3. Run unit tests and type checks:
+3. (Optional) Configure the backend URL. Vite reads `.env` files from `apps/web/` only — the
+   repository-root `.env` is **not** loaded by the frontend:
+   ```bash
+   cp .env.example .env.local   # then edit VITE_API_URL if the backend is not on http://localhost:8000
+   ```
+   See `docs/architecture/frontend-api-client.md` for how requests and errors are handled.
+4. Run unit tests and type checks:
    ```bash
    npm run test
    npm run build
    ```
-4. Start the Vite development server:
+5. Start the Vite development server:
    ```bash
    npm run dev
    ```
-5. Open your browser at `http://localhost:5173`.
+6. Open your browser at `http://localhost:5173`.
 
 ---
 

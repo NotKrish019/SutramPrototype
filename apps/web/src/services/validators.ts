@@ -1,0 +1,34 @@
+import type { HealthCheckResponse } from '../types';
+
+function describeType(value: unknown): string {
+  if (value === null) return 'null';
+  if (Array.isArray(value)) return 'array';
+  return typeof value;
+}
+
+/**
+ * Validate an untrusted payload against `HealthCheckResponse`.
+ * Returns a new object containing only the known fields; throws a TypeError otherwise.
+ */
+export function parseHealthCheckResponse(data: unknown): HealthCheckResponse {
+  if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+    throw new TypeError(`expected an object, received ${describeType(data)}`);
+  }
+  const record = data as Record<string, unknown>;
+  if (typeof record.status !== 'string') {
+    throw new TypeError(`"status" must be a string, received ${describeType(record.status)}`);
+  }
+  if (typeof record.project !== 'string') {
+    throw new TypeError(`"project" must be a string, received ${describeType(record.project)}`);
+  }
+  return { status: record.status, project: record.project };
+}
+
+export function isHealthCheckResponse(data: unknown): data is HealthCheckResponse {
+  try {
+    parseHealthCheckResponse(data);
+    return true;
+  } catch {
+    return false;
+  }
+}
