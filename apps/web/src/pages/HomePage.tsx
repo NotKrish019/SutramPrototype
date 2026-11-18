@@ -1,9 +1,29 @@
-import React from 'react';
-import { Network, Clock, FileCheck } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { ArrowRight, Database, FolderSearch, History, Server } from 'lucide-react';
 import { BackendStatusCard } from '../components/BackendStatusCard';
-import { DEFAULT_HEALTH_POLL_INTERVAL_MS, useBackendHealth } from '../hooks/useBackendHealth';
+import { DEFAULT_HEALTH_POLL_INTERVAL_MS } from '../hooks/useBackendHealth';
+import { Link } from '../router/Link';
+import { caseHref } from '../router/router';
 import { HEALTH_PATH } from '../services/api';
 import { buildApiUrl } from '../services/config';
+import type { CaseStatus } from '../types';
+import { useSharedBackendHealth } from '../features/workspace/data/BackendHealthContext';
+import { useWorkspaceRepository } from '../features/workspace/data/WorkspaceDataContext';
+import { useWorkspaceShell } from '../features/workspace/layout/WorkspaceShellContext';
+import {
+  CaseStatusBadge,
+  EmptyState,
+  ErrorState,
+  FilterChip,
+  LoadingState,
+  PageHeader,
+  Panel,
+  SearchField,
+  SelectField,
+  SyntheticTag,
+} from '../features/workspace/components/ui';
+import { CASE_STATUS_LABEL, formatDate, formatDateTime } from '../features/workspace/format';
+import type { WorkspaceCase } from '../features/workspace/types';
 
 /** Configured health URL for display; never throws during render. */
 function describeHealthUrl(): string {
@@ -14,79 +34,336 @@ function describeHealthUrl(): string {
   }
 }
 
-export const HomePage: React.FC = () => {
-  const health = useBackendHealth({ intervalMs: DEFAULT_HEALTH_POLL_INTERVAL_MS });
+const STATUSES: CaseStatus[] = ['ACTIVE', 'UNDER_REVIEW', 'DRAFT', 'ARCHIVED'];
+
+const STATUS_BAR: Record<CaseStatus, string> = {
+  ACTIVE: 'bg-signal-ok',
+  UNDER_REVIEW: 'bg-signal-amber',
+  DRAFT: 'bg-fg-muted',
+  ARCHIVED: 'bg-ink-strong',
+};
+
+type SortKey = 'updated' | 'case' | 'evidence' | 'review';
+
+const SORTERS: Record<SortKey, (a: WorkspaceCase, b: WorkspaceCase) => number> = {
+  updated: (a, b) => b.updated_at.localeCompare(a.updated_at),
+  case: (a, b) => a.case_id.localeCompare(b.case_id),
+  evidence: (a, b) => b.evidence_count - a.evidence_count,
+  review: (a, b) => b.review_count - a.review_count,
+};
+
+/* ------------------------------------------------------------------ Metrics */
+
+const MetricsBand: React.FC<{ cases: WorkspaceCase[]; synthetic: boolean }> = ({ cases, synthetic }) => {
+  const sum = (key: 'evidence_count' | 'event_count' | 'entity_count' | 'review_count'): number =>
+    cases.reduce((total, c) => total + c[key], 0);
+  const active = cases.filter((c) => c.status === 'ACTIVE').length;
+  const underReview = cases.filter((c) => c.status === 'UNDER_REVIEW').length;
+  const metrics = [
+    { label: 'Total cases', value: cases.length, note: `${STATUSES.length} canonical statuses` },
+    { label: 'Active investigations', value: active, note: `+ ${underReview} under review` },
+    { label: 'Evidence artifacts', value: sum('evidence_count'), note: 'across all cases' },
+    { label: 'Extracted events', value: sum('event_count'), note: 'across all cases' },
+    { label: 'Entities identified', value: sum('entity_count'), note: 'across all cases' },
+    { label: 'Requiring review', value: sum('review_count'), note: 'open review items', alert: true },
+  ];
+  return (
+    <section aria-labelledby="metrics-heading" className="border-b border-ink-line">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-4 sm:px-6 lg:px-8">
+        <h2 id="metrics-heading" className="font-mono text-micro uppercase text-fg-subtle">
+          Case portfolio
+        </h2>
+        {synthetic && <SyntheticTag />}
+      </div>
+      <div className="px-4 pt-3 sm:px-6 lg:px-8">
+        <div className="flex h-1.5 w-full gap-px bg-ink-950" role="img" aria-label={`Case status: ${STATUSES.map((s) => `${cases.filter((c) => c.status === s).length} ${CASE_STATUS_LABEL[s]}`).join(', ')}`}>
+          {STATUSES.map((s) => {
+            const count = cases.filter((c) => c.status === s).length;
+            return count > 0 ? <span key={s} className={STATUS_BAR[s]} style={{ flexGrow: count }} title={`${CASE_STATUS_LABEL[s]}: ${count}`} /> : null;
+          })}
+        </div>
+        <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 font-mono text-micro uppercase text-fg-subtle" aria-hidden="true">
+          {STATUSES.map((s) => (
+            <li key={s} className="flex items-center gap-1.5"><span className={`h-1.5 w-1.5 ${STATUS_BAR[s]}`} />{CASE_STATUS_LABEL[s]} {cases.filter((c) => c.status === s).length}</li>
+          ))}
+        </ul>
+      </div>
+      <dl className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6">
+        {metrics.map((metric) => (
+          <div key={metric.label} className="border-ink-line px-4 py-5 sm:px-6 lg:px-8 [&:not(:last-child)]:border-r max-sm:[&:nth-child(2n)]:border-r-0 sm:max-xl:[&:nth-child(3n)]:border-r-0">
+            <dt className="min-h-[2rem] font-mono text-micro uppercase text-fg-subtle">{metric.label}</dt>
+            <dd className={`mt-2 font-display text-4xl font-semibold leading-none ${metric.alert ? 'text-signal-flag' : 'text-fg'}`}>
+              {metric.value}
+            </dd>
+            <dd className="mt-1.5 text-xs text-fg-subtle">{metric.note}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
+};
+
+/* --------------------------------------------------------------- Case table */
+
+const CaseActions: React.FC<{ item: WorkspaceCase }> = ({ item }) => (
+  <div className="flex items-center gap-3 font-mono text-micro uppercase">
+    <Link to={caseHref(item.case_id)} className="inline-flex items-center gap-1 text-fg hover:text-signal-amber">
+      Open <ArrowRight aria-hidden="true" className="h-3 w-3" />
+      <span className="sr-only">{item.case_id}</span>
+    </Link>
+    {item.has_detail && (
+      <>
+        <Link to={caseHref(item.case_id, 'evidence')} className="text-fg-muted hover:text-fg">
+          Evidence<span className="sr-only"> for {item.case_id}</span>
+        </Link>
+        <Link to={caseHref(item.case_id, 'timeline')} className="hidden text-fg-muted hover:text-fg 2xl:inline">
+          Timeline<span className="sr-only"> for {item.case_id}</span>
+        </Link>
+      </>
+    )}
+  </div>
+);
+
+const CaseTable: React.FC<{ cases: WorkspaceCase[] }> = ({ cases }) => {
+  const [query, setQuery] = useState('');
+  const [status, setStatus] = useState<CaseStatus | 'ALL'>('ALL');
+  const [sort, setSort] = useState<SortKey>('updated');
+
+  const counts = useMemo(() => {
+    const result = { ALL: cases.length } as Record<CaseStatus | 'ALL', number>;
+    for (const s of STATUSES) result[s] = cases.filter((c) => c.status === s).length;
+    return result;
+  }, [cases]);
+
+  const rows = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return cases
+      .filter((c) => status === 'ALL' || c.status === status)
+      .filter((c) => !q || [c.case_id, c.title, c.fir_number ?? ''].some((field) => field.toLowerCase().includes(q)))
+      .sort(SORTERS[sort]);
+  }, [cases, query, status, sort]);
+  const maxEvidence = Math.max(1, ...cases.map((c) => c.evidence_count));
 
   return (
-    <div className="space-y-8 py-4">
-      {/* Hero Banner */}
-      <section className="bg-slate-900/80 border border-slate-800 rounded-xl p-8 relative overflow-hidden">
-        <div className="max-w-3xl space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 text-xs font-medium">
-            <span className="w-2 h-2 rounded-full bg-sky-400 animate-ping" />
-            Phase 0 Operational Environment
-          </div>
-          <h2 className="text-3xl font-extrabold text-white tracking-tight sm:text-4xl">
-            SUTRAM Digital Forensics
-          </h2>
-          <p className="text-lg text-slate-300 font-medium">
-            Digital Evidence Correlation and Crime Reconstruction Platform
-          </p>
-          <p className="text-sm text-slate-400 leading-relaxed">
-            Multi-modal evidence ingestion, entity-event knowledge graph synthesis,
-            and temporal-spatial reconstruction for complex cyber investigations.
-          </p>
+    <Panel title="Investigations" meta={`${rows.length} of ${cases.length}`} labelledBy="cases-heading">
+      <div className="flex flex-col gap-3 border-b border-ink-line p-3 sm:p-4">
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <SearchField value={query} onChange={setQuery} label="Search cases" placeholder="Case ID, title or FIR" className="flex-1" />
+          <SelectField
+            label="Sort"
+            value={sort}
+            onChange={(value) => setSort(value as SortKey)}
+            options={[
+              { value: 'updated', label: 'Last updated' },
+              { value: 'case', label: 'Case ID' },
+              { value: 'evidence', label: 'Evidence count' },
+              { value: 'review', label: 'Needs review' },
+            ]}
+            className="sm:w-56"
+          />
         </div>
-      </section>
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter by case status">
+          <FilterChip active={status === 'ALL'} onClick={() => setStatus('ALL')} count={counts.ALL}>
+            All
+          </FilterChip>
+          {STATUSES.map((s) => (
+            <FilterChip key={s} active={status === s} onClick={() => setStatus(s)} count={counts[s]}>
+              {CASE_STATUS_LABEL[s]}
+            </FilterChip>
+          ))}
+        </div>
+      </div>
 
-      {/* Backend Connection Status Card */}
-      <BackendStatusCard
-        health={health}
-        healthUrl={describeHealthUrl()}
-        pollIntervalMs={DEFAULT_HEALTH_POLL_INTERVAL_MS}
+      {rows.length === 0 ? (
+        <EmptyState icon={FolderSearch} title="No matching cases">
+          Adjust the search or status filter.
+        </EmptyState>
+      ) : (
+        <>
+          <table className="hidden w-full text-left md:table">
+            <thead>
+              <tr className="border-b border-ink-line font-mono text-micro uppercase text-fg-subtle">
+                <th scope="col" className="px-4 py-2.5 font-normal">Case</th>
+                <th scope="col" className="px-4 py-2.5 font-normal">Status</th>
+                <th scope="col" className="px-4 py-2.5 text-right font-normal">Evidence</th>
+                <th scope="col" className="px-4 py-2.5 text-right font-normal">Review</th>
+                <th scope="col" className="hidden px-4 py-2.5 font-normal lg:table-cell">Updated</th>
+                <th scope="col" className="px-4 py-2.5 font-normal"><span className="sr-only">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-ink-line">
+              {rows.map((item) => (
+                <tr key={item.case_id} className="group transition-colors hover:bg-white/[0.02]">
+                  <td className="px-4 py-3">
+                    <Link to={caseHref(item.case_id)} className="block focus:outline-none focus-visible:ring-1 focus-visible:ring-signal-amber">
+                      <span className="font-mono text-micro text-fg-subtle">{item.case_id}</span>
+                      <span className="block text-sm font-medium text-fg group-hover:text-signal-amber">{item.title}</span>
+                    </Link>
+                  </td>
+                  <td className="px-4 py-3"><CaseStatusBadge status={item.status} /></td>
+                  <td className="px-4 py-3 text-right font-mono text-sm text-fg">
+                    <span className="inline-flex items-center gap-2">
+                      <span aria-hidden="true" className="hidden h-1 w-14 bg-ink-700 lg:block">
+                        <span className="block h-full bg-fg/70" style={{ width: `${(item.evidence_count / maxEvidence) * 100}%` }} />
+                      </span>
+                      {item.evidence_count}
+                    </span>
+                  </td>
+                  <td className={`px-4 py-3 text-right font-mono text-sm ${item.review_count > 0 ? 'text-signal-flag' : 'text-fg-subtle'}`}>
+                    {item.review_count > 0 ? item.review_count : '—'}
+                    <span className="sr-only">{item.review_count > 0 ? ' items need review' : ' no open review items'}</span>
+                  </td>
+                  <td className="hidden px-4 py-3 font-mono text-xs text-fg-muted lg:table-cell">{formatDate(item.updated_at)}</td>
+                  <td className="px-4 py-3"><CaseActions item={item} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <ul className="divide-y divide-ink-line md:hidden">
+            {rows.map((item) => (
+              <li key={item.case_id} className="flex flex-col gap-2 px-4 py-3">
+                <div className="flex items-start justify-between gap-3">
+                  <Link to={caseHref(item.case_id)} className="min-w-0">
+                    <span className="font-mono text-micro text-fg-subtle">{item.case_id}</span>
+                    <span className="block text-sm font-medium text-fg">{item.title}</span>
+                  </Link>
+                  <CaseStatusBadge status={item.status} />
+                </div>
+                <p className="font-mono text-micro uppercase text-fg-subtle">
+                  {item.evidence_count} evidence · {item.review_count} to review · {formatDate(item.updated_at)}
+                </p>
+                <CaseActions item={item} />
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </Panel>
+  );
+};
+
+/* ------------------------------------------------------------ Side panels */
+
+const RecentActivity: React.FC<{ cases: WorkspaceCase[]; synthetic: boolean }> = ({ cases, synthetic }) => {
+  const items = [...cases]
+    .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
+    .slice(0, 5)
+    .map((c) => ({
+      id: c.case_id,
+      when: c.updated_at,
+      text: c.created_at === c.updated_at ? 'Case record created' : 'Case record updated',
+      title: c.title,
+    }));
+  return (
+    <Panel title="Recent activity" meta={synthetic ? 'synthetic · case timestamps' : undefined}>
+      {items.length === 0 ? (
+        <EmptyState icon={History} title="No activity yet" />
+      ) : (
+        <ol className="divide-y divide-ink-line">
+          {items.map((item) => (
+            <li key={item.id} className="grid grid-cols-[auto_1fr] gap-x-3 px-4 py-3">
+              <span aria-hidden="true" className="mt-1.5 h-1.5 w-1.5 bg-fg-subtle" />
+              <div className="min-w-0">
+                <p className="text-sm text-fg">
+                  {item.text} · <Link to={caseHref(item.id)} className="font-mono text-xs text-fg-muted hover:text-signal-amber">{item.id}</Link>
+                </p>
+                <p className="truncate text-xs text-fg-subtle">{item.title}</p>
+                <time dateTime={item.when} className="mt-0.5 block font-mono text-micro text-fg-subtle">
+                  {formatDateTime(item.when)}
+                </time>
+              </div>
+            </li>
+          ))}
+        </ol>
+      )}
+      <p className="border-t border-ink-line px-4 py-2.5 font-mono text-micro uppercase text-fg-subtle">From case timestamps · no audit-log API yet</p>
+    </Panel>
+  );
+};
+
+const DataSourcesPanel: React.FC<{ synthetic: boolean }> = ({ synthetic }) => (
+  <Panel title="Data sources">
+    <ul className="divide-y divide-ink-line text-sm">
+      <li className="flex items-center justify-between gap-3 px-4 py-3">
+        <span className="flex items-center gap-2 text-fg"><Server aria-hidden="true" className="h-4 w-4 text-signal-ok" /> Backend API</span>
+        <span className="font-mono text-micro uppercase text-signal-ok">Live · /health</span>
+      </li>
+      <li className="flex items-center justify-between gap-3 px-4 py-3">
+        <span className="flex items-center gap-2 text-fg">
+          <Database aria-hidden="true" className={`h-4 w-4 ${synthetic ? 'text-signal-amber' : 'text-signal-ok'}`} /> Case records
+        </span>
+        <span className={`font-mono text-micro uppercase ${synthetic ? 'text-signal-amber' : 'text-signal-ok'}`}>{synthetic ? 'Synthetic fixture' : 'API'}</span>
+      </li>
+      {synthetic && (
+        <li className="flex flex-wrap items-center gap-1.5 px-4 py-3" aria-label="Not available in this build">
+          <span className="mr-1 font-mono text-micro uppercase text-fg-subtle">Not yet available</span>
+          {['Case creation', 'Ingestion', 'Case APIs'].map((item) => (
+            <span key={item} className="border border-dashed border-ink-strong px-1.5 py-0.5 font-mono text-micro uppercase text-fg-subtle">{item}</span>
+          ))}
+        </li>
+      )}
+    </ul>
+  </Panel>
+);
+
+/* -------------------------------------------------------------------- Page */
+
+/** Workspace home (`/workspace`): case portfolio, investigations, connectivity and activity. */
+export const HomePage: React.FC = () => {
+  const health = useSharedBackendHealth();
+  const repository = useWorkspaceRepository();
+  const { cases } = useWorkspaceShell();
+  const synthetic = repository.source === 'synthetic';
+
+  return (
+    <div>
+      <PageHeader
+        eyebrow="Investigation workspace"
+        title="Investigation Workspace"
+        description="Manage cases, examine digital evidence, and reconstruct connected events."
+        actions={
+          repository.defaultCaseId ? (
+            <Link
+              to={caseHref(repository.defaultCaseId)}
+              className="inline-flex h-9 items-center gap-2 border border-signal-amber bg-signal-amber px-3.5 font-mono text-[0.75rem] uppercase tracking-[0.04em] text-ink-950 hover:bg-[#ffc457] focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-amber focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950"
+            >
+              Open {repository.defaultCaseId} <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" />
+            </Link>
+          ) : null
+        }
       />
 
-      {/* Capability Modules Grid (Phase 0 Skeleton) */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="p-5 rounded-lg border border-slate-800 bg-slate-900/30 space-y-2">
-          <div className="flex items-center space-x-2 text-sky-400">
-            <FileCheck className="w-5 h-5" />
-            <h4 className="font-semibold text-sm text-slate-200">1. Evidence Ingestion</h4>
-          </div>
-          <p className="text-xs text-slate-400">
-            Multi-modal raw file intake with instant SHA-256 cryptographic verification.
-          </p>
-          <span className="inline-block text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400">
-            Planned • Member 2
-          </span>
-        </div>
+      {cases.state.status === 'success' && <MetricsBand cases={cases.state.data} synthetic={synthetic} />}
 
-        <div className="p-5 rounded-lg border border-slate-800 bg-slate-900/30 space-y-2">
-          <div className="flex items-center space-x-2 text-indigo-400">
-            <Network className="w-5 h-5" />
-            <h4 className="font-semibold text-sm text-slate-200">2. Knowledge Graph</h4>
-          </div>
-          <p className="text-xs text-slate-400">
-            Cross-source entity correlation linking CDR, chat logs, and CCTV entities.
-          </p>
-          <span className="inline-block text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400">
-            Planned • Member 1
-          </span>
+      <div className="grid grid-cols-1 gap-4 p-4 sm:p-6 lg:p-8 xl:grid-cols-12">
+        <div className="min-w-0 xl:col-span-8">
+          {cases.state.status === 'loading' && (
+            <Panel title="Investigations">
+              <LoadingState label="Loading cases" />
+            </Panel>
+          )}
+          {cases.state.status === 'error' && (
+            <Panel title="Investigations">
+              <ErrorState message={cases.state.error} onRetry={cases.retry} />
+            </Panel>
+          )}
+          {cases.state.status === 'success' &&
+            (cases.state.data.length === 0 ? (
+              <Panel title="Investigations">
+                <EmptyState icon={FolderSearch} title="No cases yet">
+                  Cases will appear here once the case API is available.
+                </EmptyState>
+              </Panel>
+            ) : (
+              <CaseTable cases={cases.state.data} />
+            ))}
         </div>
-
-        <div className="p-5 rounded-lg border border-slate-800 bg-slate-900/30 space-y-2">
-          <div className="flex items-center space-x-2 text-amber-400">
-            <Clock className="w-5 h-5" />
-            <h4 className="font-semibold text-sm text-slate-200">3. Crime Reconstruction</h4>
-          </div>
-          <p className="text-xs text-slate-400">
-            Synchronized temporal timeline and spatial trajectory visualization.
-          </p>
-          <span className="inline-block text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400">
-            Planned • Member 4
-          </span>
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+          <BackendStatusCard health={health} healthUrl={describeHealthUrl()} pollIntervalMs={DEFAULT_HEALTH_POLL_INTERVAL_MS} />
+          <DataSourcesPanel synthetic={synthetic} />
+          {cases.state.status === 'success' && <RecentActivity cases={cases.state.data} synthetic={synthetic} />}
         </div>
-      </section>
+      </div>
     </div>
   );
 };

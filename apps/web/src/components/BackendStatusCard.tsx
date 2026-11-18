@@ -10,9 +10,9 @@ export interface BackendStatusCardProps {
 }
 
 const STATUS_STYLES: Record<ConnectionStatus, { label: string; dot: string; text: string }> = {
-  checking: { label: 'Checking', dot: 'bg-amber-500 animate-pulse', text: 'text-amber-400' },
-  connected: { label: 'Connected', dot: 'bg-emerald-500', text: 'text-emerald-400' },
-  offline: { label: 'Offline', dot: 'bg-rose-500', text: 'text-rose-400' },
+  checking: { label: 'Checking', dot: 'bg-signal-amber animate-pulse motion-reduce:animate-none', text: 'text-signal-amber' },
+  connected: { label: 'Connected', dot: 'bg-signal-ok', text: 'text-signal-ok' },
+  offline: { label: 'Offline', dot: 'bg-signal-flag', text: 'text-signal-flag' },
 };
 
 function formatTime(date: Date): string {
@@ -31,53 +31,50 @@ export const BackendStatusCard: React.FC<BackendStatusCardProps> = ({
   return (
     <section
       aria-labelledby="backend-status-heading"
-      className="bg-slate-900/50 border border-slate-800 rounded-xl p-6"
+      className="border border-ink-line bg-ink-900"
     >
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <h3
-          id="backend-status-heading"
-          className="text-sm font-semibold text-slate-200 uppercase tracking-wider"
-        >
+      <div className="flex min-h-[2.75rem] flex-wrap items-center justify-between gap-3 border-b border-ink-line px-4 py-2">
+        <h2 id="backend-status-heading" className="font-mono text-micro uppercase text-fg-muted">
           Backend Gateway Telemetry
-        </h3>
+        </h2>
         <button
           type="button"
           onClick={retry}
           disabled={isChecking}
-          className="inline-flex items-center gap-2 rounded-md border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex h-8 items-center gap-2 border border-ink-strong px-2.5 font-mono text-micro uppercase tracking-[0.04em] text-fg transition-colors hover:border-fg-muted hover:bg-white/[0.03] focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-amber disabled:cursor-not-allowed disabled:opacity-45"
         >
-          <RefreshCw aria-hidden="true" className={`w-3.5 h-3.5 ${isChecking ? 'animate-spin' : ''}`} />
+          <RefreshCw aria-hidden="true" className={`h-3.5 w-3.5 ${isChecking ? 'animate-spin motion-reduce:animate-none' : ''}`} />
           Retry Now
         </button>
       </div>
 
-      <div className="flex items-start space-x-4">
-        <div aria-hidden="true" className={`mt-1.5 w-3 h-3 shrink-0 rounded-full ${style.dot}`} />
-        <div className="text-sm space-y-1 min-w-0">
-          <p role="status" aria-live="polite" className={`font-semibold ${style.text}`}>
+      <div className="flex items-start gap-4 px-4 py-4">
+        <div aria-hidden="true" className={`mt-1.5 h-2.5 w-2.5 shrink-0 ${style.dot}`} />
+        <div className="min-w-0 space-y-1.5 text-sm">
+          <p role="status" aria-live="polite" className={`font-display text-xl font-semibold uppercase leading-none ${style.text}`}>
             {style.label}
           </p>
 
           {status === 'checking' && (
-            <p className="text-slate-400">Pinging backend at {healthUrl}...</p>
+            <p className="text-fg-muted">Pinging backend at {healthUrl}...</p>
           )}
 
           {status === 'connected' && data && (
-            <p className="text-emerald-400 font-mono">
+            <p className="font-mono text-xs text-fg">
               {data.project} (Status: {data.status})
             </p>
           )}
 
           {status === 'offline' && (
             <>
-              <p className="text-slate-400 font-mono">
-                Run <code className="text-sky-400">uv run uvicorn app.main:app</code> in{' '}
-                <code className="text-slate-300">backend/</code>
+              <p className="font-mono text-xs text-fg-muted">
+                Run <code className="text-signal-amber">uv run uvicorn app.main:app</code> in{' '}
+                <code className="text-fg">backend/</code>
               </p>
               {error && (
-                <p role="alert" className="text-xs text-rose-400 font-mono break-all">
+                <p role="alert" className="break-all font-mono text-xs text-signal-flag">
                   {error.kind !== 'unknown' && (
-                    <span className="uppercase text-rose-300">[{error.kind}] </span>
+                    <span className="uppercase text-signal-flag">[{error.kind}] </span>
                   )}
                   {error.message}
                 </p>
@@ -85,14 +82,14 @@ export const BackendStatusCard: React.FC<BackendStatusCardProps> = ({
             </>
           )}
 
-          <p className="text-xs text-slate-500">
+          <p className="font-mono text-micro uppercase text-fg-subtle">
             Last successful check:{' '}
             {lastSuccessAt ? (
-              <time dateTime={lastSuccessAt.toISOString()} className="font-mono text-slate-400">
+              <time dateTime={lastSuccessAt.toISOString()} className="text-fg-muted">
                 {formatTime(lastSuccessAt)}
               </time>
             ) : (
-              <span className="font-mono text-slate-400">Never</span>
+              <span className="text-fg-muted">Never</span>
             )}
             {' · '}Auto-checks every {Math.round(pollIntervalMs / 1000)}s
           </p>

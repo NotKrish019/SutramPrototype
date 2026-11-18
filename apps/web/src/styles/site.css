@@ -1,0 +1,268 @@
+/*
+ * SUTRAM public site — motion system and technical patterns.
+ * Timing tokens: fast 150ms · base 250ms · slow 600ms · ease-out cubic-bezier(0.22, 1, 0.36, 1)
+ * All continuous motion is disabled under prefers-reduced-motion.
+ */
+
+:root {
+  --site-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --site-fast: 150ms;
+  --site-base: 250ms;
+  --site-slow: 600ms;
+  --site-nav-offset: 5.5rem;
+}
+
+.site-root {
+  font-family: Inter, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+.site-root ::selection {
+  background: rgba(255, 178, 36, 0.32);
+  color: #fff;
+}
+
+html:has(.site-root) {
+  scroll-behavior: smooth;
+  background: #09090a;
+}
+
+.site-root [id] {
+  scroll-margin-top: var(--site-nav-offset);
+}
+
+/* Display type: Archivo, condensed for the editorial uppercase headlines. */
+.font-display {
+  font-stretch: 78%;
+  font-variation-settings: 'wdth' 78;
+}
+
+/* Legible SVG labels over edges: halo in the panel colour. */
+.svg-label {
+  paint-order: stroke;
+  stroke: #0f0f11;
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+
+/* ---------- Entrance reveal (progressive enhancement; see useInView) ---------- */
+.reveal {
+  opacity: 0;
+  transform: translate3d(0, 14px, 0);
+  transition:
+    opacity var(--site-slow) var(--site-ease),
+    transform var(--site-slow) var(--site-ease);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+.reveal[data-visible='true'] {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------- Technical patterns ---------- */
+.pattern-grid {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.pattern-dots {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.16) 1px, transparent 1.2px);
+  background-size: 14px 14px;
+}
+
+.pattern-hatch {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(255, 255, 255, 0.06) 0 1px,
+    transparent 1px 7px
+  );
+}
+
+/* ---------- SVG flow lines ---------- */
+.flow-line {
+  stroke-dasharray: 3 9;
+  animation: flow-dash 2.8s linear infinite;
+}
+
+.flow-line--slow {
+  animation-duration: 5s;
+}
+
+@keyframes flow-dash {
+  to {
+    stroke-dashoffset: -48;
+  }
+}
+
+.pulse-node {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pulse-node 3.2s var(--site-ease) infinite;
+}
+
+@keyframes pulse-node {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0;
+    transform: scale(2.2);
+  }
+}
+
+.scan-line {
+  animation: scan 5.5s var(--site-ease) infinite;
+}
+
+@keyframes scan {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  10%,
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(var(--scan-distance, 120px));
+    opacity: 0;
+  }
+}
+
+.caret-blink {
+  animation: caret 1.1s steps(1) infinite;
+}
+
+@keyframes caret {
+  50% {
+    opacity: 0;
+  }
+}
+
+.marquee-track {
+  animation: marquee 38s linear infinite;
+}
+
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------- 3D evidence stack (hero) ---------- */
+.stack-scene {
+  perspective: 1800px;
+  perspective-origin: 50% 30%;
+}
+
+.stack-stage,
+.stack-layer,
+.stack-float,
+.stack-enter {
+  transform-style: preserve-3d;
+}
+
+.stack-float {
+  animation: stack-float 7s ease-in-out infinite;
+  animation-delay: var(--float-delay, 0s);
+}
+
+@keyframes stack-float {
+  0%,
+  100% {
+    transform: translateZ(0);
+  }
+  50% {
+    transform: translateZ(8px);
+  }
+}
+
+/* A light pulse travelling up a vertical beam. */
+.stack-beam {
+  background: linear-gradient(to bottom, rgba(255, 178, 36, 0) 0%, rgba(255, 178, 36, 0.95) 45%, rgba(255, 178, 36, 0) 90%);
+  background-size: 100% 300%;
+  animation: beam-flow 2.6s linear infinite;
+  animation-delay: var(--beam-delay, 0s);
+}
+
+@keyframes beam-flow {
+  from {
+    background-position: 0 100%;
+  }
+  to {
+    background-position: 0 0%;
+  }
+}
+
+.stack-enter {
+  animation: stack-enter 1.1s var(--site-ease) both;
+  animation-delay: var(--enter-delay, 0s);
+}
+
+/* Transform-only entrance: opacity < 1 would flatten the 3D context. */
+@keyframes stack-enter {
+  from {
+    transform: translateZ(-90px) scale(0.92);
+  }
+  to {
+    transform: translateZ(0) scale(1);
+  }
+}
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  html:has(.site-root) {
+    scroll-behavior: auto;
+  }
+
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .flow-line,
+  .pulse-node,
+  .scan-line,
+  .caret-blink,
+  .marquee-track,
+  .stack-float,
+  .stack-beam,
+  .stack-enter {
+    animation: none !important;
+  }
+
+  .stack-beam {
+    background: rgba(255, 178, 36, 0.45);
+  }
+
+  .pulse-node {
+    opacity: 0;
+  }
+
+  .site-root *,
+  .site-root *::before,
+  .site-root *::after {
+    transition-duration: 1ms !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
