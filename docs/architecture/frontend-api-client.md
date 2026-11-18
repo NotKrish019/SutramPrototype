@@ -23,7 +23,8 @@ Owner: Member 3 (Frontend & Visualization). Frontend only; no backend or `shared
 | `services/http.ts`       | `requestJson(path, parser, { signal, timeoutMs, init })`, the shared transport |
 | `services/validators.ts` | Runtime validators for response contracts (`parseHealthCheckResponse`)         |
 | `services/api.ts`        | Endpoint functions (`fetchHealth`)                                             |
-| `hooks/useBackendHealth.ts` | React state and cancellation on unmount                                     |
+| `hooks/useBackendHealth.ts` | Health monitoring: polling, retry, visibility pause, cancellation           |
+| `components/BackendStatusCard.tsx` | Presentational connection status card (no network access)           |
 
 ## Error model
 
@@ -48,6 +49,22 @@ standard `AbortError` `DOMException`. Callers check it with `isAbortError()` and
 Configuration errors (invalid `VITE_API_URL`) and invalid `timeoutMs` (`RangeError`) are thrown as
 ordinary errors. UI code should always render messages through `getErrorMessage(unknown)`, which never
 throws.
+
+## Backend health monitoring
+
+`useBackendHealth({ intervalMs = 15_000, timeoutMs? })` returns
+`{ status, data, error, lastSuccessAt, lastCheckedAt, isChecking, retry }`.
+
+- **States:** `checking` (before the first result and during a manual retry), `connected`, `offline`.
+  Background polls keep the current status until they settle, so the UI doesn't flicker.
+- **Polling:** a `setTimeout` chain. The next check is scheduled only after the current one settles,
+  so requests never overlap. `retry()` and visibility checks are ignored while a request is in flight.
+- **Manual retry:** `retry()` checks immediately and restarts the 15 s interval.
+- **Tab visibility:** polling stops while `document.visibilityState === 'hidden'`, and a check runs
+  immediately when the tab becomes visible.
+- **Cleanup:** each effect run owns one `AbortController` and a `disposed` flag. Unmount (and the
+  StrictMode double-mount) aborts the in-flight request, clears timers and ignores late responses.
+- `data` and `lastSuccessAt` keep the last successful values while offline.
 
 ## Adding an endpoint
 

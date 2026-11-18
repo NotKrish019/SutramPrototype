@@ -1,6 +1,7 @@
 import React from 'react';
 import { Network, Clock, FileCheck } from 'lucide-react';
-import { useBackendHealth } from '../hooks/useBackendHealth';
+import { BackendStatusCard } from '../components/BackendStatusCard';
+import { DEFAULT_HEALTH_POLL_INTERVAL_MS, useBackendHealth } from '../hooks/useBackendHealth';
 import { HEALTH_PATH } from '../services/api';
 import { buildApiUrl } from '../services/config';
 
@@ -14,10 +15,7 @@ function describeHealthUrl(): string {
 }
 
 export const HomePage: React.FC = () => {
-  const health = useBackendHealth();
-  const loading = health.status === 'loading';
-  const backendHealth = health.status === 'success' ? health.data : null;
-  const error = health.status === 'error' ? health.message : null;
+  const health = useBackendHealth({ intervalMs: DEFAULT_HEALTH_POLL_INTERVAL_MS });
 
   return (
     <div className="space-y-8 py-4">
@@ -42,42 +40,11 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* Backend Connection Status Card */}
-      <section className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
-        <h3 className="text-sm font-semibold text-slate-200 uppercase tracking-wider mb-4">
-          Backend Gateway Telemetry
-        </h3>
-        <div className="flex items-center space-x-4">
-          <div
-            className={`w-3 h-3 rounded-full ${
-              backendHealth?.status === 'ok'
-                ? 'bg-emerald-500'
-                : loading
-                ? 'bg-amber-500 animate-pulse'
-                : 'bg-rose-500'
-            }`}
-          />
-          <div className="text-sm">
-            {loading && (
-              <span className="text-slate-400">Pinging backend at {describeHealthUrl()}...</span>
-            )}
-            {!loading && backendHealth && (
-              <span className="text-emerald-400 font-mono">
-                Connected: {backendHealth.project} (Status: {backendHealth.status})
-              </span>
-            )}
-            {!loading && error && (
-              <div className="space-y-1">
-                <span className="block text-slate-400 font-mono">
-                  Backend Status: Offline (Run <code className="text-sky-400">uv run uvicorn app.main:app</code> in <code className="text-slate-300">backend/</code>)
-                </span>
-                <span role="alert" className="block text-xs text-rose-400 font-mono break-all">
-                  {error}
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
+      <BackendStatusCard
+        health={health}
+        healthUrl={describeHealthUrl()}
+        pollIntervalMs={DEFAULT_HEALTH_POLL_INTERVAL_MS}
+      />
 
       {/* Capability Modules Grid (Phase 0 Skeleton) */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
