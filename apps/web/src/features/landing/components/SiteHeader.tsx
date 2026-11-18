@@ -4,7 +4,7 @@ import { Link } from '../../../router/Link';
 import { ROUTES } from '../../../router/router';
 import { NAV_ITEMS, SECTION_IDS } from '../data/siteContent';
 import { useActiveSection } from '../hooks/useInView';
-import { CtaLink, SutramWordmark } from '../../../components/ui/primitives';
+import { CtaLink, YuktiWordmark } from '../../../components/ui/primitives';
 
 const NAV_SECTION_IDS = NAV_ITEMS.map((item) => item.href.slice(1));
 
@@ -13,7 +13,7 @@ export const SiteAnnouncementBar: React.FC = () => (
     <div className="mx-auto flex max-w-site items-center justify-center gap-3 px-gutter py-2.5 font-mono text-micro uppercase text-fg-muted">
       <span aria-hidden="true" className="h-1.5 w-1.5 bg-signal-amber" />
       <span className="truncate">
-        Introducing SUTRAM <span className="hidden sm:inline">— Digital Evidence Intelligence</span>
+        Introducing YUKTI <span className="hidden sm:inline">— Digital Evidence Intelligence</span>
       </span>
       <a
         href={`#${SECTION_IDS.workbench}`}
@@ -63,8 +63,8 @@ export const SiteNavbar: React.FC = () => {
   return (
     <header ref={headerRef} className="sticky top-0 z-50 border-b border-ink-line bg-ink-950/90 backdrop-blur-md">
       <nav aria-label="Primary" className="mx-auto flex h-16 max-w-site items-center justify-between gap-6 px-gutter">
-        <Link to={ROUTES.home} aria-label="SUTRAM home" className="shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-amber">
-          <SutramWordmark />
+        <Link to={ROUTES.home} aria-label="YUKTI home" className="shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-amber">
+          <YuktiWordmark />
         </Link>
 
         <ul className="hidden items-center gap-1 lg:flex">

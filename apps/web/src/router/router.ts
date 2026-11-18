@@ -15,7 +15,7 @@ export const ROUTES = {
 
 export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES];
 
-const NAVIGATE_EVENT = 'sutram:navigate';
+const NAVIGATE_EVENT = 'yukti:navigate';
 
 function subscribe(onChange: () => void): () => void {
   window.addEventListener('popstate', onChange);

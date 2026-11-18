@@ -1,4 +1,4 @@
-# SUTRAM Digital Forensics
+# YUKTI Digital Forensics
 ### AI-Powered Digital Evidence Correlation and Crime Reconstruction Platform
 
 [![CI](https://github.com/NotKrish019/SutramPrototype/actions/workflows/ci.yml/badge.svg)](https://github.com/NotKrish019/SutramPrototype/actions/workflows/ci.yml)
@@ -11,7 +11,7 @@
 
 ## 1. Project Overview
 
-**SUTRAM Digital Forensics** is an intelligent, end-to-end digital investigation platform engineered for the **SUTRAM 2026 — ISEA-IGDTUW National Hackathon**. It empowers cyber forensic investigators, law enforcement analysts, and intelligence teams to ingest, normalize, correlate, and reconstruct complex criminal activities from multi-source digital evidence.
+**YUKTI Digital Forensics** is an intelligent, end-to-end digital investigation platform engineered for the **SUTRAM 2026 — ISEA-IGDTUW National Hackathon**. It empowers cyber forensic investigators, law enforcement analysts, and intelligence teams to ingest, normalize, correlate, and reconstruct complex criminal activities from multi-source digital evidence.
 
 ---
 
@@ -25,7 +25,7 @@ Investigators face critical challenges:
 - **Evidence Contradictions:** Detecting alibi discrepancies and conflicting testimonies across multimodal evidence is labor-intensive and error-prone.
 - **Chain of Custody Risks:** Maintaining strict cryptographic integrity (SHA-256) while processing evidence is paramount for legal admissibility.
 
-**SUTRAM** solves this by unifying multi-source digital evidence into a centralized, cross-correlated knowledge graph with automated temporal-spatial reconstruction and decision support.
+**YUKTI** solves this by unifying multi-source digital evidence into a centralized, cross-correlated knowledge graph with automated temporal-spatial reconstruction and decision support.
 
 ---
 

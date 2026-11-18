@@ -1,6 +1,6 @@
 ## PR Summary
 
-> **NOTE:** SUTRAM 2026 development operates primarily on `main`. If a PR is submitted from an external contributor, ensure it satisfies all standards below.
+> **NOTE:** YUKTI development (SUTRAM 2026) operates primarily on `main`. If a PR is submitted from an external contributor, ensure it satisfies all standards below.
 
 ## Changes Included
 - Brief bulleted list of changes

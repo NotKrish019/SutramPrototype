@@ -207,8 +207,8 @@ export const ProvenanceLegend: React.FC<{ className?: string }> = ({ className =
 
 /* ------------------------------------------------------------------- Brand */
 
-/** Original SUTRAM mark: a single thread joining three evidence points. */
-export const SutramMark: React.FC<{ className?: string }> = ({ className = 'h-6 w-6' }) => (
+/** Original YUKTI mark: a single thread joining three evidence points. */
+export const YuktiMark: React.FC<{ className?: string }> = ({ className = 'h-6 w-6' }) => (
   <svg viewBox="0 0 24 24" className={className} aria-hidden="true" fill="none">
     <rect x="0.5" y="0.5" width="23" height="23" stroke="currentColor" strokeOpacity="0.35" />
     <path d="M5 7 C 12 7, 12 12, 12 12 S 12 17, 19 17" stroke="currentColor" strokeWidth="1.5" />
@@ -218,10 +218,10 @@ export const SutramMark: React.FC<{ className?: string }> = ({ className = 'h-6 
   </svg>
 );
 
-export const SutramWordmark: React.FC<{ className?: string }> = ({ className = '' }) => (
+export const YuktiWordmark: React.FC<{ className?: string }> = ({ className = '' }) => (
   <span className={`inline-flex items-center gap-2.5 ${className}`}>
-    <SutramMark className="h-7 w-7 text-fg" />
-    <span className="font-display text-xl font-bold uppercase tracking-[0.08em] text-fg">Sutram</span>
+    <YuktiMark className="h-7 w-7 text-fg" />
+    <span className="font-display text-xl font-bold uppercase tracking-[0.08em] text-fg">Yukti</span>
   </span>
 );
 

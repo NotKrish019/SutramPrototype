@@ -15,7 +15,7 @@ export default {
           700: '#0369a1',
           900: '#0c4a6e',
         },
-        // SUTRAM site design tokens — near-black canvas with hairline structure.
+        // YUKTI site design tokens — near-black canvas with hairline structure.
         ink: {
           950: '#09090A',
           900: '#0F0F11',

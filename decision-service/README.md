@@ -1,4 +1,4 @@
-# SUTRAM Digital Forensics — Decision Support Service
+# YUKTI Digital Forensics — Decision Support Service
 
 ## Purpose & Architecture
 This microservice is reserved for hosting **Laya (Receptron)** decision intelligence and ONNX Runtime model inference.

@@ -39,7 +39,7 @@ export const HeroSection: React.FC = () => (
 
     <div className="relative border-t border-ink-line">
       <Container>
-        <ol className="flex flex-col gap-2 py-5 sm:flex-row sm:items-center sm:justify-between" aria-label="What SUTRAM does">
+        <ol className="flex flex-col gap-2 py-5 sm:flex-row sm:items-center sm:justify-between" aria-label="What YUKTI does">
           {FLOW.map((item, index) => (
             <li key={item} className="flex items-center gap-3">
               <span className="font-mono text-micro text-fg-subtle">0{index + 1}</span>

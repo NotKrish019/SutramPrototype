@@ -1,1 +1,1 @@
-"""SUTRAM Digital Forensics Backend Package."""
+"""YUKTI Digital Forensics Backend Package."""

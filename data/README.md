@@ -1,6 +1,6 @@
 # Data Management & Forensic Evidence Policy
 
-This directory documents datasets used within **SUTRAM Digital Forensics**.
+This directory documents datasets used within **YUKTI Digital Forensics**.
 
 ## STRICT RULES:
 1. **NO REAL FORENSIC EVIDENCE:** Under no circumstances should real victim, suspect, or sensitive evidentiary data be committed to this repository.

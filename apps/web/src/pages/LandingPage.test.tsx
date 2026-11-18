@@ -36,11 +36,11 @@ describe('LandingPage structure', () => {
       'Every insight should have a source.',
       'Five capabilities. One investigation surface.',
       'Bring every piece of evidence into the bigger picture.',
-      'About SUTRAM',
+      'About YUKTI',
     ]);
   });
 
-  it('has a single h1 that states what SUTRAM does', async () => {
+  it('has a single h1 that states what YUKTI does', async () => {
     await renderLanding();
     const h1 = screen.getAllByRole('heading', { level: 1 });
     expect(h1).toHaveLength(1);
@@ -68,7 +68,7 @@ describe('LandingPage structure', () => {
 
   it('routes workspace CTAs to /workspace and the repository opens safely in a new tab', async () => {
     await renderLanding();
-    for (const link of screen.getAllByRole('link', { name: /open workspace|explore sutram|investigator workspace/i })) {
+    for (const link of screen.getAllByRole('link', { name: /open workspace|explore yukti|investigator workspace/i })) {
       expect(link).toHaveAttribute('href', '/workspace');
     }
     const repo = screen.getByRole('link', { name: /repository/i });

@@ -8,15 +8,15 @@ import { ROUTES, matchWorkspaceRoute, usePathname, type WorkspaceRoute } from '.
 function workspaceTitle(route: WorkspaceRoute): string {
   switch (route.kind) {
     case 'home':
-      return 'Workspace · SUTRAM Digital Forensics';
+      return 'Workspace · YUKTI Digital Forensics';
     case 'case':
-      return `${route.section === 'overview' ? route.caseId : `${caseSectionLabel(route.section)} · ${route.caseId}`} · SUTRAM`;
+      return `${route.section === 'overview' ? route.caseId : `${caseSectionLabel(route.section)} · ${route.caseId}`} · YUKTI`;
     case 'settings':
-      return 'Settings · SUTRAM workspace';
+      return 'Settings · YUKTI workspace';
     case 'help':
-      return 'Help · SUTRAM workspace';
+      return 'Help · YUKTI workspace';
     default:
-      return 'Not found · SUTRAM workspace';
+      return 'Not found · YUKTI workspace';
   }
 }
 
@@ -27,8 +27,8 @@ export const App: React.FC = () => {
   useEffect(() => {
     const route = matchWorkspaceRoute(pathname);
     if (route) document.title = workspaceTitle(route);
-    else if (pathname === ROUTES.home) document.title = 'SUTRAM — Digital Evidence Intelligence & Crime Reconstruction';
-    else document.title = 'Not found · SUTRAM';
+    else if (pathname === ROUTES.home) document.title = 'YUKTI — Digital Evidence Intelligence & Crime Reconstruction';
+    else document.title = 'Not found · YUKTI';
   }, [pathname]);
 
   if (workspaceRoute) return <WorkspaceApp route={workspaceRoute} />;

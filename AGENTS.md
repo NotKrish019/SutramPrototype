@@ -1,6 +1,6 @@
 # AGENTS.md — Global Operational Directives for AI Agents & Engineers
 
-Welcome to **SUTRAM Digital Forensics** (SUTRAM 2026 — ISEA-IGDTUW National Hackathon).
+Welcome to **YUKTI Digital Forensics** (built for SUTRAM 2026 — ISEA-IGDTUW National Hackathon).
 All AI agents, coding assistants, and human developers operating within this repository must strictly adhere to the following rules.
 
 ---

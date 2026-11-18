@@ -8,7 +8,7 @@ router = APIRouter(tags=["Health"])
     "/health",
     response_model=HealthResponse,
     summary="Health check endpoint",
-    description="Returns the operational status of the SUTRAM backend service.",
+    description="Returns the operational status of the YUKTI backend service.",
 )
 async def get_health() -> HealthResponse:
     """Return operational health status."""

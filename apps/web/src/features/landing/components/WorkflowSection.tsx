@@ -104,7 +104,7 @@ export const WorkflowSection: React.FC = () => {
       <Container>
         <SectionHeader
           id="workflow-heading"
-          eyebrow="04 — How SUTRAM works"
+          eyebrow="04 — How YUKTI works"
           lead="From raw evidence"
           emphasis="to a reconstructed investigation."
           aside={<p>Four stages. Each keeps a reference to its artifact.</p>}

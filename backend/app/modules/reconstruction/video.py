@@ -576,7 +576,7 @@ def extract_video_keyframes(
                 raise VideoExtractionError(
                     f"Pre-existing artifact collision: frame artifact '{existing.name}' already "
                     f"exists in '{resolved_output_dir}'. Overwriting derived artifacts is strictly "
-                    "forbidden in SUTRAM forensics. Use a unique output directory for each run."
+                    "forbidden in YUKTI forensics. Use a unique output directory for each run."
                 )
 
     # Probe metadata and verify video stream presence

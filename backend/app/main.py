@@ -7,9 +7,9 @@ from app.api.routes import health
 
 
 def create_application() -> FastAPI:
-    """Application factory for SUTRAM digital forensics backend."""
+    """Application factory for YUKTI digital forensics backend."""
     application = FastAPI(
-        title="SUTRAM Digital Forensics API",
+        title="YUKTI Digital Forensics API",
         description="AI-Powered Digital Evidence Correlation and Crime Reconstruction Platform",
         version=settings.VERSION,
         docs_url="/docs",

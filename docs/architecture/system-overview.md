@@ -1,8 +1,8 @@
-# SUTRAM Digital Forensics — System Architecture Overview
+# YUKTI Digital Forensics — System Architecture Overview
 
 ## 1. High-Level Architectural Flow
 
-The SUTRAM platform automates the transformation of unstructured, multi-source digital evidence into a coherent, cross-correlated investigative graph and chronological reconstruction.
+The YUKTI platform automates the transformation of unstructured, multi-source digital evidence into a coherent, cross-correlated investigative graph and chronological reconstruction.
 
 ```mermaid
 flowchart TD

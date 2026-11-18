@@ -1,4 +1,4 @@
-# SUTRAM Digital Forensics — Backend Service
+# YUKTI Digital Forensics — Backend Service
 
 Python 3.12 + FastAPI backend responsible for evidence ingestion, data normalization, AI pipelines, graph correlation, and reconstruction APIs.
 

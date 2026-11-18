@@ -12,11 +12,20 @@ import { WorkspaceShellProvider, useWorkspaceShell } from './WorkspaceShellConte
 import { WorkspaceSidebar } from './WorkspaceSidebar';
 import { caseSectionLabel } from './navigation';
 
-const COLLAPSE_KEY = 'sutram.workspace.sidebarCollapsed';
+export const COLLAPSE_KEY = 'yukti.workspace.sidebarCollapsed';
+/** Key used before the SUTRAM → YUKTI rename; migrated once so saved preferences survive. */
+export const LEGACY_COLLAPSE_KEY = 'sutram.workspace.sidebarCollapsed';
 
 function readCollapsed(): boolean {
   try {
-    return window.localStorage.getItem(COLLAPSE_KEY) === '1';
+    const current = window.localStorage.getItem(COLLAPSE_KEY);
+    if (current !== null) return current === '1';
+    const legacy = window.localStorage.getItem(LEGACY_COLLAPSE_KEY);
+    if (legacy !== null) {
+      window.localStorage.setItem(COLLAPSE_KEY, legacy);
+      window.localStorage.removeItem(LEGACY_COLLAPSE_KEY);
+    }
+    return legacy === '1';
   } catch {
     return false;
   }

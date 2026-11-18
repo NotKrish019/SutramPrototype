@@ -65,7 +65,7 @@ Click anything. Every panel follows — and shows where it came from.
                   <span className="h-2 w-2 border border-ink-strong" />
                   <span className="h-2 w-2 border border-ink-strong" />
                 </span>
-                <span className="truncate">sutram / workspace / {DEMO_CASE.id.toLowerCase()}</span>
+                <span className="truncate">yukti / workspace / {DEMO_CASE.id.toLowerCase()}</span>
               </div>
               <span className="border border-signal-amber/50 bg-signal-amber/10 px-2 py-0.5 font-mono text-micro uppercase text-signal-amber">
                 Synthetic demonstration data

@@ -1,4 +1,4 @@
-/** Copy and structure for the public SUTRAM site. Anchors are the single source of truth for nav + tests. */
+/** Copy and structure for the public YUKTI site. Anchors are the single source of truth for nav + tests. */
 
 export const SECTION_IDS = {
   sources: 'sources',

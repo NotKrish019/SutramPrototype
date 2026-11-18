@@ -1,6 +1,6 @@
 ---
 name: Feature Request
-about: Suggest an idea or enhancement for the SUTRAM platform
+about: Suggest an idea or enhancement for the YUKTI platform
 title: '[FEAT] '
 labels: enhancement
 assignees: ''

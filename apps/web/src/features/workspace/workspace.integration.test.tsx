@@ -58,9 +58,9 @@ describe('workspace shell', () => {
     await click(screen.getByRole('button', { name: 'Collapse sidebar' }));
     expect(screen.getByRole('button', { name: 'Expand sidebar' })).toHaveAttribute('aria-expanded', 'false');
     expect(within(sidebar()).getByRole('link', { name: 'Knowledge Graph' })).toHaveAttribute('title', 'Knowledge Graph');
-    expect(window.localStorage.getItem('sutram.workspace.sidebarCollapsed')).toBe('1');
+    expect(window.localStorage.getItem('yukti.workspace.sidebarCollapsed')).toBe('1');
     await click(screen.getByRole('button', { name: 'Expand sidebar' }));
-    expect(window.localStorage.getItem('sutram.workspace.sidebarCollapsed')).toBe('0');
+    expect(window.localStorage.getItem('yukti.workspace.sidebarCollapsed')).toBe('0');
   });
 
   it('opens the mobile drawer and closes it with Escape, restoring focus', async () => {
@@ -466,7 +466,7 @@ describe('settings and help', () => {
 /* ------------------------------------------------------ Logo → homepage */
 
 describe('workspace logo navigation', () => {
-  const logo = (scope: HTMLElement = sidebar()): HTMLElement => within(scope).getByRole('link', { name: 'Go to SUTRAM homepage' });
+  const logo = (scope: HTMLElement = sidebar()): HTMLElement => within(scope).getByRole('link', { name: 'Go to YUKTI homepage' });
 
   it.each([
     '/workspace',
@@ -516,10 +516,10 @@ describe('workspace logo navigation', () => {
   it('works when the sidebar is collapsed and does not toggle the collapse state', async () => {
     await renderAppAt('/workspace');
     await click(screen.getByRole('button', { name: 'Collapse sidebar' }));
-    expect(window.localStorage.getItem('sutram.workspace.sidebarCollapsed')).toBe('1');
+    expect(window.localStorage.getItem('yukti.workspace.sidebarCollapsed')).toBe('1');
     await click(logo());
     expect(window.location.pathname).toBe('/');
-    expect(window.localStorage.getItem('sutram.workspace.sidebarCollapsed')).toBe('1');
+    expect(window.localStorage.getItem('yukti.workspace.sidebarCollapsed')).toBe('1');
   });
 
   it('works from the mobile drawer and closes it', async () => {
@@ -535,5 +535,31 @@ describe('workspace logo navigation', () => {
     await renderAppAt('/workspace/cases/CASE-026');
     await click(within(sidebar()).getByRole('link', { name: 'Investigations' }));
     expect(window.location.pathname).toBe('/workspace');
+  });
+});
+
+describe('sidebar preference migration (SUTRAM → YUKTI rename)', () => {
+  it('migrates a saved legacy preference once and keeps the user\'s choice', async () => {
+    window.localStorage.setItem('sutram.workspace.sidebarCollapsed', '1');
+    await renderAppAt('/workspace');
+    expect(screen.getByRole('button', { name: 'Expand sidebar' })).toBeInTheDocument();
+    expect(window.localStorage.getItem('yukti.workspace.sidebarCollapsed')).toBe('1');
+    expect(window.localStorage.getItem('sutram.workspace.sidebarCollapsed')).toBeNull();
+  });
+
+  it('prefers the new key when both exist', async () => {
+    window.localStorage.setItem('yukti.workspace.sidebarCollapsed', '0');
+    window.localStorage.setItem('sutram.workspace.sidebarCollapsed', '1');
+    await renderAppAt('/workspace');
+    expect(screen.getByRole('button', { name: 'Collapse sidebar' })).toBeInTheDocument();
+  });
+
+  it('settings reset clears both keys', async () => {
+    window.localStorage.setItem('yukti.workspace.sidebarCollapsed', '1');
+    window.localStorage.setItem('sutram.workspace.sidebarCollapsed', '1');
+    await renderAppAt('/workspace/settings');
+    await click(screen.getByRole('button', { name: 'Reset sidebar preference' }));
+    expect(window.localStorage.getItem('yukti.workspace.sidebarCollapsed')).toBeNull();
+    expect(window.localStorage.getItem('sutram.workspace.sidebarCollapsed')).toBeNull();
   });
 });

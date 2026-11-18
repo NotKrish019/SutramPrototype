@@ -1,8 +1,8 @@
-# SUTRAM Phase 3C — Contract Decision Review Package
+# YUKTI Phase 3C — Contract Decision Review Package
 
 **Author:** Member 4 (Forensic Intelligence & System Integration)  
 **Date:** 2026-11-17  
-**Monorepo Target:** SUTRAM 2026 Core Contracts  
+**Monorepo Target:** YUKTI Core Contracts (SUTRAM 2026)  
 **Status:** `PROPOSED` (Awaiting Review & Approval from Members 1, 2, and 3)
 
 ---

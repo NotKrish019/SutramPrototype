@@ -4,7 +4,7 @@ import { DEMO_CASE } from '../../../fixtures/synthetic/case026';
 import type { SourceId } from '../data/siteContent';
 
 /**
- * The SUTRAM idea as one dimensional object: evidence sources (floor) → correlation layer →
+ * The YUKTI idea as one dimensional object: evidence sources (floor) → correlation layer →
  * knowledge graph → reconstructed timeline. Pure CSS 3D + SVG; synthetic data.
  */
 

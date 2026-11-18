@@ -796,7 +796,7 @@ class VideoExtractionOptions(BaseModel):
     def _reject_overwrite_option(cls, data: Any) -> Any:
         if isinstance(data, dict) and "overwrite" in data:
             raise ValueError(
-                "Overwriting pre-existing derived artifacts is strictly forbidden in SUTRAM forensics. "
+                "Overwriting pre-existing derived artifacts is strictly forbidden in YUKTI forensics. "
                 "The 'overwrite' option has been permanently removed."
             )
         return data

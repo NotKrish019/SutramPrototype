@@ -35,7 +35,7 @@ describe('App routing', () => {
   it('renders the public product site at /', async () => {
     await renderAt('/');
     expect(screen.getByRole('heading', { level: 1, name: /turn fragmented digital evidence/i })).toBeInTheDocument();
-    expect(document.title).toMatch(/SUTRAM — Digital Evidence Intelligence/);
+    expect(document.title).toMatch(/YUKTI — Digital Evidence Intelligence/);
   });
 
   it('renders the redesigned investigator workspace at /workspace', async () => {
@@ -47,7 +47,7 @@ describe('App routing', () => {
     // Existing backend health monitoring is still mounted.
     expect(screen.getByText('Backend Gateway Telemetry')).toBeInTheDocument();
     expect(await screen.findByText('sutram-digital-forensics (Status: ok)')).toBeInTheDocument();
-    expect(document.title).toBe('Workspace · SUTRAM Digital Forensics');
+    expect(document.title).toBe('Workspace · YUKTI Digital Forensics');
   });
 
   it('treats a trailing slash as the same route', async () => {
@@ -59,7 +59,7 @@ describe('App routing', () => {
     await renderAt('/workspace/cases/CASE-026/timeline');
     expect(screen.getByRole('heading', { level: 1, name: 'Warehouse Access Investigation' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /timeline/i, current: 'page' })).toBeInTheDocument();
-    expect(document.title).toBe('Event Reconstruction · CASE-026 · SUTRAM');
+    expect(document.title).toBe('Event Reconstruction · CASE-026 · YUKTI');
   });
 
   it('shows a workspace-level not-found view for unknown workspace paths', async () => {
@@ -72,7 +72,7 @@ describe('App routing', () => {
     await renderAt('/does-not-exist');
     expect(screen.getByRole('heading', { name: /no route at this path/i })).toBeInTheDocument();
     expect(screen.getByText('/does-not-exist')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /back to sutram/i })).toHaveAttribute('href', '/');
+    expect(screen.getByRole('link', { name: /back to yukti/i })).toHaveAttribute('href', '/');
   });
 
   it('navigates client-side from the site to the workspace and back with history', async () => {

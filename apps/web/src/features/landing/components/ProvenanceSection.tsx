@@ -143,7 +143,7 @@ export const ProvenanceSection: React.FC = () => {
             ))}
           </ul>
           <p className="mt-4 font-mono text-micro uppercase leading-relaxed text-fg-subtle">
-            A digest alone does not establish that the original source is authentic · SUTRAM supports investigators; it does not determine identity or guilt
+            A digest alone does not establish that the original source is authentic · YUKTI supports investigators; it does not determine identity or guilt
           </p>
         </Reveal>
       </Container>

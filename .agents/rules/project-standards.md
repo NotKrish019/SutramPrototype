@@ -1,6 +1,6 @@
 # Project Standards & Engineering Guidelines
 
-This document governs engineering practices, repository structure, and code standards for **SUTRAM Digital Forensics**.
+This document governs engineering practices, repository structure, and code standards for **YUKTI Digital Forensics**.
 
 ---
 

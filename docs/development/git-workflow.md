@@ -1,6 +1,6 @@
 # Git & Collaboration Workflow — Single Main Branch Policy
 
-To ensure high velocity and eliminate merge hell during hackathon sprints, **SUTRAM 2026 operates on a strict single-branch (`main`) policy**.
+To ensure high velocity and eliminate merge hell during hackathon sprints, **YUKTI development operates on a strict single-branch (`main`) policy**.
 
 ---
 

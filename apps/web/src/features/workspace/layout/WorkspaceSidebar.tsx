@@ -1,6 +1,6 @@
 import React from 'react';
 import { ArrowUpRight, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
-import { SutramMark } from '../../../components/ui/primitives';
+import { YuktiMark } from '../../../components/ui/primitives';
 import { Link } from '../../../router/Link';
 import { ROUTES, caseHref } from '../../../router/router';
 import { useWorkspaceShell } from './WorkspaceShellContext';
@@ -51,14 +51,14 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
         <Link
           to={ROUTES.home}
           onClick={onNavigate}
-          aria-label="Go to SUTRAM homepage"
-          title="Go to SUTRAM homepage"
+          aria-label="Go to YUKTI homepage"
+          title="Go to YUKTI homepage"
           className="group -m-1 flex cursor-pointer items-center gap-2.5 p-1 transition-colors duration-fast hover:bg-white/[0.04] focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-amber"
         >
-          <SutramMark className="h-7 w-7 text-fg transition-colors duration-fast group-hover:text-signal-amber" />
+          <YuktiMark className="h-7 w-7 text-fg transition-colors duration-fast group-hover:text-signal-amber" />
           {!collapsed && (
             <span className="leading-none">
-              <span className="block font-display text-lg font-bold uppercase tracking-[0.08em] text-fg">Sutram</span>
+              <span className="block font-display text-lg font-bold uppercase tracking-[0.08em] text-fg">Yukti</span>
               <span className="block font-mono text-[0.625rem] uppercase tracking-[0.1em] text-fg-subtle transition-colors duration-fast group-hover:text-fg-muted">Investigation workspace</span>
             </span>
           )}

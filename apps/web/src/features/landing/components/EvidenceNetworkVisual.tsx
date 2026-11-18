@@ -147,7 +147,7 @@ const NetworkDiagram: React.FC<DiagramProps> = ({ active, onActivate, compact = 
         <rect x={LAYER.x} y={LAYER.y} width={LAYER.w} height={LAYER.h} fill="#141416" stroke="#EDEDEF" strokeOpacity="0.7" />
         <rect x={LAYER.x - 4} y={LAYER.y - 4} width="8" height="8" fill="#FFB224" />
         <text x={LAYER.x + 12} y={LAYER.y + 22} fill="#FFB224" fontSize="9.5" fontFamily="JetBrains Mono, monospace" letterSpacing="0.08em">
-          SUTRAM
+          YUKTI
         </text>
         <text x={LAYER.x + 12} y={LAYER.y + 36} fill="#A3A3AB" fontSize="9.5" fontFamily="JetBrains Mono, monospace" letterSpacing="0.06em">
           CORRELATION LAYER

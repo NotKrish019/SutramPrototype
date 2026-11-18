@@ -4,7 +4,7 @@ import { useBackendHealth, type ConnectionStatus } from '../../../hooks/useBacke
 import { Link } from '../../../router/Link';
 import { ROUTES } from '../../../router/router';
 import { DELIVERABLES, PROJECT_REPOSITORY_URL, SECTION_IDS } from '../data/siteContent';
-import { Container, CtaLink, Eyebrow, SutramWordmark } from '../../../components/ui/primitives';
+import { Container, CtaLink, Eyebrow, YuktiWordmark } from '../../../components/ui/primitives';
 
 const FOOTER_PLATFORM_LINKS = [
   { label: 'Evidence sources', href: `#${SECTION_IDS.sources}` },
@@ -58,11 +58,11 @@ export const FinalCTASection: React.FC = () => (
         <span className="block font-bold text-signal-amber">into the bigger picture.</span>
       </h2>
       <p className="mx-auto mt-7 max-w-xl text-lg leading-relaxed text-fg-muted">
-        SUTRAM helps transform disconnected digital artifacts into traceable investigative intelligence.
+        YUKTI helps transform disconnected digital artifacts into traceable investigative intelligence.
       </p>
       <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
         <CtaLink href={ROUTES.workspace} arrow>
-          Explore SUTRAM
+          Explore YUKTI
         </CtaLink>
         <CtaLink href={`#${SECTION_IDS.workbench}`} variant="secondary">
           View the Platform
@@ -75,16 +75,16 @@ export const FinalCTASection: React.FC = () => (
 export const SiteFooter: React.FC = () => (
   <footer id={SECTION_IDS.about} aria-labelledby="footer-heading" className="bg-ink-950">
     <h2 id="footer-heading" className="sr-only">
-      About SUTRAM
+      About YUKTI
     </h2>
     <Container className="grid gap-12 py-16 md:grid-cols-12">
       <div className="md:col-span-5">
-        <SutramWordmark />
+        <YuktiWordmark />
         <p className="mt-5 max-w-sm text-sm leading-relaxed text-fg-muted">
 Digital Evidence Intelligence &amp; Crime Reconstruction Platform.
         </p>
         <p className="mt-5 max-w-sm text-sm leading-relaxed text-fg-muted">
-SUTRAM 2026 — ISEA-IGDTUW National Hackathon · synthetic data only.
+Built for SUTRAM 2026 — ISEA-IGDTUW National Hackathon · synthetic data only.
         </p>
       </div>
 
@@ -135,14 +135,14 @@ SUTRAM 2026 — ISEA-IGDTUW National Hackathon · synthetic data only.
 
     <div className="border-t border-ink-line">
       <Container className="flex flex-col gap-4 py-6 sm:flex-row sm:items-center sm:justify-between">
-        <p className="font-mono text-micro uppercase text-fg-subtle">© 2026 SUTRAM project team</p>
+        <p className="font-mono text-micro uppercase text-fg-subtle">© 2026 YUKTI project team</p>
         <ApiStatus />
       </Container>
     </div>
 
     <div aria-hidden="true" className="overflow-hidden border-t border-ink-line">
       <p className="select-none whitespace-nowrap text-center font-display text-[22vw] font-bold uppercase leading-[0.78] tracking-[-0.04em] text-ink-800">
-        Sutram
+        Yukti
       </p>
     </div>
   </footer>

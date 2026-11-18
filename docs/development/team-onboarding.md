@@ -1,6 +1,6 @@
 # Team Onboarding & 4-Member Responsibility Matrix
 
-Welcome to the **SUTRAM 2026** engineering team. This document specifies member roles, module ownership, and day-to-day operations.
+Welcome to the **YUKTI** engineering team (SUTRAM 2026 — ISEA-IGDTUW National Hackathon). This document specifies member roles, module ownership, and day-to-day operations.
 
 ---
 

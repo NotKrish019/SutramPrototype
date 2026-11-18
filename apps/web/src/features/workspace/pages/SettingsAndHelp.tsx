@@ -3,6 +3,7 @@ import { ProvenanceBadge } from '../../../components/ui/primitives';
 import { DEFAULT_HEALTH_POLL_INTERVAL_MS } from '../../../hooks/useBackendHealth';
 import { DEFAULT_REQUEST_TIMEOUT_MS, getApiBaseUrl } from '../../../services/config';
 import { useWorkspaceRepository } from '../data/WorkspaceDataContext';
+import { COLLAPSE_KEY, LEGACY_COLLAPSE_KEY } from '../layout/WorkspaceLayout';
 import { KeyValueList, PageHeader, Panel, ReviewCategoryBadge } from '../components/ui';
 import { CASE_TIME_ZONE, PRECISION_LABEL } from '../format';
 import type { ReviewCategory, TimePrecision } from '../types';
@@ -26,7 +27,8 @@ export const SettingsPage: React.FC = () => {
 
   const resetLayout = (): void => {
     try {
-      window.localStorage.removeItem('sutram.workspace.sidebarCollapsed');
+      window.localStorage.removeItem(COLLAPSE_KEY);
+      window.localStorage.removeItem(LEGACY_COLLAPSE_KEY);
       setSidebarNote('Sidebar preference cleared. It applies on next load.');
     } catch {
       setSidebarNote('Browser storage is unavailable; nothing was stored.');

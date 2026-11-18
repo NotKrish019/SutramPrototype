@@ -1,4 +1,4 @@
-# Contributing to SUTRAM Digital Forensics
+# Contributing to YUKTI Digital Forensics
 
 This repository is maintained by a 4-member team participating in **SUTRAM 2026 (ISEA-IGDTUW National Hackathon)**.
 To maintain high agility and code quality, all contributors must follow these procedures.

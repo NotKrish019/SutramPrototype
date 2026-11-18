@@ -1,4 +1,4 @@
-# SUTRAM Phase 0.5 — Consolidated Canonical Contract Proposal
+# YUKTI Phase 0.5 — Consolidated Canonical Contract Proposal
 
 **Author:** Member 3 (Frontend & Visualization)
 **Date:** 2026-11-18
