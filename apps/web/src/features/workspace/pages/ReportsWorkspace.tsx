@@ -52,9 +52,13 @@ export const ReportsWorkspace: React.FC<{ detail: CaseDetail }> = ({ detail }) =
             <WsButton icon={FileDown} disabled aria-describedby="report-export-note">
               Export PDF / JSON
             </WsButton>
+            <div className="flex items-center gap-1.5 mt-1">
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono uppercase bg-signal-flag/10 text-signal-flag border border-signal-flag/30">
+                SHIP_EXPORT_BLOCKED
+              </span>
+            </div>
             <p id="report-export-note" className="text-xs leading-relaxed text-fg-subtle">
-              Export is disabled: the reporting service (backend/app/modules/reporting) is planned. The preview is
-              assembled in the browser from the records shown in this workspace.
+              Judicial export status: <strong>SHIP_EXPORT_BLOCKED</strong>. Dossier export is blocked pending verification of unresolved contradiction leads and chain of custody finalization. The preview is assembled in the browser from the records shown in this workspace.
             </p>
           </div>
         </Panel>

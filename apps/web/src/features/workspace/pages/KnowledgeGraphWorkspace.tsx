@@ -3,6 +3,7 @@ import { ArrowRight, ChevronDown, Focus, Maximize2, Minus, Plus, RotateCcw, Wayp
 import { ProvenanceBadge, ReviewBadge } from '../../../components/ui/primitives';
 import { Link } from '../../../router/Link';
 import { caseHref } from '../../../router/router';
+import { GraphSyncStatus, KnowledgeGraph, fetchGraphSummary, type GraphSummaryDto } from '../../graph';
 import { useCaseIndex, useQuerySelection, type CaseIndex } from '../caseIndex';
 import { FilterChip, KeyValueList, Panel, SearchField, SelectField, WsButton } from '../components/ui';
 import { formatEventTime } from '../format';
@@ -279,6 +280,32 @@ const Inspector: React.FC<{
 /* --------------------------------------------------------------------- Page */
 
 export const KnowledgeGraphWorkspace: React.FC<{ detail: CaseDetail }> = ({ detail }) => {
+  const [engine, setEngine] = useState<'svg' | 'cytoscape'>('svg');
+  const [summary, setSummary] = useState<GraphSummaryDto | null>(null);
+  const [isSummaryLoading, setIsSummaryLoading] = useState(false);
+
+  const loadSummary = useCallback(() => {
+    const controller = new AbortController();
+    setIsSummaryLoading(true);
+    fetchGraphSummary(detail.case.case_id, { signal: controller.signal })
+      .then((res) => {
+        if (!controller.signal.aborted) {
+          setSummary(res);
+          setIsSummaryLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setIsSummaryLoading(false);
+        }
+      });
+    return () => controller.abort();
+  }, [detail.case.case_id]);
+
+  useEffect(() => {
+    return loadSummary();
+  }, [loadSummary]);
+
   const index = useCaseIndex(detail);
   const graph = useMemo(() => buildGraph(detail), [detail]);
   const [nodeId, setNodeId] = useQuerySelection('node');
@@ -410,9 +437,56 @@ export const KnowledgeGraphWorkspace: React.FC<{ detail: CaseDetail }> = ({ deta
 
   const scale = view.w / CANVAS.w;
 
+  if (engine === 'cytoscape') {
+    return (
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ink-line bg-ink-900 px-4 py-2 sm:px-6 lg:px-8">
+          <GraphSyncStatus summary={summary} isLoading={isSummaryLoading} onRefresh={loadSummary} />
+          <div className="flex rounded border border-ink-line bg-ink-950 p-0.5 font-mono text-micro uppercase">
+            <button
+              type="button"
+              onClick={() => setEngine('cytoscape')}
+              className="rounded bg-ink-800 px-2.5 py-1 font-semibold text-signal-amber"
+            >
+              Cytoscape Engine (Phase 2B)
+            </button>
+            <button
+              type="button"
+              onClick={() => setEngine('svg')}
+              className="rounded px-2.5 py-1 text-fg-subtle hover:text-fg"
+            >
+              Blueprint View
+            </button>
+          </div>
+        </div>
+        <KnowledgeGraph detail={detail} />
+      </div>
+    );
+  }
+
   return (
-    <div className="grid grid-cols-1 gap-4 p-4 sm:p-6 lg:p-8 xl:grid-cols-12">
-      <div className="min-w-0 space-y-4 xl:col-span-9">
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ink-line bg-ink-900 px-4 py-2 sm:px-6 lg:px-8">
+        <GraphSyncStatus summary={summary} isLoading={isSummaryLoading} onRefresh={loadSummary} />
+        <div className="flex rounded border border-ink-line bg-ink-950 p-0.5 font-mono text-micro uppercase">
+          <button
+            type="button"
+            onClick={() => setEngine('cytoscape')}
+            className="rounded px-2.5 py-1 text-fg-subtle hover:text-fg"
+          >
+            Cytoscape Engine (Phase 2B)
+          </button>
+          <button
+            type="button"
+            onClick={() => setEngine('svg')}
+            className="rounded bg-ink-800 px-2.5 py-1 font-semibold text-signal-amber"
+          >
+            Blueprint View
+          </button>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 gap-4 p-4 sm:p-6 lg:p-8 xl:grid-cols-12">
+        <div className="min-w-0 space-y-4 xl:col-span-9">
         <Panel
           title="Knowledge graph"
           meta={`${visibleNodes.length} nodes · ${visibleEdges.length} links`}
@@ -624,5 +698,6 @@ export const KnowledgeGraphWorkspace: React.FC<{ detail: CaseDetail }> = ({ deta
         />
       </Panel>
     </div>
-  );
+  </div>
+);
 };

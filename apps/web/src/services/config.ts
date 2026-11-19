@@ -1,5 +1,5 @@
-/** Backend URL used when `VITE_API_URL` is unset or blank (local FastAPI dev server). */
-export const DEFAULT_API_BASE_URL = 'http://localhost:8000';
+/** Backend URL used when `VITE_API_URL` is unset or blank (local Rust Axum dev server). */
+export const DEFAULT_API_BASE_URL = 'http://localhost:8080';
 
 /** Default per-request timeout in milliseconds. */
 export const DEFAULT_REQUEST_TIMEOUT_MS = 10_000;

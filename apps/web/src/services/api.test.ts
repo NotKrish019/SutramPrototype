@@ -79,7 +79,7 @@ describe('fetchHealth — success', () => {
     vi.stubEnv('VITE_API_URL', '');
     const fetchMock = stubFetch(vi.fn(async () => jsonResponse({ status: 'ok', project: 'p' })));
     await fetchHealth();
-    expect(fetchMock.mock.calls[0]![0]).toBe('http://localhost:8000/health');
+    expect(fetchMock.mock.calls[0]![0]).toBe('http://localhost:8080/health');
   });
 
   it('clears the timeout timer after a successful response', async () => {

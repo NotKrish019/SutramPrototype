@@ -463,7 +463,7 @@ describe('reports', () => {
 describe('settings and help', () => {
   it('shows the real runtime configuration', async () => {
     await renderAppAt('/workspace/settings');
-    expect(screen.getByText('http://localhost:8000')).toBeInTheDocument();
+    expect(screen.getByText('http://localhost:8080')).toBeInTheDocument();
     expect(screen.getByText(/GET \/health every 15s/)).toBeInTheDocument();
     expect(screen.getByText('Synthetic fixture (no case API yet)')).toBeInTheDocument();
   });

@@ -287,7 +287,7 @@ export const EvidenceRepository: React.FC<{ detail: CaseDetail }> = ({ detail })
           {uploadOpen ? 'Hide staging' : 'Add evidence'}
         </WsButton>
       </div>
-      {uploadOpen && <EvidenceUploadPanel id={uploadId} />}
+      {uploadOpen && <EvidenceUploadPanel id={uploadId} caseId={detail.case.case_id} />}
 
       <div className={`grid grid-cols-1 gap-4 ${selected ? 'xl:grid-cols-12' : ''}`}>
         <Panel
