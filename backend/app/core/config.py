@@ -30,8 +30,20 @@ class Settings(BaseSettings):
     NEO4J_USER: str = "neo4j"
     NEO4J_PASSWORD: str = "ChangeMeInLocalEnv123!"
 
-    # Storage paths
+    # Storage paths and upload constraints
     EVIDENCE_STORAGE_PATH: str = "./data/evidence_storage"
+    MAX_UPLOAD_SIZE_BYTES: int = 50 * 1024 * 1024  # 50 MB default ceiling
+    ALLOWED_EVIDENCE_EXTENSIONS: List[str] = [
+        ".csv",
+        ".json",
+        ".txt",
+        ".pdf",
+        ".mp4",
+        ".mov",
+        ".png",
+        ".jpg",
+        ".jpeg",
+    ]
     DECISION_SERVICE_URL: str = "http://localhost:3001"
 
 

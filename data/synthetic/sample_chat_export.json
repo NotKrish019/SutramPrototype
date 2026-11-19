@@ -1,0 +1,32 @@
+{
+  "export_format": "whatsapp_chat_export_v1",
+  "export_timestamp": "2026-11-11T08:00:00Z",
+  "chat_title": "Logistics Dispatch Operations",
+  "chat_id": "chat-grp-synthetic-901",
+  "messages": [
+    {
+      "message_id": "msg-001",
+      "sender_id": "+919811002233",
+      "sender_name": "Synthetic Target Alpha",
+      "recipients": ["+919899887766"],
+      "timestamp": "2026-11-10T20:15:30+05:30",
+      "content": "Consignment dispatched from South warehouse. Call me at 09811002233 or email alpha.lead@synthetic-forensics.internal. Device IMEI 861234567890123."
+    },
+    {
+      "message_id": "msg-002",
+      "sender_id": "+919899887766",
+      "sender_name": "Synthetic Target Bravo",
+      "recipients": ["+919811002233"],
+      "timestamp": "2026-11-10T20:18:45+05:30",
+      "content": "Received the manifest. Will confirm receipt shortly. SIM IMSI 404450123456789 active."
+    },
+    {
+      "message_id": "msg-003",
+      "sender_id": "+919876543210",
+      "sender_name": "Synthetic Courier Delta",
+      "recipients": ["+919811002233", "+919899887766"],
+      "timestamp": "2026-11-10T22:45:00+05:30",
+      "content": "Transit vehicle reached toll gate. Contact driver at +91 98110 02233 if gate is locked."
+    }
+  ]
+}
