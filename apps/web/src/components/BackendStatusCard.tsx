@@ -10,7 +10,7 @@ export interface BackendStatusCardProps {
 }
 
 const STATUS_STYLES: Record<ConnectionStatus, { label: string; dot: string; text: string }> = {
-  checking: { label: 'Checking', dot: 'bg-signal-amber animate-pulse motion-reduce:animate-none', text: 'text-signal-amber' },
+  checking: { label: 'Checking', dot: 'bg-signal-accent animate-pulse motion-reduce:animate-none', text: 'text-signal-accent' },
   connected: { label: 'Connected', dot: 'bg-signal-ok', text: 'text-signal-ok' },
   offline: { label: 'Offline', dot: 'bg-signal-flag', text: 'text-signal-flag' },
 };
@@ -41,7 +41,7 @@ export const BackendStatusCard: React.FC<BackendStatusCardProps> = ({
           type="button"
           onClick={retry}
           disabled={isChecking}
-          className="inline-flex h-8 items-center gap-2 border border-ink-strong px-2.5 font-mono text-micro uppercase tracking-[0.04em] text-fg transition-colors hover:border-fg-muted hover:bg-white/[0.03] focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-amber disabled:cursor-not-allowed disabled:opacity-45"
+          className="inline-flex h-8 items-center gap-2 border border-ink-strong px-2.5 font-mono text-micro uppercase tracking-[0.04em] text-fg transition-colors hover:border-fg-muted hover:bg-white/[0.03] focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-accent disabled:cursor-not-allowed disabled:opacity-45"
         >
           <RefreshCw aria-hidden="true" className={`h-3.5 w-3.5 ${isChecking ? 'animate-spin motion-reduce:animate-none' : ''}`} />
           Retry Now
@@ -68,7 +68,7 @@ export const BackendStatusCard: React.FC<BackendStatusCardProps> = ({
           {status === 'offline' && (
             <>
               <p className="font-mono text-xs text-fg-muted">
-                Run <code className="text-signal-amber">uv run uvicorn app.main:app</code> in{' '}
+                Run <code className="text-signal-accent">uv run uvicorn app.main:app</code> in{' '}
                 <code className="text-fg">backend/</code>
               </p>
               {error && (

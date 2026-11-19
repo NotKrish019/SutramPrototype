@@ -1,0 +1,62 @@
+/*
+ * Investigator workspace motion. Short and purposeful: it communicates selection and context
+ * changes only. Everything here is disabled under prefers-reduced-motion.
+ */
+
+/* Contextual inspectors slide in from the side they occupy. */
+.ws-inspector-enter {
+  animation: ws-inspector-in 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes ws-inspector-in {
+  from {
+    opacity: 0;
+    transform: translate3d(12px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Thin investigative paths draw into view once (set pathLength="1" on the path). */
+.ws-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: ws-draw 900ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation-delay: var(--ws-draw-delay, 0ms);
+}
+
+@keyframes ws-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* View changes inside a case fade up briefly. */
+.ws-view-enter {
+  animation: ws-view-in 220ms ease-out both;
+}
+
+@keyframes ws-view-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 4px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ws-inspector-enter,
+  .ws-view-enter {
+    animation: none;
+  }
+
+  .ws-draw {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}

@@ -37,7 +37,7 @@ const ArtifactRows: React.FC<{ evidence: DemoEvidence; provenance: ProvenanceCla
             <p key={event.id} className="flex items-start gap-2">
               <CornerDownRight aria-hidden="true" className="mt-1 h-3 w-3 shrink-0 text-fg-subtle" />
               <span>
-                <span className="font-mono text-xs text-signal-amber">{event.time}</span> {event.title}
+                <span className="font-mono text-xs text-signal-accent">{event.time}</span> {event.title}
               </span>
             </p>
           ))
@@ -113,7 +113,7 @@ export const ProvenancePanel: React.FC<ProvenancePanelProps> = ({ selection, onS
                     <button
                       type="button"
                       onClick={() => onSelectEvidence(item.id)}
-                      className="font-mono text-xs text-fg underline decoration-ink-strong underline-offset-4 hover:decoration-signal-amber focus:outline-none focus-visible:text-signal-amber"
+                      className="font-mono text-xs text-fg underline decoration-ink-strong underline-offset-4 hover:decoration-signal-accent focus:outline-none focus-visible:text-signal-accent"
                     >
                       {item.id} · {item.fileName}
                     </button>

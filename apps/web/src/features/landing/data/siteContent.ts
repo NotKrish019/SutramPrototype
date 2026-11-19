@@ -1,12 +1,14 @@
 /** Copy and structure for the public YUKTI site. Anchors are the single source of truth for nav + tests. */
 
 export const SECTION_IDS = {
-  sources: 'sources',
-  platform: 'platform',
-  workbench: 'workbench',
-  workflow: 'workflow',
+  capabilities: 'capabilities',
+  correlation: 'correlation',
+  reconstruction: 'reconstruction',
+  timeline: 'timeline',
+  contradictions: 'contradictions',
   provenance: 'provenance',
-  deliverables: 'capabilities',
+  technology: 'technology',
+  platform: 'platform',
   about: 'about',
 } as const;
 
@@ -17,84 +19,20 @@ export interface NavItem {
 
 export const NAV_ITEMS: NavItem[] = [
   { label: 'Platform', href: `#${SECTION_IDS.platform}` },
-  { label: 'Capabilities', href: `#${SECTION_IDS.deliverables}` },
-  { label: 'Workflow', href: `#${SECTION_IDS.workflow}` },
-  { label: 'Evidence Intelligence', href: `#${SECTION_IDS.workbench}` },
+  { label: 'Capabilities', href: `#${SECTION_IDS.capabilities}` },
+  { label: 'Reconstruction', href: `#${SECTION_IDS.reconstruction}` },
+  { label: 'Technology', href: `#${SECTION_IDS.technology}` },
   { label: 'About', href: `#${SECTION_IDS.about}` },
 ];
 
-export type SourceId = 'mobile' | 'cctv' | 'email' | 'social' | 'financial' | 'network';
-
-export interface EvidenceSource {
-  id: SourceId;
-  index: string;
-  title: string;
-  description: string;
-}
-
-export const EVIDENCE_SOURCES: EvidenceSource[] = [
-  { id: 'mobile', index: '01', title: 'Mobile Device Evidence', description: 'Messages, calls, app data and locations.' },
-  { id: 'cctv', index: '02', title: 'CCTV & Video', description: 'Frames and timestamps — clocks kept uncertain until verified.' },
-  { id: 'email', index: '03', title: 'Emails & Communications', description: 'Headers, threads and participants.' },
-  { id: 'social', index: '04', title: 'Social Media', description: 'Accounts and interactions as entities.' },
-  { id: 'financial', index: '05', title: 'Financial Records', description: 'Transactions on the same timeline.' },
-  { id: 'network', index: '06', title: 'Cloud & Network Data', description: 'Logins, IP records and access points.' },
-];
-
-export type CapabilityId = 'correlation' | 'graph' | 'timeline' | 'contradiction' | 'explainable';
-
-export interface Capability {
-  id: CapabilityId;
-  letter: string;
-  title: string;
-  summary: string;
-}
-
-export const CAPABILITIES: Capability[] = [
-  { id: 'correlation', letter: 'A', title: 'Evidence Correlation Engine', summary: 'Links records through shared entities, identifiers, times and places.' },
-  { id: 'graph', letter: 'B', title: 'Knowledge Graph Generation', summary: 'People, devices, places and events — with provenance on every edge.' },
-  { id: 'timeline', letter: 'C', title: 'Temporal & Spatial Reconstruction', summary: 'One true-to-scale chronology, mapped to places, uncertainty kept.' },
-  { id: 'contradiction', letter: 'D', title: 'Contradiction & Inconsistency Detection', summary: 'Conflicts surfaced for review — never silently resolved.' },
-  { id: 'explainable', letter: 'E', title: 'Explainable Investigative Intelligence', summary: 'Every lead traces back to its artifacts. Inferred ≠ observed.' },
-];
-
-export interface WorkflowStep {
-  id: 'ingest' | 'extract' | 'correlate' | 'reconstruct';
-  index: string;
-  title: string;
-  description: string;
-  detail: string;
-}
-
-export const WORKFLOW_STEPS: WorkflowStep[] = [
-  {
-    id: 'ingest',
-    index: '01',
-    title: 'Ingest',
-    description: 'Collect evidence from every source.',
-    detail: 'Originals stay read-only; SHA-256 recorded at intake.',
-  },
-  {
-    id: 'extract',
-    index: '02',
-    title: 'Extract',
-    description: 'Pull out entities, times and events.',
-    detail: 'Each value keeps its artifact reference.',
-  },
-  {
-    id: 'correlate',
-    index: '03',
-    title: 'Correlate',
-    description: 'Link records through shared signals.',
-    detail: 'Proposed links are labelled inferred.',
-  },
-  {
-    id: 'reconstruct',
-    index: '04',
-    title: 'Reconstruct',
-    description: 'Order events; surface conflicts.',
-    detail: 'Conflicts and uncertainty go to review.',
-  },
+/** The hero's capability strip — each item jumps to the part of the story that shows it. */
+export const CAPABILITY_STRIP: { id: string; label: string; href: `#${string}` }[] = [
+  { id: 'multi-source', label: 'Multi-source evidence', href: `#${SECTION_IDS.capabilities}` },
+  { id: 'correlation', label: 'Cross-source correlation', href: `#${SECTION_IDS.correlation}` },
+  { id: 'spatial', label: 'Spatial reconstruction', href: `#${SECTION_IDS.reconstruction}` },
+  { id: 'timeline', label: 'Timeline reconstruction', href: `#${SECTION_IDS.timeline}` },
+  { id: 'contradiction', label: 'Contradiction detection', href: `#${SECTION_IDS.contradictions}` },
+  { id: 'provenance', label: 'Evidence provenance', href: `#${SECTION_IDS.provenance}` },
 ];
 
 export type DeliverableStatus = 'implemented' | 'in-development' | 'prototype' | 'planned';

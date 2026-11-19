@@ -490,7 +490,7 @@ describe('workspace logo navigation', () => {
     expect(pushState).toHaveBeenCalledWith(null, '', '/');
     expect(window.location.pathname).toBe('/');
     expect(window.location.search).toBe('');
-    expect(screen.getByRole('heading', { level: 1, name: /turn fragmented digital evidence/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: /every fragment tells a story/i })).toBeInTheDocument();
     expect(screen.queryByRole('navigation', { name: 'Workspace' })).not.toBeInTheDocument();
   });
 

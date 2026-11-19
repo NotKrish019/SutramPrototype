@@ -1,7 +1,8 @@
 /* Fonts degrade gracefully to the system stack when offline. */
-@import url('https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
 /* Site motion and pattern utilities (plain CSS; class selectors, so preflight does not override them). */
 @import './styles/site.css';
+@import './styles/workspace.css';
 
 @tailwind base;
 @tailwind components;
@@ -16,6 +17,7 @@
 
 body {
   margin: 0;
+  background: #080807;
   min-width: 320px;
   min-height: 100vh;
 }

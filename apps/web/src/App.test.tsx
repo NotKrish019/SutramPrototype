@@ -34,7 +34,7 @@ describe('App routing', () => {
 
   it('renders the public product site at /', async () => {
     await renderAt('/');
-    expect(screen.getByRole('heading', { level: 1, name: /turn fragmented digital evidence/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: /every fragment tells a story/i })).toBeInTheDocument();
     expect(document.title).toMatch(/YUKTI — Digital Evidence Intelligence/);
   });
 
@@ -90,7 +90,7 @@ describe('App routing', () => {
       fireEvent.click(screen.getByRole('link', { name: 'Public site' }));
     });
     expect(window.location.pathname).toBe('/');
-    expect(screen.getByRole('heading', { level: 1, name: /turn fragmented/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: /every fragment tells a story/i })).toBeInTheDocument();
 
     // Browser back button.
     await act(async () => {

@@ -10,48 +10,75 @@ apps/web/src/
 ├── pages/LandingPage.tsx              # composes the sections below
 ├── pages/NotFoundPage.tsx
 ├── router/                            # router.ts, Link.tsx
-├── styles/site.css                    # motion system, patterns, reduced-motion rules
+├── styles/site.css                    # board materials, thread/settle/snap motion, reduced-motion rules
 ├── components/ui/primitives.tsx       # brand primitives shared with the workspace
 ├── fixtures/synthetic/case026.ts      # CASE-026, synthetic and typed (shared with the workspace)
 └── features/landing/
-    ├── data/siteContent.ts            # copy, nav anchors, capabilities, deliverable status
+    ├── data/siteContent.ts            # copy, nav anchors, capability strip, build status
     ├── hooks/useInView.ts             # reveal on scroll + scroll-spy
+    ├── board/                         # the evidence-board material library
+    │   ├── materials.tsx              # Pushpin, Thread, EvidencePrint, BoardLabel, SyntheticStamp, EditorialHeading
+    │   ├── ThreadCanvas.tsx           # red threads measured between live `data-pin-id` anchors
+    │   ├── hooks.ts                   # reduced motion, media queries, pointer parallax, seeded PRNG
+    │   ├── artwork/                   # original SVG artwork: CCTV still, fingerprint, phone, map, documents
+    │   └── wireframe/                 # model.ts (geometry) + WireframeModel.tsx (projected SVG 3D, drag/keys)
     └── components/
-        ├── SiteHeader.tsx             # announcement bar, sticky nav, mobile menu
-        ├── HeroSection.tsx + HeroStack3D.tsx    # CSS-3D evidence stack (no 3D library)
-        ├── EvidenceSourcesSection.tsx + EvidenceNetworkVisual.tsx
-        ├── PlatformSection.tsx + platformVisuals.tsx
-        ├── workbench/                 # ProductPreview, EvidencePanel, KnowledgeGraph,
-        │                              # EventTimeline, ProvenancePanel, selection.ts
-        ├── WorkflowSection.tsx
-        ├── ProvenanceSection.tsx
-        ├── DeliverablesSection.tsx
-        └── SiteFooter.tsx             # final CTA + footer (live API status)
+        ├── SiteHeader.tsx             # transparent → charcoal nav, scroll-spy, mobile menu
+        ├── HeroBoard.tsx              # 02 hero: pinned evidence + rotating reconstruction (desktop / compact)
+        ├── EvidenceSourcesBoard.tsx   # 03 six evidence categories as pinned artifacts
+        ├── CorrelationBoard.tsx       # 04 interactive correlation, related-entity path
+        ├── ReconstructionSection.tsx  # 05 3D site model, sensors, route
+        ├── TimelineSection.tsx        # 06 true-to-scale timeline, clock conflict
+        ├── ContradictionSection.tsx   # 07 the thread that snaps
+        ├── ProvenanceChain.tsx        # 08 artifact → fact → event → lead
+        ├── workbench/                 # 09 ProductPreview, EvidencePanel, KnowledgeGraph,
+        │                              #    EventTimeline, ProvenancePanel, selection.ts
+        ├── TechnologySection.tsx      # pipeline + honest build-status ledger
+        └── SiteFooter.tsx             # 10 final brand moment + footer (live API status)
 ```
 
-## Design system
+## Art direction
+
+The identity follows `referenceImage.jpeg` in the repository root: a dark investigation board with
+pinned prints, red string, fingerprint and CCTV evidence, a wireframe reconstruction and editorial
+type. It is rebuilt from components; the image itself is never used as page content, and the poster's
+event, organiser and team branding is not reproduced.
 
 Tokens live in `tailwind.config.js`:
 
 | Group | Tokens |
 | --- | --- |
-| Surfaces | `ink-950…700`, `ink-line`, `ink-strong` |
-| Text | `fg`, `fg-muted`, `fg-subtle` |
-| Type | `font-display` (Archivo, condensed via `site.css`), `font-sans` (Inter), `font-mono` (JetBrains Mono); `text-display-xl/lg/md`, `text-eyebrow`, `text-micro` |
-| Layout | `max-w-site`, `px-gutter`, `py-section` |
+| Surfaces | `ink-950…700`, `ink-line`, `ink-strong` (near-black → charcoal) |
+| Text | `fg` (warm ivory), `fg-bright`, `fg-muted`, `fg-subtle` |
+| Evidence materials | `paper`, `paper-light`, `paper-dark` (parchment prints and documents) |
+| Accent | `crimson`, `crimson-deep`, `crimson-muted` (threads, critical indicators) |
+| Reconstruction | `steel`, `steel-dim` (wireframe geometry) |
+| Type | `font-serif` (Fraunces, editorial headlines), `font-sans` (Inter), `font-mono` (JetBrains Mono, IDs and timestamps) |
+| Layout | `max-w-site`, `max-w-wide`, `px-gutter`, `py-section` |
 | Motion | `duration-fast/base/slow`, `ease-out` |
 
-Fonts load from Google Fonts and fall back to the system stack when offline.
+Fonts load from Google Fonts and fall back to the system stack when offline. Green (`signal-ok`) is a
+small semantic status colour only.
 
-**Colour carries meaning.** It is used consistently across the hero, graph, timeline and panels:
+**Threads carry meaning.** Observed and supplied links are solid; inferred links are dashed and labelled
+for review. A thread that snaps marks a contradiction, never a conclusion.
 
-| Signal | Token | Drawn as |
-| --- | --- | --- |
-| Observed | `signal-observed` | solid line |
-| Supplied | `signal-supplied` | dotted line |
-| Inferred | `signal-amber` (also the brand accent) | dashed line |
-| Flagged / contradiction | `signal-flag` | red |
-| Verified / healthy | `signal-ok` | green |
+### Thread rules
+
+- Threads are drawn between measured `data-pin-id` anchors (`ThreadCanvas`), so they stay attached in
+  every responsive composition. It re-measures on resize, after fonts load, when revealed, and after any
+  transform transition (prints settling or lifting) inside its container.
+- Anchors that are not rendered at the current breakpoint are skipped.
+- A thread must never cross body text or a photograph. Tie it off at a frame edge, route it under the
+  print, or drop it (the evidence-sources board shows threads only at `lg` and up).
+- Labels can be positioned along a thread with `labelT` (0…1) to keep them off prints.
+
+### 3D approach
+
+No WebGL or 3D library is used. Depth comes from CSS perspective, per-layer pointer parallax, settle
+transforms and shadows. The spatial reconstruction is a small projected SVG model (`board/wireframe`)
+with drag and arrow-key rotation and clickable sensor markers. This keeps the bundle small, works on
+low-powered devices, and needs no WebGL fallback.
 
 ## Content rules
 
@@ -76,13 +103,9 @@ Fonts load from Google Fonts and fall back to the system stack when offline.
 - The footer API status uses the existing `useBackendHealth` hook. The workspace at `/workspace` is unchanged.
 - `/workspace`'s header brand links back to `/`.
 
-## Visual-first principles (refinement pass)
+## Visual-first principles
 
 - Each section has one heading, at most one supporting sentence, and one dominant visual.
-- The hero is a CSS 3D stack: evidence floor → correlation → knowledge graph → timeline. Only the floor is
-  interactive. Upper planes and beams are `pointer-events: none`, which is verified with `elementFromPoint`
-  at all three widths.
-- Platform tab C reuses the workspace's real `Swimlanes` and `SitePlan` components, so the site shows the
-  product itself, not an illustration of it.
-- All 3D and continuous motion stops under `prefers-reduced-motion`. The 3D entrance is transform-only,
-  because opacity below 1 would flatten the 3D context.
+- The workspace preview (section 09) reuses the real workbench components with synthetic data.
+- All continuous motion (auto-rotation, thread pulses, parallax, settle and snap) stops under
+  `prefers-reduced-motion`; content is shown in its final state.

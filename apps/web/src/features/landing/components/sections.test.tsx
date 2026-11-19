@@ -1,108 +1,14 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
-import { act, fireEvent, render, screen } from '@testing-library/react';
-import { CAPABILITIES, WORKFLOW_STEPS } from '../data/siteContent';
-import { EvidenceNetworkVisual } from './EvidenceNetworkVisual';
-import { PlatformSection } from './PlatformSection';
-import { ProvenanceSection } from './ProvenanceSection';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { ContradictionSection } from './ContradictionSection';
+import { CorrelationBoard } from './CorrelationBoard';
+import { EvidenceSourcesBoard } from './EvidenceSourcesBoard';
+import { ProvenanceChain } from './ProvenanceChain';
+import { ReconstructionSection } from './ReconstructionSection';
 import { SiteNavbar } from './SiteHeader';
-import { WorkflowSection } from './WorkflowSection';
+import { ThreadCanvas } from '../board/ThreadCanvas';
 
 afterEach(() => vi.restoreAllMocks());
-
-const lastTab = (): HTMLElement => {
-  const tabs = screen.getAllByRole('tab');
-  return tabs[tabs.length - 1]!;
-};
-
-describe('PlatformSection capability tabs', () => {
-  it('shows capability A first and switches on click', () => {
-    render(<PlatformSection />);
-    const tabs = screen.getAllByRole('tab');
-    expect(tabs).toHaveLength(CAPABILITIES.length);
-    expect(tabs[0]).toHaveAttribute('aria-selected', 'true');
-
-    fireEvent.click(screen.getByRole('tab', { name: /Contradiction/ }));
-    expect(screen.getByRole('tab', { name: /Contradiction/ })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByRole('tabpanel')).toHaveTextContent('Timestamp variance');
-  });
-
-  it('supports arrow, Home and End keys with roving tabindex', () => {
-    render(<PlatformSection />);
-    const tabs = screen.getAllByRole('tab');
-    fireEvent.keyDown(tabs[0]!, { key: 'ArrowDown' });
-    expect(screen.getAllByRole('tab')[1]).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getAllByRole('tab')[1]).toHaveAttribute('tabindex', '0');
-    expect(screen.getAllByRole('tab')[0]).toHaveAttribute('tabindex', '-1');
-
-    fireEvent.keyDown(screen.getAllByRole('tab')[1]!, { key: 'End' });
-    expect(lastTab()).toHaveAttribute('aria-selected', 'true');
-    fireEvent.keyDown(lastTab(), { key: 'ArrowRight' });
-    expect(screen.getAllByRole('tab')[0]).toHaveAttribute('aria-selected', 'true'); // wraps
-    fireEvent.keyDown(screen.getAllByRole('tab')[0]!, { key: 'ArrowUp' });
-    expect(lastTab()).toHaveAttribute('aria-selected', 'true');
-    fireEvent.keyDown(lastTab(), { key: 'Home' });
-    expect(screen.getAllByRole('tab')[0]).toHaveAttribute('aria-selected', 'true');
-  });
-
-  it('explainability visual distinguishes inferred from observed and disclaims identity proof', () => {
-    render(<PlatformSection />);
-    fireEvent.click(screen.getByRole('tab', { name: /Explainable/ }));
-    expect(screen.getByText(/not proof of identity/i)).toBeInTheDocument();
-  });
-});
-
-describe('WorkflowSection stepper', () => {
-  it('starts at Ingest and advances through stages', () => {
-    render(<WorkflowSection />);
-    expect(screen.getByText(`Stage 01 / 0${WORKFLOW_STEPS.length}`)).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: /next: extract/i }));
-    expect(screen.getByText('Stage 02 / 04')).toBeInTheDocument();
-    expect(screen.getByText(/4 values extracted/)).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: /04 Reconstruct/ }));
-    expect(screen.getByRole('button', { name: /04 Reconstruct/ })).toHaveAttribute('aria-current', 'step');
-    expect(screen.getAllByText('order uncertain').length).toBeGreaterThan(0);
-
-    fireEvent.click(screen.getByRole('button', { name: /restart from ingest/i }));
-    expect(screen.getByText('Stage 01 / 04')).toBeInTheDocument();
-  });
-});
-
-describe('ProvenanceSection trace chain', () => {
-  it('traces a focused step back to its artifact', () => {
-    render(<ProvenanceSection />);
-    expect(screen.getByText(/hover or focus a step/i)).toBeInTheDocument();
-    const lead = screen.getByText(/Verify whether Person A entered Gate B/).closest('[tabindex]')!;
-    fireEvent.focus(lead);
-    expect(screen.getByText(/tracing investigative lead back through 3 supporting steps to EV-02/i)).toBeInTheDocument();
-    fireEvent.blur(lead);
-    expect(screen.getByText(/hover or focus a step/i)).toBeInTheDocument();
-  });
-});
-
-describe('EvidenceNetworkVisual', () => {
-  it('highlights a source on hover/focus (desktop) and toggles via chips (mobile)', () => {
-    render(<EvidenceNetworkVisual />);
-    const [desktopSource] = screen.getAllByRole('button', { name: 'Trace Financial evidence' });
-    fireEvent.focus(desktopSource!);
-    expect(desktopSource).toHaveAttribute('aria-pressed', 'true');
-    fireEvent.blur(desktopSource!);
-    expect(desktopSource).toHaveAttribute('aria-pressed', 'false');
-
-    const chip = screen.getByRole('button', { name: 'CCTV / video' });
-    fireEvent.click(chip);
-    expect(chip).toHaveAttribute('aria-pressed', 'true');
-    fireEvent.click(chip);
-    expect(chip).toHaveAttribute('aria-pressed', 'false');
-  });
-
-  it('labels the visual as synthetic and describes it for assistive tech', () => {
-    render(<EvidenceNetworkVisual />);
-    expect(screen.getByText('Synthetic data')).toBeInTheDocument();
-    expect(screen.getAllByRole('img', { name: /six evidence source types feed a correlation layer/i }).length).toBe(2);
-  });
-});
 
 describe('SiteNavbar mobile menu', () => {
   it('opens, closes on Escape (restoring focus) and closes after choosing a link', () => {
@@ -123,7 +29,7 @@ describe('SiteNavbar mobile menu', () => {
     expect(document.activeElement).toBe(toggle);
 
     fireEvent.click(toggle);
-    fireEvent.click(panel.querySelector('a[href="#workflow"]')!);
+    fireEvent.click(panel.querySelector('a[href="#reconstruction"]')!);
     expect(panel).not.toBeVisible();
   });
 
@@ -142,49 +48,121 @@ describe('SiteNavbar mobile menu', () => {
   });
 });
 
-describe('visual-first refinements', () => {
-  it('3D hero stack traces a source through entities and events', async () => {
-    const { HeroStack3D } = await import('./HeroStack3D');
-    render(<HeroStack3D />);
-    const finance = screen.getByRole('button', { name: 'Trace Finance evidence' });
-    fireEvent.focus(finance);
-    expect(finance).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByText(/Tracing Finance → 2 entities · 1 events/)).toBeInTheDocument();
-    fireEvent.blur(finance);
-    expect(screen.getByText(/a source to trace it/)).toBeInTheDocument();
-    expect(screen.getByText(/synthetic data/i)).toBeInTheDocument();
+describe('EvidenceSourcesBoard', () => {
+  it('presents the six evidence categories as labelled artifacts', () => {
+    render(<EvidenceSourcesBoard />);
+    const section = document.getElementById('capabilities')!;
+    expect(within(section).getAllByRole('figure')).toHaveLength(6);
+    for (const title of ['CCTV & video', 'Mobile devices', 'Fingerprint & forensic records', 'Communication records', 'Financial & transactions', 'Location & network']) {
+      expect(within(section).getByRole('figure', { name: title })).toBeInTheDocument();
+    }
+    expect(within(section).getByText(/synthetic demonstration artifacts/i)).toBeInTheDocument();
+  });
+});
+
+describe('CorrelationBoard', () => {
+  it('describes a selected record’s connections and keeps inferred links labelled', () => {
+    render(<CorrelationBoard />);
+    expect(screen.getByText('Hover or select a record to see what it connects to.')).toBeInTheDocument();
+    const person = screen.getByRole('button', { name: /Person A/ });
+    fireEvent.click(person);
+    expect(person).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText(/connections:.*likely user of · inferred/i)).toBeInTheDocument();
   });
 
-  it('sources list drives the network visual and the artifact preview', async () => {
-    const { EvidenceSourcesSection } = await import('./EvidenceSourcesSection');
-    render(<EvidenceSourcesSection />);
-    const item = screen.getByRole('button', { name: /Financial Records/ });
-    fireEvent.mouseEnter(item);
-    expect(item).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getAllByRole('button', { name: 'Trace Financial evidence' })[0]).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByText('Artifact preview · Financial Records')).toBeInTheDocument();
+  it('traces the related-entity path and flags its inferred link for review', () => {
+    render(<CorrelationBoard />);
+    const trace = screen.getByRole('button', { name: /trace related path/i });
+    fireEvent.click(trace);
+    expect(screen.getByRole('button', { name: /clear path/i })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText(/one link is inferred and requires review/i)).toBeInTheDocument();
+  });
+});
+
+describe('ReconstructionSection', () => {
+  it('selecting a sensor in the 3D model or the dossier list selects the same sensor', () => {
+    render(<ReconstructionSection />);
+    // The dossier list uses <button>; the 3D model exposes its markers as SVG role="button" groups.
+    const listButton = (name: RegExp) => screen.getAllByRole('button', { name }).find((b) => b.tagName === 'BUTTON')!;
+    const marker = (name: RegExp) => screen.getAllByRole('button', { name }).find((b) => b.tagName.toLowerCase() === 'g')!;
+
+    expect(listButton(/CAM-03 · Gate B camera/)).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(listButton(/ACS-B · Gate B controller/));
+    expect(listButton(/ACS-B · Gate B controller/)).toHaveAttribute('aria-pressed', 'true');
+    expect(listButton(/CAM-03 · Gate B camera/)).toHaveAttribute('aria-pressed', 'false');
+
+    fireEvent.click(marker(/AP-WH7/));
+    expect(listButton(/AP-WH7/)).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('graph tab shows a detail card with provenance for the selected node', () => {
-    render(<PlatformSection />);
-    fireEvent.click(screen.getByRole('tab', { name: /Knowledge Graph/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Device D-01, Device' }));
-    const card = screen.getByText('associated at Warehouse 7 · Gate B').closest('div')!;
-    expect(card).toHaveTextContent('Device D-01');
-    expect(card).toHaveTextContent('Inferred');
+  it('toggles the reconstructed route', () => {
+    render(<ReconstructionSection />);
+    const route = screen.getByRole('button', { name: /reconstructed route/i });
+    const before = route.getAttribute('aria-pressed');
+    fireEvent.click(route);
+    expect(route.getAttribute('aria-pressed')).not.toBe(before);
   });
+});
 
-  it('reconstruction tab links the real swimlanes to the site plan', () => {
-    render(<PlatformSection />);
-    fireEvent.click(screen.getByRole('tab', { name: /Reconstruction/ }));
-    fireEvent.click(screen.getByRole('button', { name: /D-01 joins warehouse access point/ }));
-    expect(screen.getByRole('button', { name: /Access point AP-WH7/ })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('button', { name: /Gate B, Gate/ })).toHaveAttribute('aria-pressed', 'false');
+describe('ContradictionSection', () => {
+  it('describes both clocks and never treats a discrepancy as wrongdoing', () => {
+    render(<ContradictionSection />);
+    expect(screen.getByRole('img', { name: /camera clock.*controller clock.*requires verification/i })).toBeInTheDocument();
+    expect(screen.getByText(/not evidence of wrongdoing/i)).toBeInTheDocument();
+    expect(screen.getByText(/possible explanations · not assessed/i)).toBeInTheDocument();
   });
+});
 
-  it('contradiction tab annotates the gap on a true-to-scale axis', () => {
-    render(<PlatformSection />);
-    fireEvent.click(screen.getByRole('tab', { name: /Contradiction/ }));
-    expect(screen.getByRole('img', { name: /22:41:07 versus 22:43:52: \+2 min 45 s, clock synchronisation requires verification/ })).toBeInTheDocument();
+describe('ProvenanceChain', () => {
+  it('traces a focused step back to its source and marks the lead as inferred', () => {
+    render(<ProvenanceChain />);
+    const steps = [...document.querySelectorAll<HTMLElement>('#provenance ol > li [tabindex="0"]')];
+    expect(steps).toHaveLength(4);
+    const status = document.querySelector('#provenance [aria-live="polite"]')!;
+    const idle = status.textContent;
+    fireEvent.focus(steps[3]!);
+    expect(status.textContent).not.toBe(idle);
+    expect(within(steps[3]!).getByText(/inferred/i)).toBeInTheDocument();
+  });
+});
+
+describe('ThreadCanvas', () => {
+  it('draws zero-size anchors but skips anchors hidden at this breakpoint', () => {
+    const rect = (w: number, h: number, x = 0, y = 0) => ({ width: w, height: h, left: x, top: y, right: x + w, bottom: y + h, x, y, toJSON: () => ({}) }) as DOMRect;
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
+      const id = this.getAttribute('data-pin-id');
+      if (id === 'edge' || id === 'hidden') return rect(0, 0, id === 'edge' ? 0 : 0, 40);
+      if (id) return rect(10, 10, id === 'a' ? 20 : 200, 20);
+      return rect(400, 300);
+    });
+    // jsdom has no checkVisibility; emulate a browser where only `hidden` is display:none.
+    Object.defineProperty(Element.prototype, 'checkVisibility', {
+      configurable: true,
+      value(this: Element) {
+        return this.getAttribute('data-pin-id') !== 'hidden';
+      },
+    });
+    try {
+      const { container } = render(
+        <div>
+          <span data-pin-id="a" />
+          <span data-pin-id="b" />
+          <span data-pin-id="edge" />
+          <span data-pin-id="hidden" />
+          <ThreadCanvas
+            drawn
+            pulse={false}
+            links={[
+              { id: 'visible', from: 'a', to: 'b' },
+              { id: 'edge-tie', from: 'edge', to: 'b' },
+              { id: 'to-hidden', from: 'a', to: 'hidden' },
+            ]}
+          />
+        </div>,
+      );
+      expect(container.querySelectorAll('path.thread')).toHaveLength(2);
+    } finally {
+      delete (Element.prototype as { checkVisibility?: unknown }).checkVisibility;
+    }
   });
 });

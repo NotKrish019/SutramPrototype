@@ -29,12 +29,14 @@ describe('LandingPage structure', () => {
     // Accessible names must keep word boundaries between the two headline lines.
     const headings = screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent);
     expect(headings).toEqual([
-      'Every source matters. Every connection counts.',
-      'One investigation. A connected view of the evidence.',
-      'The investigation workbench.',
-      'From raw evidence to a reconstructed investigation.',
-      'Every insight should have a source.',
-      'Five capabilities. One investigation surface.',
+      'Six kinds of evidence. One board.',
+      'Different sources. Connected evidence.',
+      'Put every record back in its place.',
+      'Reconstruct the sequence. Understand the connections.',
+      'Not every connection is a confirmation.',
+      'Every insight has a source.',
+      'From the board to the case file.',
+      'Built to be checked, not just believed.',
       'Bring every piece of evidence into the bigger picture.',
       'About YUKTI',
     ]);
@@ -44,7 +46,7 @@ describe('LandingPage structure', () => {
     await renderLanding();
     const h1 = screen.getAllByRole('heading', { level: 1 });
     expect(h1).toHaveLength(1);
-    expect(h1[0]).toHaveTextContent(/turn fragmented digital evidence into connected intelligence/i);
+    expect(h1[0]).toHaveTextContent(/YUKTI\s*Every fragment tells a story\. Every connection changes the investigation\./i);
   });
 
   it('has no dead in-page links: every #anchor resolves to an element', async () => {
@@ -79,13 +81,13 @@ describe('LandingPage structure', () => {
 
   it('labels demonstration data as synthetic', async () => {
     await renderLanding();
-    expect(screen.getByText('Synthetic demonstration data')).toBeInTheDocument();
+    expect(screen.getAllByText('Synthetic demonstration data').length).toBeGreaterThan(0);
     expect(screen.getByText(/records are fictional and were not processed from uploaded evidence/i)).toBeInTheDocument();
   });
 
   it('labels deliverable status honestly and never claims planned work is implemented', async () => {
     await renderLanding();
-    const section = document.getElementById('capabilities')!;
+    const section = document.getElementById('build-status')!;
     expect(within(section).getAllByText('Planned')).toHaveLength(2);
     expect(within(section).getAllByText('In development')).toHaveLength(2);
     expect(within(section).getAllByText('Prototype')).toHaveLength(1);

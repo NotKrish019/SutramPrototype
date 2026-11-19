@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
-import { ArrowRight, Menu, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { Link } from '../../../router/Link';
 import { ROUTES } from '../../../router/router';
 import { NAV_ITEMS, SECTION_IDS } from '../data/siteContent';
@@ -8,27 +8,22 @@ import { CtaLink, YuktiWordmark } from '../../../components/ui/primitives';
 
 const NAV_SECTION_IDS = NAV_ITEMS.map((item) => item.href.slice(1));
 
-export const SiteAnnouncementBar: React.FC = () => (
-  <div className="border-b border-ink-line bg-ink-950">
-    <div className="mx-auto flex max-w-site items-center justify-center gap-3 px-gutter py-2.5 font-mono text-micro uppercase text-fg-muted">
-      <span aria-hidden="true" className="h-1.5 w-1.5 bg-signal-amber" />
-      <span className="truncate">
-        Introducing YUKTI <span className="hidden sm:inline">— Digital Evidence Intelligence</span>
-      </span>
-      <a
-        href={`#${SECTION_IDS.workbench}`}
-        className="group hidden items-center gap-1 text-fg underline-offset-4 hover:underline sm:inline-flex"
-      >
-        See the workbench
-        <ArrowRight aria-hidden="true" className="h-3 w-3 transition-transform duration-fast group-hover:translate-x-0.5" />
-      </a>
-    </div>
-  </div>
-);
+/** Transparent over the hero; settles into an opaque charcoal bar once the page scrolls. */
+function useScrolled(threshold = 24): boolean {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = (): void => setScrolled(window.scrollY > threshold);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [threshold]);
+  return scrolled;
+}
 
 export const SiteNavbar: React.FC = () => {
   const [open, setOpen] = useState(false);
   const active = useActiveSection(NAV_SECTION_IDS);
+  const scrolled = useScrolled();
   const panelId = useId();
   const toggleRef = useRef<HTMLButtonElement>(null);
   const headerRef = useRef<HTMLElement>(null);
@@ -60,14 +55,27 @@ export const SiteNavbar: React.FC = () => {
     };
   }, [open, close]);
 
-  return (
-    <header ref={headerRef} className="sticky top-0 z-50 border-b border-ink-line bg-ink-950/90 backdrop-blur-md">
-      <nav aria-label="Primary" className="mx-auto flex h-16 max-w-site items-center justify-between gap-6 px-gutter">
-        <Link to={ROUTES.home} aria-label="YUKTI home" className="shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-amber">
-          <YuktiWordmark />
-        </Link>
+  const solid = scrolled || open;
 
-        <ul className="hidden items-center gap-1 lg:flex">
+  return (
+    <header
+      ref={headerRef}
+      className={`fixed inset-x-0 top-0 z-50 transition-[background-color,border-color,backdrop-filter] duration-slow ease-out ${
+        solid ? 'border-b border-ink-line bg-ink-950/85 backdrop-blur-md' : 'border-b border-transparent bg-transparent'
+      }`}
+    >
+      <nav aria-label="Primary" className="mx-auto flex h-[4.5rem] max-w-wide items-center justify-between gap-6 px-gutter">
+        <div className="flex items-center gap-5">
+          <Link to={ROUTES.home} aria-label="YUKTI home" className="shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-crimson">
+            <YuktiWordmark />
+          </Link>
+          <span aria-hidden="true" className="hidden h-7 w-px bg-gradient-to-b from-transparent via-crimson/70 to-transparent xl:block" />
+          <p className="hidden max-w-[13rem] font-mono text-[0.625rem] uppercase leading-snug tracking-[0.14em] text-fg-subtle xl:block">
+            Digital evidence intelligence &amp; crime reconstruction
+          </p>
+        </div>
+
+        <ul className="hidden items-center lg:flex">
           {NAV_ITEMS.map((item) => {
             const isActive = active === item.href.slice(1);
             return (
@@ -75,15 +83,16 @@ export const SiteNavbar: React.FC = () => {
                 <a
                   href={item.href}
                   aria-current={isActive ? 'location' : undefined}
-                  className={`relative px-3 py-2 font-mono text-[0.8125rem] uppercase tracking-[0.04em] transition-colors duration-fast hover:text-fg focus:outline-none focus-visible:text-fg focus-visible:ring-1 focus-visible:ring-signal-amber ${
-                    isActive ? 'text-fg' : 'text-fg-muted'
+                  className={`group relative block px-4 py-2 text-[0.875rem] tracking-[0.01em] transition-colors duration-base hover:text-fg-bright focus:outline-none focus-visible:text-fg-bright focus-visible:ring-1 focus-visible:ring-crimson ${
+                    isActive ? 'text-fg-bright' : 'text-fg-muted'
                   }`}
                 >
                   {item.label}
+                  {/* a red thread drawn under the item */}
                   <span
                     aria-hidden="true"
-                    className={`absolute inset-x-3 -bottom-[13px] h-px bg-signal-amber transition-opacity duration-base ${
-                      isActive ? 'opacity-100' : 'opacity-0'
+                    className={`absolute inset-x-4 -bottom-0.5 h-px origin-left bg-crimson transition-transform duration-slow ease-out group-hover:scale-x-100 ${
+                      isActive ? 'scale-x-100' : 'scale-x-0'
                     }`}
                   />
                 </a>
@@ -96,7 +105,7 @@ export const SiteNavbar: React.FC = () => {
           <CtaLink href={`#${SECTION_IDS.platform}`} variant="ghost" className="px-3">
             Explore Platform
           </CtaLink>
-          <CtaLink href={ROUTES.workspace} variant="secondary" className="py-2">
+          <CtaLink href={ROUTES.workspace} variant="secondary" className="py-2.5">
             Open Workspace
           </CtaLink>
         </div>
@@ -108,27 +117,23 @@ export const SiteNavbar: React.FC = () => {
           aria-controls={panelId}
           aria-label={open ? 'Close menu' : 'Open menu'}
           onClick={() => setOpen((value) => !value)}
-          className="inline-flex h-10 w-10 items-center justify-center border border-ink-strong text-fg transition-colors hover:bg-white/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-amber lg:hidden"
+          className="inline-flex h-10 w-10 items-center justify-center border border-paper/25 text-fg transition-colors hover:bg-paper/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-crimson lg:hidden"
         >
           {open ? <X aria-hidden="true" className="h-5 w-5" /> : <Menu aria-hidden="true" className="h-5 w-5" />}
         </button>
       </nav>
 
-      <div
-        id={panelId}
-        hidden={!open}
-        className="border-t border-ink-line bg-ink-950 lg:hidden"
-      >
+      <div id={panelId} hidden={!open} className="border-t border-ink-line bg-ink-950 lg:hidden">
         <ul className="mx-auto max-w-site px-gutter py-2">
           {NAV_ITEMS.map((item, index) => (
             <li key={item.href} className="border-b border-ink-line last:border-b-0">
               <a
                 href={item.href}
                 onClick={() => close()}
-                className="flex items-center justify-between py-4 font-display text-2xl font-semibold uppercase text-fg"
+                className="flex items-center justify-between py-4 font-serif text-2xl text-fg-bright"
               >
                 {item.label}
-                <span aria-hidden="true" className="font-mono text-micro text-fg-subtle">
+                <span aria-hidden="true" className="font-mono text-micro text-crimson">
                   0{index + 1}
                 </span>
               </a>

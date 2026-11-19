@@ -89,13 +89,14 @@ type CtaVariant = 'primary' | 'secondary' | 'ghost';
 
 const CTA_STYLES: Record<CtaVariant, string> = {
   primary:
-    'bg-signal-amber text-ink-950 hover:bg-[#ffc457] active:bg-[#e89f16] border border-signal-amber',
-  secondary: 'border border-ink-strong text-fg hover:border-fg-muted hover:bg-white/[0.03] active:bg-white/[0.06]',
+    'bg-crimson text-fg-bright border border-crimson shadow-[0_10px_30px_-10px_rgba(227,38,54,0.7)] hover:bg-[#f0303f] hover:shadow-[0_14px_40px_-10px_rgba(227,38,54,0.85)] active:bg-crimson-deep',
+  secondary:
+    'border border-paper/30 text-fg hover:border-paper/70 hover:bg-paper/[0.06] active:bg-paper/[0.1]',
   ghost: 'text-fg-muted hover:text-fg',
 };
 
 const CTA_BASE =
-  'group inline-flex items-center justify-center gap-2 px-5 py-3 font-mono text-[0.8125rem] uppercase tracking-[0.06em] transition-colors duration-fast ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-amber focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950';
+  'group inline-flex items-center justify-center gap-2 px-5 py-3 font-mono text-[0.75rem] uppercase tracking-[0.12em] transition-[color,background-color,border-color,box-shadow] duration-base ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950';
 
 export interface CtaLinkProps {
   href: string;
@@ -147,9 +148,9 @@ export const PROVENANCE_STYLES: Record<
   ProvenanceClass,
   { text: string; border: string; stroke: string; dash?: string }
 > = {
-  observed: { text: 'text-signal-observed', border: 'border-signal-observed/40', stroke: '#EDEDEF' },
-  supplied: { text: 'text-signal-supplied', border: 'border-signal-supplied/40', stroke: '#7DB4FF', dash: '1 4' },
-  inferred: { text: 'text-signal-amber', border: 'border-signal-amber/50', stroke: '#FFB224', dash: '5 5' },
+  observed: { text: 'text-signal-observed', border: 'border-signal-observed/40', stroke: '#F1E9DB' },
+  supplied: { text: 'text-signal-supplied', border: 'border-signal-supplied/40', stroke: '#8FA9C4', dash: '1 4' },
+  inferred: { text: 'text-signal-accent', border: 'border-signal-accent/50', stroke: '#D8C5A7', dash: '5 5' },
 };
 
 export const ProvenanceBadge: React.FC<{ value: ProvenanceClass; withDescription?: boolean }> = ({
@@ -207,12 +208,12 @@ export const ProvenanceLegend: React.FC<{ className?: string }> = ({ className =
 
 /* ------------------------------------------------------------------- Brand */
 
-/** Original YUKTI mark: a single thread joining three evidence points. */
+/** Original YUKTI mark: a single red-anchored thread joining three evidence points. */
 export const YuktiMark: React.FC<{ className?: string }> = ({ className = 'h-6 w-6' }) => (
   <svg viewBox="0 0 24 24" className={className} aria-hidden="true" fill="none">
     <rect x="0.5" y="0.5" width="23" height="23" stroke="currentColor" strokeOpacity="0.35" />
     <path d="M5 7 C 12 7, 12 12, 12 12 S 12 17, 19 17" stroke="currentColor" strokeWidth="1.5" />
-    <rect x="3.5" y="5.5" width="3" height="3" fill="#FFB224" />
+    <rect x="3.5" y="5.5" width="3" height="3" fill="#E32636" />
     <rect x="10.5" y="10.5" width="3" height="3" fill="currentColor" />
     <rect x="17.5" y="15.5" width="3" height="3" fill="currentColor" />
   </svg>
@@ -221,7 +222,7 @@ export const YuktiMark: React.FC<{ className?: string }> = ({ className = 'h-6 w
 export const YuktiWordmark: React.FC<{ className?: string }> = ({ className = '' }) => (
   <span className={`inline-flex items-center gap-2.5 ${className}`}>
     <YuktiMark className="h-7 w-7 text-fg" />
-    <span className="font-display text-xl font-bold uppercase tracking-[0.08em] text-fg">Yukti</span>
+    <span className="font-serif text-[1.375rem] font-semibold uppercase leading-none tracking-[0.1em] text-fg-bright">Yukti</span>
   </span>
 );
 

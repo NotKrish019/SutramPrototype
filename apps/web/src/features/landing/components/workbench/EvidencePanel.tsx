@@ -33,13 +33,13 @@ export const EvidencePanel: React.FC<EvidencePanelProps> = ({ selectedId, relate
               type="button"
               aria-pressed={selected}
               onClick={() => onSelect(item.id)}
-              className={`group flex w-full items-start gap-3 px-4 py-3 text-left transition-[background-color,opacity] duration-base focus:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-signal-amber ${
-                selected ? 'bg-signal-amber/[0.08]' : 'hover:bg-white/[0.03]'
+              className={`group flex w-full items-start gap-3 px-4 py-3 text-left transition-[background-color,opacity] duration-base focus:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-signal-accent ${
+                selected ? 'bg-signal-accent/[0.08]' : 'hover:bg-white/[0.03]'
               } ${lit ? 'opacity-100' : 'opacity-45'}`}
             >
               <span
                 className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center border ${
-                  selected ? 'border-signal-amber text-signal-amber' : 'border-ink-strong text-fg-muted'
+                  selected ? 'border-signal-accent text-signal-accent' : 'border-ink-strong text-fg-muted'
                 }`}
               >
                 <Icon aria-hidden="true" className="h-3.5 w-3.5" />

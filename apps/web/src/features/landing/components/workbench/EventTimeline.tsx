@@ -32,7 +32,7 @@ export const EventTimeline: React.FC<EventTimelineProps> = ({
         const flagged = FLAGGED_EVIDENCE.has(event.evidenceId);
         const body = (
           <>
-            <time className={`w-[4.75rem] shrink-0 pt-0.5 font-mono text-xs sm:w-[5.5rem] ${selected ? 'text-signal-amber' : 'text-fg-muted'}`}>
+            <time className={`w-[4.75rem] shrink-0 pt-0.5 font-mono text-xs sm:w-[5.5rem] ${selected ? 'text-signal-accent' : 'text-fg-muted'}`}>
               {event.time}
             </time>
             <span
@@ -41,7 +41,7 @@ export const EventTimeline: React.FC<EventTimelineProps> = ({
                 flagged
                   ? 'border-signal-flag bg-signal-flag'
                   : selected
-                    ? 'border-signal-amber bg-signal-amber'
+                    ? 'border-signal-accent bg-signal-accent'
                     : 'border-fg bg-ink-950'
               }`}
             />
@@ -63,7 +63,7 @@ export const EventTimeline: React.FC<EventTimelineProps> = ({
         );
         const rowClass = `flex w-full items-start gap-3 px-3 py-3 text-left transition-[background-color,opacity] duration-base sm:gap-4 ${
           lit ? 'opacity-100' : 'opacity-35'
-        } ${selected ? 'bg-signal-amber/[0.07]' : ''}`;
+        } ${selected ? 'bg-signal-accent/[0.07]' : ''}`;
         return (
           <li key={event.id}>
             {onSelectEvent ? (
@@ -71,7 +71,7 @@ export const EventTimeline: React.FC<EventTimelineProps> = ({
                 type="button"
                 aria-pressed={selected}
                 onClick={() => onSelectEvent(event)}
-                className={`${rowClass} hover:bg-white/[0.03] focus:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-signal-amber`}
+                className={`${rowClass} hover:bg-white/[0.03] focus:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-signal-accent`}
               >
                 {body}
               </button>

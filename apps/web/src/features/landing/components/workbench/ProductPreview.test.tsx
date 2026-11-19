@@ -4,7 +4,7 @@ import { DEMO_CASE } from '../../../../fixtures/synthetic/case026';
 import { ProductPreview } from './ProductPreview';
 import { countReviewItems, deriveSelection } from './selection';
 
-const provenanceHeading = () => document.querySelector('#workbench [aria-live="polite"]')!;
+const provenanceHeading = () => document.querySelector('#platform [aria-live="polite"]')!;
 
 describe('deriveSelection', () => {
   it('resolves an evidence item to its events and entities', () => {
