@@ -1,0 +1,108 @@
+name: Rust Backend CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend-rust-linux:
+    name: Linux CI (Format, Check, Test & Clippy)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: yukti_user
+          POSTGRES_PASSWORD: yukti_password
+          POSTGRES_DB: yukti_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      neo4j:
+        image: neo4j:5.26-community
+        env:
+          NEO4J_AUTH: neo4j/forensic_graph_password_2026
+        ports:
+          - 7474:7474
+          - 7687:7687
+        options: >-
+          --health-cmd "wget -q --spider http://localhost:7474 || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    defaults:
+      run:
+        working-directory: backend-rust
+    env:
+      DATABASE_URL: postgres://yukti_user:yukti_password@localhost:5432/yukti_test
+      GRAPH_ENABLED: "true"
+      NEO4J_URI: "http://localhost:7474"
+      NEO4J_DATABASE: "neo4j"
+      NEO4J_USER: "neo4j"
+      NEO4J_PASSWORD: "forensic_graph_password_2026"
+      GRAPH_IDENTIFIER_HMAC_KEY: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Install System Dependencies (FFmpeg)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Cache Cargo Dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: backend-rust
+
+      - name: Check Formatting
+        run: cargo fmt --check
+
+      - name: Cargo Check
+        run: cargo check --locked
+
+      - name: Run Tests
+        run: cargo test --locked
+
+      - name: Run Clippy Linter
+        run: cargo clippy --locked -- -D warnings
+
+  backend-rust-windows:
+    name: Windows CI (MSVC Build & Test)
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: backend-rust
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Rust Toolchain (MSVC)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Cache Cargo Dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: backend-rust
+
+      - name: Cargo Check
+        run: cargo check --target x86_64-pc-windows-msvc --locked
+
+      - name: Run Tests
+        run: cargo test --target x86_64-pc-windows-msvc --locked

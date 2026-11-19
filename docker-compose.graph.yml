@@ -1,0 +1,51 @@
+# YUKTI Digital Forensics Platform — Multi-Model Storage Infrastructure
+# PostgreSQL 16 (Relational ground truth) + Neo4j 5.26 (Knowledge graph projection)
+
+services:
+  yukti-postgres:
+    image: postgres:16-alpine
+    container_name: yukti-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: sutram_forensics
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data_forensic:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d sutram_forensics"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  yukti-neo4j:
+    image: neo4j:5.26-community
+    container_name: yukti-neo4j
+    restart: unless-stopped
+    environment:
+      NEO4J_AUTH: neo4j/forensic_graph_password_2026
+      NEO4J_server_memory_pagecache_size: 512M
+      NEO4J_server_memory_heap_initial__size: 512M
+      NEO4J_server_memory_heap_max__size: 1024M
+    ports:
+      - "7474:7474" # HTTP Browser & Query API v2
+      - "7687:7687" # Bolt protocol
+    volumes:
+      - neo4j_data_forensic:/data
+      - neo4j_logs_forensic:/logs
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:7474 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+volumes:
+  pg_data_forensic:
+    name: yukti_pg_data_forensic
+  neo4j_data_forensic:
+    name: yukti_neo4j_data_forensic
+  neo4j_logs_forensic:
+    name: yukti_neo4j_logs_forensic
