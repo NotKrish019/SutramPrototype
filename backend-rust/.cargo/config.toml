@@ -1,0 +1,3 @@
+# SUTRAM Rust Backend - Cargo Configuration
+# Target-independent configuration.
+# Platform-specific linkers are resolved portably via PATH or standard toolchain targets.
