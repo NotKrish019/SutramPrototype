@@ -243,7 +243,10 @@ describe('case view', () => {
   it('overview links each summary figure to its section', async () => {
     await renderAppAt('/workspace/cases/CASE-026');
     const summary = screen.getByRole('region', { name: 'Investigation summary' });
-    expect(within(summary).getByText('Needs investigator review').nextSibling).toHaveTextContent('04');
+    expect(within(summary).getByText('Needs review').nextSibling).toHaveTextContent('04');
+    // Visual previews are derived from the case records and link into the focused views.
+    expect(screen.getByRole('link', { name: 'Person A, Person' })).toHaveAttribute('href', '/workspace/cases/CASE-026/graph?node=ENT-PA');
+    expect(screen.getAllByRole('img', { name: /^Synthetic preview of EV-0/ })).toHaveLength(5);
     await click(within(screen.getByRole('region', { name: /Review queue/i })).getByText('Gate B timestamps disagree'));
     expect(window.location.search).toBe('?item=DX-01');
   });
@@ -254,11 +257,17 @@ describe('case view', () => {
 describe('evidence repository', () => {
   it('filters, selects and inspects an artifact with integrity and provenance', async () => {
     await renderAppAt('/workspace/cases/CASE-026/evidence');
-    expect(screen.getAllByRole('row')).toHaveLength(6);
+    // Gallery is the default view; every card carries a preview labelled synthetic or a neutral type glyph.
+    const gallery = () => screen.getByRole('list', { name: 'Evidence gallery' });
+    expect(within(gallery()).getAllByRole('listitem')).toHaveLength(5);
+    expect(within(gallery()).getByRole('img', { name: 'Synthetic preview of EV-01' })).toBeInTheDocument();
     await click(screen.getByRole('button', { name: /^Flagged/ }));
-    expect(screen.getAllByRole('row')).toHaveLength(3);
+    expect(within(gallery()).getAllByRole('listitem')).toHaveLength(2);
     await click(screen.getByRole('button', { name: /^All/ }));
 
+    // The list view keeps the tabular comparison.
+    await click(screen.getByRole('button', { name: 'List view' }));
+    expect(screen.getAllByRole('row')).toHaveLength(6);
     await act(async () => {
       fireEvent.change(screen.getByRole('combobox', { name: /^Type/ }), { target: { value: 'UNCLASSIFIED' } });
     });
@@ -270,6 +279,7 @@ describe('evidence repository', () => {
     await click(screen.getByRole('button', { name: /door_controller_export\.csv/ }));
     expect(window.location.search).toBe('?evidence=EV-02');
     const panel = screen.getByRole('complementary');
+    expect(within(panel).getByRole('img', { name: 'Synthetic preview of EV-02' })).toBeInTheDocument();
     expect(within(panel).getByText('3b77e0a95c12d4f86b3e1a7c09d5f2e4a68b17c3e95d0f2a4c71b8e36d500c92')).toBeInTheDocument();
     expect(within(panel).getByText(/does not establish that the\s+artifact was authentic/)).toBeInTheDocument();
     expect(within(panel).getByText('Access-control log · no canonical EvidenceType')).toBeInTheDocument();
@@ -342,7 +352,7 @@ describe('knowledge graph', () => {
     await act(async () => {
       fireEvent.change(screen.getByRole('combobox', { name: /^To/ }), { target: { value: 'ENT-LOC' } });
     });
-    expect(screen.getByText('Path highlighted in amber on the canvas.')).toBeInTheDocument();
+    expect(screen.getByText('Path highlighted on the canvas.')).toBeInTheDocument();
   });
 
   it('draws contradiction links distinctly and lists them in the legend', async () => {
@@ -398,6 +408,8 @@ describe('contradiction review', () => {
     expect(within(detail).getByText('Source A · EV-01')).toBeInTheDocument();
     expect(within(detail).getByText('Source B · EV-02')).toBeInTheDocument();
     expect(within(detail).getByText(/not evidence of wrongdoing/)).toBeInTheDocument();
+    // Both recorded clock values are plotted on one axis, exactly as recorded.
+    expect(within(detail).getByRole('img', { name: /Source A at 22:41:07 IST and source B at 22:43:52 IST, 2 min 45 s apart as recorded/ })).toBeInTheDocument();
 
     await click(within(screen.getByRole('group', { name: 'Filter review items by category' })).getByRole('button', { name: /^Missing information/ }));
     const queue = screen.getByRole('region', { name: /Review queue/ });

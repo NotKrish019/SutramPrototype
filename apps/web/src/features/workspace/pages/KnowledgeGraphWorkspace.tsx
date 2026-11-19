@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowRight, Focus, Maximize2, Minus, Plus, RotateCcw, Waypoints } from 'lucide-react';
+import { ArrowRight, ChevronDown, Focus, Maximize2, Minus, Plus, RotateCcw, Waypoints } from 'lucide-react';
 import { ProvenanceBadge, ReviewBadge } from '../../../components/ui/primitives';
 import { Link } from '../../../router/Link';
 import { caseHref } from '../../../router/router';
@@ -24,10 +24,22 @@ const DEFAULT_VIEW = { x: 0, y: 0, w: CANVAS.w, h: CANVAS.h };
 type View = typeof DEFAULT_VIEW;
 
 const EDGE_STYLE: Record<GraphEdge['provenance'], { stroke: string; dash?: string; width: number; opacity: number }> = {
-  observed: { stroke: '#EDEDEF', width: 1.4, opacity: 0.75 },
-  supplied: { stroke: '#7DB4FF', dash: '2 5', width: 1.6, opacity: 0.95 },
-  inferred: { stroke: '#FFB224', dash: '7 6', width: 1.5, opacity: 0.95 },
-  structural: { stroke: '#6E6E77', width: 1, opacity: 0.45 },
+  observed: { stroke: '#F1E9DB', width: 1.4, opacity: 0.75 },
+  supplied: { stroke: '#8FA9C4', dash: '2 5', width: 1.6, opacity: 0.95 },
+  inferred: { stroke: '#D8C5A7', dash: '7 6', width: 1.5, opacity: 0.95 },
+  structural: { stroke: '#857D72', width: 1, opacity: 0.45 },
+};
+
+/** Restrained per-type tones from the YUKTI palette; crimson is reserved for contradictions. */
+export const NODE_TONE: Record<NodeCategory, string> = {
+  person: '#F1E9DB',
+  device: '#8FA9C4',
+  vehicle: '#D8C5A7',
+  location: '#C9A45A',
+  organization: '#B9A584',
+  unclassified: '#857D72',
+  event: '#A9A197',
+  evidence: '#6F8AA6',
 };
 
 const NodeGlyph: React.FC<{ node: GraphNode; fill: string; stroke: string }> = ({ node, fill, stroke }) => {
@@ -84,8 +96,9 @@ const Inspector: React.FC<{
   const caseId = detail.case.case_id;
   if (!node && !edge) {
     return (
-      <div className="px-4 py-6 text-sm leading-relaxed text-fg-muted">
-        Select a node or relationship to inspect its attributes, connected records, supporting evidence and provenance.
+      <div className="px-4 py-8 text-center">
+        <Waypoints aria-hidden="true" strokeWidth={1.2} className="mx-auto h-8 w-8 text-fg-subtle" />
+        <p className="mt-3 text-sm text-fg-muted">Select a node or link.</p>
       </div>
     );
   }
@@ -159,7 +172,7 @@ const Inspector: React.FC<{
       {entity && (
         <KeyValueList
           items={[
-            ['entity_type', entity.entity_type ?? <span key="u" className="text-signal-amber">{entity.type_label}</span>],
+            ['entity_type', entity.entity_type ?? <span key="u" className="text-signal-accent">{entity.type_label}</span>],
             ...(entity.aliases.length > 0 ? ([['Aliases', entity.aliases.join(', ')]] as [string, string][]) : []),
             ...Object.entries(entity.attributes).map(([k, v]) => [k, v] as [string, string]),
             ['Confidence', entity.confidence === null ? <span key="c" className="text-fg-subtle">Not provided</span> : entity.confidence.toFixed(2)],
@@ -192,7 +205,7 @@ const Inspector: React.FC<{
             const otherId = e.source === n.id ? e.target : e.source;
             return (
               <li key={e.id} className="flex items-center justify-between gap-2 px-4 py-2">
-                <button type="button" onClick={() => onSelectNode(otherId)} className="min-w-0 text-left text-sm text-fg hover:text-signal-amber">
+                <button type="button" onClick={() => onSelectNode(otherId)} className="min-w-0 text-left text-sm text-fg hover:text-signal-accent">
                   <span className="block truncate">{index.nameOf(otherId)}</span>
                   <span className="font-mono text-micro uppercase text-fg-subtle">{e.label}</span>
                 </button>
@@ -249,12 +262,12 @@ const Inspector: React.FC<{
             options={[{ value: '', label: 'Choose a node…' }, ...nodes.filter((other) => other.id !== n.id).map((other) => ({ value: other.id, label: other.label }))]}
           />
           {pathFound === false && <p className="text-xs text-signal-flag">No path through the visible relationships.</p>}
-          {pathFound === true && <p className="text-xs text-fg-muted">Path highlighted in amber on the canvas.</p>}
+          {pathFound === true && <p className="text-xs text-fg-muted">Path highlighted on the canvas.</p>}
         </div>
       </InspectorSection>
       {event && (
         <div className="border-t border-ink-line px-4 py-3">
-          <Link to={caseHref(caseId, 'timeline', { event: event.event_id })} className="font-mono text-micro uppercase text-signal-amber hover:underline">
+          <Link to={caseHref(caseId, 'timeline', { event: event.event_id })} className="font-mono text-micro uppercase text-signal-accent hover:underline">
             Open in timeline →
           </Link>
         </div>
@@ -399,7 +412,7 @@ export const KnowledgeGraphWorkspace: React.FC<{ detail: CaseDetail }> = ({ deta
 
   return (
     <div className="grid grid-cols-1 gap-4 p-4 sm:p-6 lg:p-8 xl:grid-cols-12">
-      <div className="min-w-0 space-y-4 xl:col-span-8">
+      <div className="min-w-0 space-y-4 xl:col-span-9">
         <Panel
           title="Knowledge graph"
           meta={`${visibleNodes.length} nodes · ${visibleEdges.length} links`}
@@ -424,7 +437,7 @@ export const KnowledgeGraphWorkspace: React.FC<{ detail: CaseDetail }> = ({ deta
                 )}
               </div>
             )}
-            <span className="font-mono text-micro uppercase text-fg-subtle md:ml-auto">Drag to pan · Ctrl + scroll to zoom</span>
+            <span className="hidden font-mono text-micro uppercase text-fg-subtle md:ml-auto md:inline">Drag · Ctrl + scroll</span>
           </div>
 
           <div className="relative overflow-x-auto bg-ink-950">
@@ -467,8 +480,8 @@ export const KnowledgeGraphWorkspace: React.FC<{ detail: CaseDetail }> = ({ deta
                   <g key={edge.id} opacity={lit || selected ? 1 : 0.12} style={{ transition: 'opacity 200ms' }}>
                     {contradiction ? (
                       <>
-                        <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="#FF5A4E" strokeWidth={5 * Math.max(scale, 0.6)} strokeOpacity="0.18" />
-                        <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="#FF5A4E" strokeWidth="1.6" strokeDasharray="10 4 2 4" />
+                        <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="#E32636" strokeWidth={5 * Math.max(scale, 0.6)} strokeOpacity="0.18" />
+                        <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="#E32636" strokeWidth="1.6" strokeDasharray="10 4 2 4" />
                       </>
                     ) : (
                       <line
@@ -476,7 +489,7 @@ export const KnowledgeGraphWorkspace: React.FC<{ detail: CaseDetail }> = ({ deta
                         y1={a.y}
                         x2={b.x}
                         y2={b.y}
-                        stroke={onPath ? '#FFB224' : style.stroke}
+                        stroke={onPath ? '#D8C5A7' : style.stroke}
                         strokeOpacity={onPath || selected ? 1 : style.opacity}
                         strokeWidth={onPath || selected ? style.width + 1.2 : style.width}
                         strokeDasharray={style.dash}
@@ -496,7 +509,7 @@ export const KnowledgeGraphWorkspace: React.FC<{ detail: CaseDetail }> = ({ deta
                       <title>{`${a.label} — ${edge.label} → ${b.label}`}</title>
                     </line>
                     {(contradiction || selected || (edge.provenance !== 'structural' && scale < 0.85)) && (
-                      <text x={mx} y={my - 6} textAnchor="middle" className="svg-label pointer-events-none" fontFamily={MONO} fontSize={10 * Math.max(scale, 0.7)} fill={contradiction ? '#FF5A4E' : style.stroke}>
+                      <text x={mx} y={my - 6} textAnchor="middle" className="svg-label pointer-events-none" fontFamily={MONO} fontSize={10 * Math.max(scale, 0.7)} fill={contradiction ? '#E32636' : style.stroke}>
                         {contradiction ? '≠ ' : ''}
                         {edge.label}
                       </text>
@@ -508,8 +521,8 @@ export const KnowledgeGraphWorkspace: React.FC<{ detail: CaseDetail }> = ({ deta
               {visibleNodes.map((node) => {
                 const selected = selectedNode?.id === node.id;
                 const lit = nodeLit(node.id);
-                const stroke = selected ? '#FFB224' : node.category === 'event' ? '#A3A3AB' : node.category === 'evidence' ? '#7DB4FF' : '#EDEDEF';
-                const fill = selected ? '#2a2112' : '#0F0F11';
+                const stroke = NODE_TONE[node.category];
+                const fill = selected ? '#2a2218' : '#11100E';
                 return (
                   <g
                     key={node.id}
@@ -529,67 +542,73 @@ export const KnowledgeGraphWorkspace: React.FC<{ detail: CaseDetail }> = ({ deta
                       }
                     }}
                   >
-                    <circle className="focus-ring" cx={node.x} cy={node.y} r="26" fill="none" stroke="#FFB224" strokeDasharray="3 3" opacity="0" />
-                    {selected && <circle cx={node.x} cy={node.y} r="24" fill="none" stroke="#FFB224" strokeOpacity="0.4" />}
-                    {matchIds.has(node.id) && <circle cx={node.x} cy={node.y} r="22" fill="none" stroke="#FFB224" strokeWidth="1.5" />}
+                    <circle className="focus-ring" cx={node.x} cy={node.y} r="26" fill="none" stroke="#D8C5A7" strokeDasharray="3 3" opacity="0" />
+                    {selected && (
+                      <>
+                        <circle cx={node.x} cy={node.y} r="30" fill={stroke} fillOpacity="0.08" />
+                        <circle cx={node.x} cy={node.y} r="24" fill="none" stroke={stroke} strokeOpacity="0.6" />
+                      </>
+                    )}
+                    {matchIds.has(node.id) && <circle cx={node.x} cy={node.y} r="22" fill="none" stroke="#D8C5A7" strokeWidth="1.5" />}
                     <rect x={node.x - 45} y={node.y - 22} width="90" height="64" fill="transparent" />
                     <NodeGlyph node={node} fill={fill} stroke={stroke} />
-                    <text x={node.x} y={node.y + 30} textAnchor="middle" className="svg-label" fontFamily={MONO} fontSize="11" fill="#EDEDEF">
+                    <text x={node.x} y={node.y + 30} textAnchor="middle" className="svg-label" fontFamily={MONO} fontSize="11" fill="#F1E9DB">
                       {node.label.length > 26 ? `${node.label.slice(0, 25)}…` : node.label}
                     </text>
-                    <text x={node.x} y={node.y + 43} textAnchor="middle" className="svg-label" fontFamily={MONO} fontSize="8.5" fill="#6E6E77">
+                    <text x={node.x} y={node.y + 43} textAnchor="middle" className="svg-label" fontFamily={MONO} fontSize="8.5" fill="#857D72">
                       {node.sublabel.toUpperCase()}
                     </text>
                   </g>
                 );
               })}
             </svg>
+            <ul
+              aria-label="Line legend"
+              className="relative flex flex-wrap gap-x-4 gap-y-1 border-t border-ink-line px-3 py-2 font-mono text-[0.625rem] uppercase tracking-[0.08em] text-fg-muted"
+            >
+              {(['observed', 'supplied', 'inferred'] as const).map((key) => (
+                <li key={key} className="flex items-center gap-1.5">
+                  <svg aria-hidden="true" width="20" height="6"><line x1="0" y1="3" x2="20" y2="3" stroke={EDGE_STYLE[key].stroke} strokeWidth="1.6" strokeDasharray={EDGE_STYLE[key].dash} /></svg>
+                  {key}
+                </li>
+              ))}
+              <li className="flex items-center gap-1.5 text-crimson">
+                <svg aria-hidden="true" width="20" height="6"><line x1="0" y1="3" x2="20" y2="3" stroke="#E32636" strokeWidth="1.6" strokeDasharray="10 4 2 4" /></svg>
+                Contradicts (needs review)
+              </li>
+              <li className="normal-case tracking-normal text-fg-subtle">Weights shown only when provided</li>
+            </ul>
           </div>
 
-          <div className="grid gap-3 border-t border-ink-line p-3 lg:grid-cols-2">
-            <div>
-              <p className="mb-2 font-mono text-micro uppercase text-fg-subtle">Node types</p>
-              <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter node types">
-                {categories.map((category) => (
-                  <FilterChip key={category} active={!hiddenCategories.has(category)} onClick={() => setHiddenCategories((s) => toggle(s, category))}>
+          <div className="flex flex-col gap-3 border-t border-ink-line p-3 lg:flex-row lg:items-start lg:justify-between">
+            <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter node types">
+              {categories.map((category) => (
+                <FilterChip key={category} active={!hiddenCategories.has(category)} onClick={() => setHiddenCategories((s) => toggle(s, category))}>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span aria-hidden="true" className="h-2 w-2" style={{ background: NODE_TONE[category], opacity: hiddenCategories.has(category) ? 0.35 : 1 }} />
                     {CATEGORY_LABEL[category]}
-                  </FilterChip>
-                ))}
-              </div>
+                  </span>
+                </FilterChip>
+              ))}
             </div>
-            <div>
-              <p className="mb-2 font-mono text-micro uppercase text-fg-subtle">Relationship types</p>
-              <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter relationship types">
+            <details className="group shrink-0 lg:text-right">
+              <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 font-mono text-micro uppercase text-fg-subtle hover:text-fg focus:outline-none focus-visible:ring-1 focus-visible:ring-signal-accent">
+                Relationship types · {kinds.length - hiddenKinds.size}/{kinds.length}
+                <ChevronDown aria-hidden="true" className="h-3 w-3 transition-transform group-open:rotate-180" />
+              </summary>
+              <div className="mt-2 flex flex-wrap gap-1.5 lg:max-w-md lg:justify-end" role="group" aria-label="Filter relationship types">
                 {kinds.map((kind) => (
                   <FilterChip key={kind} active={!hiddenKinds.has(kind)} onClick={() => setHiddenKinds((s) => toggle(s, kind))}>
                     {EDGE_KIND_LABEL[kind]}
                   </FilterChip>
                 ))}
               </div>
-            </div>
+            </details>
           </div>
-        </Panel>
-
-        <Panel title="Legend">
-          <ul className="grid gap-x-6 gap-y-2 px-4 py-3 font-mono text-micro uppercase text-fg-muted sm:grid-cols-2 xl:grid-cols-3">
-            {(['observed', 'supplied', 'inferred', 'structural'] as const).map((key) => (
-              <li key={key} className="flex items-center gap-2">
-                <svg aria-hidden="true" width="28" height="6"><line x1="0" y1="3" x2="28" y2="3" stroke={EDGE_STYLE[key].stroke} strokeWidth="1.6" strokeDasharray={EDGE_STYLE[key].dash} /></svg>
-                {key === 'structural' ? 'Structural (record fields)' : key}
-              </li>
-            ))}
-            <li className="flex items-center gap-2">
-              <svg aria-hidden="true" width="28" height="8"><line x1="0" y1="4" x2="28" y2="4" stroke="#FF5A4E" strokeWidth="1.6" strokeDasharray="10 4 2 4" /></svg>
-              Contradicts (needs review)
-            </li>
-            <li className="flex items-center gap-2 normal-case">
-              <Waypoints aria-hidden="true" className="h-3.5 w-3.5" /> Weights shown only when provided
-            </li>
-          </ul>
         </Panel>
       </div>
 
-      <Panel as="aside" title="Inspector" className="xl:col-span-4 xl:self-start">
+      <Panel as="aside" title="Inspector" className="ws-inspector-enter xl:col-span-3 xl:self-start xl:sticky xl:top-4">
         <Inspector
           detail={detail}
           index={index}

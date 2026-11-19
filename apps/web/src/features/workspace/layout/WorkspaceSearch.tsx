@@ -134,7 +134,7 @@ export const WorkspaceSearch: React.FC = () => {
           onFocus={() => setOpen(true)}
           onKeyDown={onKeyDown}
           placeholder="Search cases, evidence, entities, events"
-          className="h-full w-full border border-ink-line bg-ink-950 pl-9 pr-10 text-sm text-fg placeholder:text-fg-subtle focus:border-signal-amber/60 focus:outline-none"
+          className="h-full w-full border border-ink-line bg-ink-950 pl-9 pr-10 text-sm text-fg placeholder:text-fg-subtle focus:border-signal-accent/60 focus:outline-none"
         />
         <kbd className="pointer-events-none absolute right-2.5 hidden border border-ink-strong px-1.5 font-mono text-micro text-fg-subtle sm:block">/</kbd>
       </label>

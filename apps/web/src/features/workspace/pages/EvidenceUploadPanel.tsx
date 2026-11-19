@@ -83,7 +83,7 @@ export const EvidenceUploadPanel: React.FC<{ id: string }> = ({ id }) => {
     <section id={id} aria-labelledby={`${id}-heading`} className="border border-ink-line bg-ink-900">
       <div className="flex items-center justify-between gap-3 border-b border-ink-line px-4 py-2.5">
         <h2 id={`${id}-heading`} className="font-mono text-micro uppercase text-fg-muted">Stage evidence</h2>
-        <span className="font-mono text-micro uppercase text-signal-amber">Ingestion API not available</span>
+        <span className="font-mono text-micro uppercase text-signal-accent">Ingestion API not available</span>
       </div>
       <div className="grid gap-4 p-4 lg:grid-cols-12">
         <div className="lg:col-span-7">
@@ -99,7 +99,7 @@ export const EvidenceUploadPanel: React.FC<{ id: string }> = ({ id }) => {
               addFiles(event.dataTransfer.files);
             }}
             className={`flex flex-col items-center justify-center gap-3 border border-dashed px-4 py-8 text-center transition-colors ${
-              dragging ? 'border-signal-amber bg-signal-amber/[0.06]' : 'border-ink-strong bg-ink-950'
+              dragging ? 'border-signal-accent bg-signal-accent/[0.06]' : 'border-ink-strong bg-ink-950'
             }`}
           >
             <FileUp aria-hidden="true" className="h-6 w-6 text-fg-subtle" />

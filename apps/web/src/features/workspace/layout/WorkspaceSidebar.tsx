@@ -16,14 +16,14 @@ export interface WorkspaceSidebarProps {
 }
 
 const itemClass = (active: boolean, collapsed: boolean): string =>
-  `group relative flex h-9 items-center gap-3 text-sm transition-colors duration-fast focus:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-signal-amber ${
+  `group relative flex h-9 items-center gap-3 text-sm transition-colors duration-fast focus:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-signal-accent ${
     collapsed ? 'justify-center px-0' : 'px-3'
   } ${active ? 'bg-white/[0.05] text-fg' : 'text-fg-muted hover:bg-white/[0.03] hover:text-fg'}`;
 
 const ActiveBar: React.FC<{ active: boolean }> = ({ active }) => (
   <span
     aria-hidden="true"
-    className={`absolute inset-y-1.5 left-0 w-0.5 bg-signal-amber transition-opacity duration-base ${active ? 'opacity-100' : 'opacity-0'}`}
+    className={`absolute inset-y-1.5 left-0 w-0.5 bg-signal-accent transition-opacity duration-base ${active ? 'opacity-100' : 'opacity-0'}`}
   />
 );
 
@@ -53,9 +53,9 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
           onClick={onNavigate}
           aria-label="Go to YUKTI homepage"
           title="Go to YUKTI homepage"
-          className="group -m-1 flex cursor-pointer items-center gap-2.5 p-1 transition-colors duration-fast hover:bg-white/[0.04] focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-amber"
+          className="group -m-1 flex cursor-pointer items-center gap-2.5 p-1 transition-colors duration-fast hover:bg-white/[0.04] focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-accent"
         >
-          <YuktiMark className="h-7 w-7 text-fg transition-colors duration-fast group-hover:text-signal-amber" />
+          <YuktiMark className="h-7 w-7 text-fg transition-colors duration-fast group-hover:text-signal-accent" />
           {!collapsed && (
             <span className="leading-none">
               <span className="block font-display text-lg font-bold uppercase tracking-[0.08em] text-fg">Yukti</span>
@@ -104,7 +104,7 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
                       className={itemClass(active, collapsed)}
                     >
                       <ActiveBar active={active} />
-                      <item.icon aria-hidden="true" className={`h-4 w-4 shrink-0 ${active ? 'text-signal-amber' : ''}`} />
+                      <item.icon aria-hidden="true" className={`h-4 w-4 shrink-0 ${active ? 'text-signal-accent' : ''}`} />
                       {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
                       {badge !== null && (
                         <span

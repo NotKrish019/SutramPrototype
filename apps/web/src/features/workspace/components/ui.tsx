@@ -18,7 +18,7 @@ export const PageHeader: React.FC<{
     <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
       <div className="min-w-0">
         <Eyebrow className="mb-3">{eyebrow}</Eyebrow>
-        <h1 className="font-display text-[clamp(1.75rem,3vw,2.5rem)] font-bold uppercase leading-none tracking-[-0.01em] text-fg">
+        <h1 className="font-serif text-[clamp(1.9rem,3.2vw,2.75rem)] font-normal leading-[1.02] tracking-[-0.015em] text-fg-bright">
           {title}
         </h1>
         {description && <p className="mt-3 max-w-2xl text-sm leading-relaxed text-fg-muted">{description}</p>}
@@ -81,7 +81,7 @@ export const KeyValueList: React.FC<{ items: [React.ReactNode, React.ReactNode][
 const CASE_STATUS_STYLE: Record<CaseStatus, string> = {
   DRAFT: 'border-ink-strong text-fg-muted',
   ACTIVE: 'border-signal-ok/50 text-signal-ok',
-  UNDER_REVIEW: 'border-signal-amber/50 text-signal-amber',
+  UNDER_REVIEW: 'border-signal-accent/50 text-signal-accent',
   ARCHIVED: 'border-ink-strong text-fg-subtle',
 };
 
@@ -97,14 +97,14 @@ export const EvidenceTypeLabel: React.FC<{ evidence: Pick<WorkspaceEvidence, 'so
     <span className="font-mono text-xs text-fg">{evidence.source_type}</span>
   ) : (
     <span className="inline-flex items-center gap-1 font-mono text-xs text-fg-muted" title={evidence.source_type_label}>
-      <span className="text-signal-amber">—</span> Unclassified
+      <span className="text-signal-accent">—</span> Unclassified
       <span className="sr-only">: {evidence.source_type_label}</span>
     </span>
   );
 
 const CATEGORY_STYLE: Record<ReviewCategory, string> = {
   conflicting: 'border-signal-flag/60 text-signal-flag',
-  uncertain: 'border-signal-amber/60 text-signal-amber',
+  uncertain: 'border-signal-accent/60 text-signal-accent',
   missing: 'border-ink-strong text-fg-muted border-dashed',
   unverified: 'border-signal-supplied/60 text-signal-supplied',
   supporting: 'border-signal-ok/50 text-signal-ok',
@@ -118,7 +118,7 @@ export const ReviewCategoryBadge: React.FC<{ category: ReviewCategory }> = ({ ca
 
 export const SyntheticTag: React.FC<{ className?: string }> = ({ className = '' }) => (
   <span
-    className={`inline-flex items-center gap-1.5 border border-signal-amber/50 bg-signal-amber/10 px-1.5 py-0.5 font-mono text-micro uppercase text-signal-amber ${className}`}
+    className={`inline-flex items-center gap-1.5 border border-signal-accent/50 bg-signal-accent/10 px-1.5 py-0.5 font-mono text-micro uppercase text-signal-accent ${className}`}
   >
     <FlaskConical aria-hidden="true" className="h-3 w-3" />
     Synthetic demonstration data
@@ -172,7 +172,7 @@ type ButtonVariant = 'default' | 'primary' | 'ghost';
 
 const BUTTON_VARIANT: Record<ButtonVariant, string> = {
   default: 'border border-ink-strong text-fg hover:border-fg-muted hover:bg-white/[0.03]',
-  primary: 'border border-signal-amber bg-signal-amber text-ink-950 hover:bg-[#ffc457]',
+  primary: 'border border-signal-accent bg-signal-accent text-ink-950 hover:bg-[#E9D7B8]',
   ghost: 'border border-transparent text-fg-muted hover:text-fg hover:bg-white/[0.04]',
 };
 
@@ -190,7 +190,7 @@ export const WsButton = React.forwardRef<HTMLButtonElement, WsButtonProps>(funct
     <button
       ref={ref}
       type={type}
-      className={`inline-flex items-center justify-center gap-2 font-mono uppercase tracking-[0.04em] transition-colors duration-fast focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-amber disabled:cursor-not-allowed disabled:opacity-45 ${
+      className={`inline-flex items-center justify-center gap-2 font-mono uppercase tracking-[0.04em] transition-colors duration-fast focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-accent disabled:cursor-not-allowed disabled:opacity-45 ${
         size === 'sm' ? 'h-8 px-2.5 text-micro' : 'h-9 px-3.5 text-[0.75rem]'
       } ${BUTTON_VARIANT[variant]} ${className}`}
       {...rest}
@@ -211,12 +211,12 @@ export const FilterChip: React.FC<{
     type="button"
     aria-pressed={active}
     onClick={onClick}
-    className={`inline-flex h-8 items-center gap-2 border px-2.5 font-mono text-micro uppercase transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-signal-amber ${
-      active ? 'border-signal-amber/60 bg-signal-amber/10 text-fg' : 'border-ink-line text-fg-muted hover:border-ink-strong hover:text-fg'
+    className={`inline-flex h-8 items-center gap-2 border px-2.5 font-mono text-micro uppercase transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-signal-accent ${
+      active ? 'border-signal-accent/60 bg-signal-accent/10 text-fg' : 'border-ink-line text-fg-muted hover:border-ink-strong hover:text-fg'
     }`}
   >
     {children}
-    {count !== undefined && <span className={active ? 'text-signal-amber' : 'text-fg-subtle'}>{count}</span>}
+    {count !== undefined && <span className={active ? 'text-signal-accent' : 'text-fg-subtle'}>{count}</span>}
   </button>
 );
 
@@ -235,7 +235,7 @@ export const SearchField: React.FC<{
       value={value}
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}
-      className="h-full w-full border border-ink-line bg-ink-950 pl-9 pr-8 text-sm text-fg placeholder:text-fg-subtle focus:border-signal-amber/60 focus:outline-none [&::-webkit-search-cancel-button]:hidden"
+      className="h-full w-full border border-ink-line bg-ink-950 pl-9 pr-8 text-sm text-fg placeholder:text-fg-subtle focus:border-signal-accent/60 focus:outline-none [&::-webkit-search-cancel-button]:hidden"
     />
     {value && (
       <button

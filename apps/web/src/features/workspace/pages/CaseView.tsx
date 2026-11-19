@@ -37,9 +37,10 @@ const CaseHeader: React.FC<{ item: WorkspaceCase; section: CaseSection; syntheti
           <CaseStatusBadge status={item.status} />
           {synthetic && <SyntheticTag />}
         </div>
-        <h1 className="mt-2 font-display text-[clamp(1.6rem,2.8vw,2.25rem)] font-bold uppercase leading-none text-fg">{item.title}</h1>
+        <h1 className="mt-2 font-serif text-[clamp(1.8rem,3vw,2.5rem)] font-normal leading-[1.02] tracking-[-0.015em] text-fg-bright">{item.title}</h1>
         <p className="mt-2 font-mono text-micro uppercase text-fg-subtle">
-          {item.fir_number && <>{item.fir_number} · </>}Opened {formatDateTime(item.created_at)} · Updated {formatDateTime(item.updated_at)}
+          {item.fir_number && <>{item.fir_number} · </>}
+          <span className="text-fg-muted">{item.evidence_count} evidence</span> · Updated {formatDateTime(item.updated_at)}
         </p>
       </div>
     </div>
@@ -52,13 +53,13 @@ const CaseHeader: React.FC<{ item: WorkspaceCase; section: CaseSection; syntheti
               <Link
                 to={caseHref(item.case_id, navItem.section)}
                 aria-current={active ? 'page' : undefined}
-                className={`relative flex h-10 items-center gap-2 px-3 font-mono text-micro uppercase transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-signal-amber ${
+                className={`relative flex h-10 items-center gap-2 px-3 font-mono text-micro uppercase transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-signal-accent ${
                   active ? 'text-fg' : 'text-fg-subtle hover:text-fg'
                 }`}
               >
-                <navItem.icon aria-hidden="true" className={`h-3.5 w-3.5 ${active ? 'text-signal-amber' : ''}`} />
+                <navItem.icon aria-hidden="true" className={`h-3.5 w-3.5 ${active ? 'text-signal-accent' : ''}`} />
                 {navItem.short}
-                <span aria-hidden="true" className={`absolute inset-x-3 bottom-0 h-0.5 bg-signal-amber transition-opacity ${active ? 'opacity-100' : 'opacity-0'}`} />
+                <span aria-hidden="true" className={`absolute inset-x-3 bottom-0 h-0.5 bg-signal-accent transition-opacity ${active ? 'opacity-100' : 'opacity-0'}`} />
               </Link>
             </li>
           );
@@ -94,7 +95,7 @@ export const CaseView: React.FC<{ caseId: string; section: CaseSection }> = ({ c
         icon={FolderX}
         title="Case not found"
         action={
-          <Link to={ROUTES.workspace} className="font-mono text-micro uppercase text-signal-amber hover:underline">
+          <Link to={ROUTES.workspace} className="font-mono text-micro uppercase text-signal-accent hover:underline">
             Back to investigations
           </Link>
         }
@@ -109,14 +110,16 @@ export const CaseView: React.FC<{ caseId: string; section: CaseSection }> = ({ c
     <div>
       <CaseHeader item={item} section={section} synthetic={synthetic} />
       {data ? (
-        <Section key={`${caseId}-${section}`} detail={data} />
+        <div key={`${caseId}-${section}`} className="ws-view-enter">
+          <Section detail={data} />
+        </div>
       ) : (
         <EmptyState icon={FileQuestion} title="Detailed records not available">
           {synthetic ? (
             <>
               {item.case_id} is a summary-only synthetic case. Detailed demonstration records are provided for{' '}
               {repository.defaultCaseId && (
-                <Link to={caseHref(repository.defaultCaseId, section)} className="text-signal-amber hover:underline">
+                <Link to={caseHref(repository.defaultCaseId, section)} className="text-signal-accent hover:underline">
                   {repository.defaultCaseId}
                 </Link>
               )}

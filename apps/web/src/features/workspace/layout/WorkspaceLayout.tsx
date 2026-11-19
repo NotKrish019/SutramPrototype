@@ -111,7 +111,7 @@ const Topbar: React.FC<{ onOpenMenu: () => void; menuButtonRef: React.RefObject<
           type="button"
           onClick={onOpenMenu}
           aria-label="Open navigation"
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center border border-ink-strong text-fg hover:bg-white/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-amber lg:hidden"
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center border border-ink-strong text-fg hover:bg-white/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-accent lg:hidden"
         >
           <Menu aria-hidden="true" className="h-4 w-4" />
         </button>
@@ -124,7 +124,7 @@ const Topbar: React.FC<{ onOpenMenu: () => void; menuButtonRef: React.RefObject<
         <BackendConnectionIndicator />
       </div>
       {repository.source === 'synthetic' && (
-        <p className="border-t border-ink-line bg-signal-amber/[0.06] px-3 py-1.5 font-mono text-micro uppercase text-signal-amber sm:px-4 lg:px-6 2xl:hidden">
+        <p className="border-t border-ink-line bg-signal-accent/[0.06] px-3 py-1.5 font-mono text-micro uppercase text-signal-accent sm:px-4 lg:px-6 2xl:hidden">
           Synthetic demonstration data · case records are fictional · backend API: health only
         </p>
       )}
@@ -169,7 +169,7 @@ const Shell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     <div className="site-root min-h-screen bg-ink-950 text-fg lg:flex">
       <a
         href="#workspace-main"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:bg-signal-amber focus:px-4 focus:py-2 focus:font-mono focus:text-xs focus:uppercase focus:text-ink-950"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:bg-signal-accent focus:px-4 focus:py-2 focus:font-mono focus:text-xs focus:uppercase focus:text-ink-950"
       >
         Skip to content
       </a>

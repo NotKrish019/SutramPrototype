@@ -1,9 +1,11 @@
 import React, { useId, useMemo, useState } from 'react';
-import { ArrowRight, Check, Copy, FileSearch, Plus, X } from 'lucide-react';
+import { ArrowRight, Check, ChevronDown, Copy, FileSearch, LayoutGrid, List, Plus, X } from 'lucide-react';
 import { ProvenanceBadge, ReviewBadge } from '../../../components/ui/primitives';
 import { Link } from '../../../router/Link';
 import { caseHref } from '../../../router/router';
 import { useCaseIndex, useQuerySelection, type CaseIndex } from '../caseIndex';
+import { useWorkspaceRepository } from '../data/WorkspaceDataContext';
+import { EvidencePreview } from '../components/EvidencePreview';
 import { EmptyState, EvidenceTypeLabel, FilterChip, KeyValueList, Panel, ReviewCategoryBadge, SearchField, SelectField, WsButton } from '../components/ui';
 import { formatBytes, formatDateTime, formatEventTime, formatUtc, shortHash } from '../format';
 import type { CaseDetail, ReviewStatus, WorkspaceEvidence } from '../types';
@@ -71,6 +73,7 @@ export const EvidenceDetailPanel: React.FC<{
   onSelect: (id: string) => void;
   onClose: () => void;
 }> = ({ evidence, detail, index, onSelect, onClose }) => {
+  const synthetic = useWorkspaceRepository().source === 'synthetic';
   const caseId = detail.case.case_id;
   const related = detail.evidence.filter(
     (other) =>
@@ -90,9 +93,13 @@ export const EvidenceDetailPanel: React.FC<{
         </button>
       }
     >
-      <div className="border-b border-ink-line px-4 py-4">
-        <p className="break-all font-mono text-sm text-fg">{evidence.original_filename}</p>
-        <div className="mt-2 flex flex-wrap items-center gap-2">
+      <div className="border-b border-ink-line p-4">
+        <EvidencePreview evidence={evidence} synthetic={synthetic} className="border border-ink-line" />
+        <p className="mt-4 break-all font-mono text-sm text-fg">{evidence.original_filename}</p>
+        <p className="mt-1 font-mono text-micro uppercase text-fg-subtle">
+          {evidence.source} · {formatBytes(evidence.file_size_bytes)}
+        </p>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           <ProvenanceBadge value={evidence.provenance} withDescription />
           <ReviewBadge value={evidence.review} />
         </div>
@@ -106,32 +113,18 @@ export const EvidenceDetailPanel: React.FC<{
           <p className="text-sm text-fg">{evidence.source}</p>
         </li>
         <li className="relative border-l border-ink-strong pl-4">
-          <span aria-hidden="true" className="absolute -left-[3px] top-1.5 h-1.5 w-1.5 bg-signal-amber" />
+          <span aria-hidden="true" className="absolute -left-[3px] top-1.5 h-1.5 w-1.5 bg-signal-accent" />
           <p className="font-mono text-micro uppercase text-fg-subtle">Extracted information</p>
           <p className="text-sm leading-relaxed text-fg">{evidence.extracted_summary}</p>
         </li>
       </ol>
 
-      <SubHeading>Artifact metadata</SubHeading>
-      <KeyValueList
-        items={[
-          ['Evidence type', <><EvidenceTypeLabel evidence={evidence} />{!evidence.source_type && <span className="mt-1 block text-xs text-fg-subtle">{evidence.source_type_label}</span>}</>],
-          ['Source', evidence.source],
-          ['File size', `${formatBytes(evidence.file_size_bytes)} (${evidence.file_size_bytes.toLocaleString('en-US')} bytes)`],
-          ['Ingested', <><span className="block">{formatDateTime(evidence.ingested_at)}</span><span className="font-mono text-micro text-fg-subtle">{formatUtc(evidence.ingested_at)}</span></>],
-          ...Object.entries(evidence.metadata).map(([key, value]) => [key, value] as [string, string]),
-        ]}
-      />
-
-      <SubHeading>Integrity</SubHeading>
-      <div className="space-y-2 px-4 py-3">
-        <p className="font-mono text-micro uppercase text-fg-subtle">SHA-256 · recorded at ingestion</p>
-        <p className="break-all font-mono text-xs leading-relaxed text-fg">{evidence.sha256_hash}</p>
+      <div className="flex items-center justify-between gap-3 border-b border-ink-line px-4 py-3">
+        <span className="min-w-0">
+          <span className="block font-mono text-micro uppercase text-fg-subtle">SHA-256 · at ingestion</span>
+          <span className="block font-mono text-xs text-fg" title={evidence.sha256_hash}>{shortHash(evidence.sha256_hash)}</span>
+        </span>
         <CopyHash value={evidence.sha256_hash} />
-        <p className="text-xs leading-relaxed text-fg-subtle">
-          Re-hashing the stored copy can detect changes after ingestion. The digest does not establish that the
-          artifact was authentic or complete before acquisition.
-        </p>
       </div>
 
       <SubHeading>Associated entities</SubHeading>
@@ -190,6 +183,32 @@ export const EvidenceDetailPanel: React.FC<{
           ))}
         </ul>
       )}
+      <details className="group border-t border-ink-line">
+        <summary className="flex cursor-pointer list-none items-center justify-between bg-ink-850 px-4 py-2 font-mono text-micro uppercase text-fg-subtle hover:text-fg focus:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-signal-accent">
+          Metadata &amp; integrity
+          <ChevronDown aria-hidden="true" className="h-3.5 w-3.5 transition-transform group-open:rotate-180" />
+        </summary>
+      <KeyValueList
+        items={[
+          ['Evidence type', <><EvidenceTypeLabel evidence={evidence} />{!evidence.source_type && <span className="mt-1 block text-xs text-fg-subtle">{evidence.source_type_label}</span>}</>],
+          ['Source', evidence.source],
+          ['File size', `${formatBytes(evidence.file_size_bytes)} (${evidence.file_size_bytes.toLocaleString('en-US')} bytes)`],
+          ['Ingested', <><span className="block">{formatDateTime(evidence.ingested_at)}</span><span className="font-mono text-micro text-fg-subtle">{formatUtc(evidence.ingested_at)}</span></>],
+          ...Object.entries(evidence.metadata).map(([key, value]) => [key, value] as [string, string]),
+        ]}
+      />
+
+      <p className="border-t border-ink-line px-4 pt-3 font-mono text-micro uppercase text-fg-subtle">Integrity</p>
+      <div className="space-y-2 px-4 pb-4 pt-2">
+        <p className="font-mono text-micro uppercase text-fg-subtle">SHA-256 · recorded at ingestion</p>
+        <p className="break-all font-mono text-xs leading-relaxed text-fg">{evidence.sha256_hash}</p>
+        <p className="text-xs leading-relaxed text-fg-subtle">
+          Re-hashing the stored copy can detect changes after ingestion. The digest does not establish that the
+          artifact was authentic or complete before acquisition.
+        </p>
+      </div>
+
+      </details>
     </Panel>
   );
 };
@@ -202,6 +221,8 @@ export const EvidenceRepository: React.FC<{ detail: CaseDetail }> = ({ detail })
   const [provenance, setProvenance] = useState('all');
   const [review, setReview] = useState<ReviewStatus | 'all'>('all');
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [view, setView] = useState<'gallery' | 'list'>('gallery');
+  const synthetic = useWorkspaceRepository().source === 'synthetic';
   const uploadId = useId();
 
   const typeOptions = useMemo(() => {
@@ -224,11 +245,43 @@ export const EvidenceRepository: React.FC<{ detail: CaseDetail }> = ({ detail })
   const reviewCount = (value: ReviewStatus | 'all'): number =>
     value === 'all' ? detail.evidence.length : detail.evidence.filter((e) => e.review === value).length;
 
+  const gallery = (
+    <ul aria-label="Evidence gallery" className="grid grid-cols-1 gap-3 p-3 sm:grid-cols-2 sm:p-4 2xl:grid-cols-3">
+      {rows.map((e) => {
+        const isSelected = e.evidence_id === selectedId;
+        return (
+          <li key={e.evidence_id}>
+            <button
+              type="button"
+              aria-pressed={isSelected}
+              onClick={() => setSelectedId(isSelected ? null : e.evidence_id)}
+              className={`group block w-full border text-left transition-[border-color,transform,box-shadow] duration-base ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-accent motion-safe:hover:-translate-y-0.5 ${
+                isSelected ? 'border-crimson/70 bg-ink-850 shadow-[0_18px_30px_-18px_rgba(227,38,54,.45)]' : 'border-ink-line bg-ink-950 hover:border-ink-strong hover:shadow-[0_18px_30px_-18px_rgba(0,0,0,.9)]'
+              }`}
+            >
+              <EvidencePreview evidence={e} synthetic={synthetic} className="border-b border-ink-line" />
+              <span className="block px-3 py-2.5">
+                <span className="flex items-center justify-between gap-2">
+                  <span className={`font-mono text-micro ${e.review === 'flagged' ? 'text-crimson' : 'text-fg-subtle'}`}>{e.evidence_id}</span>
+                  <ReviewBadge value={e.review} />
+                </span>
+                <span className={`mt-1 block truncate text-sm ${isSelected ? 'text-fg-bright' : 'text-fg'}`}>{e.original_filename}</span>
+                <span className="mt-0.5 block truncate font-mono text-micro uppercase text-fg-subtle">
+                  {e.source_type ?? 'Unclassified'} · {formatDateTime(e.ingested_at)}
+                </span>
+              </span>
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+
   return (
     <div className="space-y-4 p-4 sm:p-6 lg:p-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-fg-muted">
-          {detail.evidence.length} artifacts · originals are referenced read-only; extracted information links back to each artifact.
+        <p className="font-mono text-micro uppercase text-fg-subtle">
+          {detail.evidence.length} artifacts · originals read-only
         </p>
         <WsButton icon={Plus} aria-expanded={uploadOpen} aria-controls={uploadId} onClick={() => setUploadOpen((value) => !value)}>
           {uploadOpen ? 'Hide staging' : 'Add evidence'}
@@ -237,7 +290,32 @@ export const EvidenceRepository: React.FC<{ detail: CaseDetail }> = ({ detail })
       {uploadOpen && <EvidenceUploadPanel id={uploadId} />}
 
       <div className={`grid grid-cols-1 gap-4 ${selected ? 'xl:grid-cols-12' : ''}`}>
-        <Panel title="Evidence repository" meta={`${rows.length} of ${detail.evidence.length}`} className={selected ? 'xl:col-span-7' : ''}>
+        <Panel
+          title="Evidence repository"
+          meta={`${rows.length} of ${detail.evidence.length}`}
+          className={selected ? 'xl:col-span-7' : ''}
+          actions={
+            <div role="group" aria-label="Evidence view" className="flex border border-ink-line">
+              {(
+                [
+                  ['gallery', 'Gallery view', LayoutGrid],
+                  ['list', 'List view', List],
+                ] as const
+              ).map(([value, label, Icon]) => (
+                <button
+                  key={value}
+                  type="button"
+                  aria-label={label}
+                  aria-pressed={view === value}
+                  onClick={() => setView(value)}
+                  className={`p-1.5 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-signal-accent ${view === value ? 'bg-ink-700 text-fg' : 'text-fg-subtle hover:text-fg'}`}
+                >
+                  <Icon aria-hidden="true" className="h-3.5 w-3.5" />
+                </button>
+              ))}
+            </div>
+          }
+        >
           <div className="flex flex-col gap-3 border-b border-ink-line p-3 sm:p-4">
             <div className="grid gap-2 md:grid-cols-[1fr_auto_auto]">
               <SearchField value={query} onChange={setQuery} label="Search evidence" placeholder="ID, file name, source or extracted text" />
@@ -266,6 +344,8 @@ export const EvidenceRepository: React.FC<{ detail: CaseDetail }> = ({ detail })
             <EmptyState icon={FileSearch} title="No matching evidence">
               Adjust the search or filters.
             </EmptyState>
+          ) : view === 'gallery' ? (
+            gallery
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left">
@@ -282,16 +362,16 @@ export const EvidenceRepository: React.FC<{ detail: CaseDetail }> = ({ detail })
                   {rows.map((e) => {
                     const isSelected = e.evidence_id === selectedId;
                     return (
-                      <tr key={e.evidence_id} className={`transition-colors ${isSelected ? 'bg-signal-amber/[0.07]' : 'hover:bg-white/[0.02]'}`}>
+                      <tr key={e.evidence_id} className={`transition-colors ${isSelected ? 'bg-signal-accent/[0.07]' : 'hover:bg-white/[0.02]'}`}>
                         <td className="px-4 py-3">
                           <button
                             type="button"
                             aria-pressed={isSelected}
                             onClick={() => setSelectedId(isSelected ? null : e.evidence_id)}
-                            className="block min-w-0 max-w-[20rem] break-all text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-signal-amber"
+                            className="block min-w-0 max-w-[20rem] break-all text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-signal-accent"
                           >
                             <span className="font-mono text-micro text-fg-subtle">{e.evidence_id} · {e.source}</span>
-                            <span className={`block truncate text-sm ${isSelected ? 'text-signal-amber' : 'text-fg'}`}>{e.original_filename}</span>
+                            <span className={`block truncate text-sm ${isSelected ? 'text-signal-accent' : 'text-fg'}`}>{e.original_filename}</span>
                           </button>
                         </td>
                         <td className="hidden px-4 py-3 sm:table-cell"><EvidenceTypeLabel evidence={e} /></td>
@@ -307,12 +387,10 @@ export const EvidenceRepository: React.FC<{ detail: CaseDetail }> = ({ detail })
           )}
         </Panel>
 
-        {selected ? (
-          <div className="xl:col-span-5">
+        {selected && (
+          <div className="ws-inspector-enter xl:col-span-5">
             <EvidenceDetailPanel evidence={selected} detail={detail} index={index} onSelect={setSelectedId} onClose={() => setSelectedId(null)} />
           </div>
-        ) : (
-          <p className="font-mono text-micro uppercase text-fg-subtle">Select an artifact to inspect its metadata, integrity and provenance.</p>
         )}
       </div>
     </div>

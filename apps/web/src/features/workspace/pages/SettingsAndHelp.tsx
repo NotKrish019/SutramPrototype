@@ -58,7 +58,7 @@ export const SettingsPage: React.FC = () => {
             ]}
           />
           <div className="flex flex-wrap items-center gap-3 border-t border-ink-line px-4 py-3">
-            <button type="button" onClick={resetLayout} className="font-mono text-micro uppercase text-fg hover:text-signal-amber">
+            <button type="button" onClick={resetLayout} className="font-mono text-micro uppercase text-fg hover:text-signal-accent">
               Reset sidebar preference
             </button>
             {sidebarNote && <span role="status" className="text-xs text-fg-muted">{sidebarNote}</span>}

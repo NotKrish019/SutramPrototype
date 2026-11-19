@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ArrowRight, Database, FolderSearch, History, Server } from 'lucide-react';
+import { AlertTriangle, Archive, ArrowRight, Database, FolderOpen, FolderSearch, History, ListOrdered, Server, Share2, type LucideIcon } from 'lucide-react';
 import { BackendStatusCard } from '../components/BackendStatusCard';
 import { DEFAULT_HEALTH_POLL_INTERVAL_MS } from '../hooks/useBackendHealth';
 import { Link } from '../router/Link';
@@ -8,7 +8,8 @@ import { HEALTH_PATH } from '../services/api';
 import { buildApiUrl } from '../services/config';
 import type { CaseStatus } from '../types';
 import { useSharedBackendHealth } from '../features/workspace/data/BackendHealthContext';
-import { useWorkspaceRepository } from '../features/workspace/data/WorkspaceDataContext';
+import { useCaseDetail, useWorkspaceRepository } from '../features/workspace/data/WorkspaceDataContext';
+import { EvidencePreview } from '../features/workspace/components/EvidencePreview';
 import { useWorkspaceShell } from '../features/workspace/layout/WorkspaceShellContext';
 import {
   CaseStatusBadge,
@@ -38,7 +39,7 @@ const STATUSES: CaseStatus[] = ['ACTIVE', 'UNDER_REVIEW', 'DRAFT', 'ARCHIVED'];
 
 const STATUS_BAR: Record<CaseStatus, string> = {
   ACTIVE: 'bg-signal-ok',
-  UNDER_REVIEW: 'bg-signal-amber',
+  UNDER_REVIEW: 'bg-signal-accent',
   DRAFT: 'bg-fg-muted',
   ARCHIVED: 'bg-ink-strong',
 };
@@ -57,15 +58,12 @@ const SORTERS: Record<SortKey, (a: WorkspaceCase, b: WorkspaceCase) => number> =
 const MetricsBand: React.FC<{ cases: WorkspaceCase[]; synthetic: boolean }> = ({ cases, synthetic }) => {
   const sum = (key: 'evidence_count' | 'event_count' | 'entity_count' | 'review_count'): number =>
     cases.reduce((total, c) => total + c[key], 0);
-  const active = cases.filter((c) => c.status === 'ACTIVE').length;
-  const underReview = cases.filter((c) => c.status === 'UNDER_REVIEW').length;
-  const metrics = [
-    { label: 'Total cases', value: cases.length, note: `${STATUSES.length} canonical statuses` },
-    { label: 'Active investigations', value: active, note: `+ ${underReview} under review` },
-    { label: 'Evidence artifacts', value: sum('evidence_count'), note: 'across all cases' },
-    { label: 'Extracted events', value: sum('event_count'), note: 'across all cases' },
-    { label: 'Entities identified', value: sum('entity_count'), note: 'across all cases' },
-    { label: 'Requiring review', value: sum('review_count'), note: 'open review items', alert: true },
+  const metrics: { label: string; value: number; icon: LucideIcon; alert?: boolean }[] = [
+    { label: 'Total cases', value: cases.length, icon: FolderOpen },
+    { label: 'Evidence files', value: sum('evidence_count'), icon: Archive },
+    { label: 'Events', value: sum('event_count'), icon: ListOrdered },
+    { label: 'Entities', value: sum('entity_count'), icon: Share2 },
+    { label: 'Needs review', value: sum('review_count'), icon: AlertTriangle, alert: true },
   ];
   return (
     <section aria-labelledby="metrics-heading" className="border-b border-ink-line">
@@ -88,14 +86,14 @@ const MetricsBand: React.FC<{ cases: WorkspaceCase[]; synthetic: boolean }> = ({
           ))}
         </ul>
       </div>
-      <dl className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6">
+      <dl className="mt-4 grid grid-cols-2 border-t border-ink-line sm:grid-cols-5">
         {metrics.map((metric) => (
-          <div key={metric.label} className="border-ink-line px-4 py-5 sm:px-6 lg:px-8 [&:not(:last-child)]:border-r max-sm:[&:nth-child(2n)]:border-r-0 sm:max-xl:[&:nth-child(3n)]:border-r-0">
-            <dt className="min-h-[2rem] font-mono text-micro uppercase text-fg-subtle">{metric.label}</dt>
-            <dd className={`mt-2 font-display text-4xl font-semibold leading-none ${metric.alert ? 'text-signal-flag' : 'text-fg'}`}>
-              {metric.value}
-            </dd>
-            <dd className="mt-1.5 text-xs text-fg-subtle">{metric.note}</dd>
+          <div key={metric.label} className="flex items-center gap-3 border-ink-line px-4 py-4 sm:px-6 lg:px-8 [&:not(:last-child)]:border-r max-sm:[&:nth-child(2n)]:border-r-0">
+            <metric.icon aria-hidden="true" strokeWidth={1.4} className={`h-5 w-5 shrink-0 ${metric.alert ? 'text-crimson' : 'text-fg-subtle'}`} />
+            <div className="flex flex-col-reverse">
+              <dt className="font-mono text-micro uppercase text-fg-subtle">{metric.label}</dt>
+              <dd className={`font-display text-3xl font-semibold leading-none ${metric.alert ? 'text-signal-flag' : 'text-fg-bright'}`}>{metric.value}</dd>
+            </div>
           </div>
         ))}
       </dl>
@@ -107,7 +105,7 @@ const MetricsBand: React.FC<{ cases: WorkspaceCase[]; synthetic: boolean }> = ({
 
 const CaseActions: React.FC<{ item: WorkspaceCase }> = ({ item }) => (
   <div className="flex items-center gap-3 font-mono text-micro uppercase">
-    <Link to={caseHref(item.case_id)} className="inline-flex items-center gap-1 text-fg hover:text-signal-amber">
+    <Link to={caseHref(item.case_id)} className="inline-flex items-center gap-1 text-fg hover:text-signal-accent">
       Open <ArrowRight aria-hidden="true" className="h-3 w-3" />
       <span className="sr-only">{item.case_id}</span>
     </Link>
@@ -195,9 +193,9 @@ const CaseTable: React.FC<{ cases: WorkspaceCase[] }> = ({ cases }) => {
               {rows.map((item) => (
                 <tr key={item.case_id} className="group transition-colors hover:bg-white/[0.02]">
                   <td className="px-4 py-3">
-                    <Link to={caseHref(item.case_id)} className="block focus:outline-none focus-visible:ring-1 focus-visible:ring-signal-amber">
+                    <Link to={caseHref(item.case_id)} className="block focus:outline-none focus-visible:ring-1 focus-visible:ring-signal-accent">
                       <span className="font-mono text-micro text-fg-subtle">{item.case_id}</span>
-                      <span className="block text-sm font-medium text-fg group-hover:text-signal-amber">{item.title}</span>
+                      <span className="block text-sm font-medium text-fg group-hover:text-signal-accent">{item.title}</span>
                     </Link>
                   </td>
                   <td className="px-4 py-3"><CaseStatusBadge status={item.status} /></td>
@@ -265,7 +263,7 @@ const RecentActivity: React.FC<{ cases: WorkspaceCase[]; synthetic: boolean }> =
               <span aria-hidden="true" className="mt-1.5 h-1.5 w-1.5 bg-fg-subtle" />
               <div className="min-w-0">
                 <p className="text-sm text-fg">
-                  {item.text} · <Link to={caseHref(item.id)} className="font-mono text-xs text-fg-muted hover:text-signal-amber">{item.id}</Link>
+                  {item.text} · <Link to={caseHref(item.id)} className="font-mono text-xs text-fg-muted hover:text-signal-accent">{item.id}</Link>
                 </p>
                 <p className="truncate text-xs text-fg-subtle">{item.title}</p>
                 <time dateTime={item.when} className="mt-0.5 block font-mono text-micro text-fg-subtle">
@@ -290,9 +288,9 @@ const DataSourcesPanel: React.FC<{ synthetic: boolean }> = ({ synthetic }) => (
       </li>
       <li className="flex items-center justify-between gap-3 px-4 py-3">
         <span className="flex items-center gap-2 text-fg">
-          <Database aria-hidden="true" className={`h-4 w-4 ${synthetic ? 'text-signal-amber' : 'text-signal-ok'}`} /> Case records
+          <Database aria-hidden="true" className={`h-4 w-4 ${synthetic ? 'text-signal-accent' : 'text-signal-ok'}`} /> Case records
         </span>
-        <span className={`font-mono text-micro uppercase ${synthetic ? 'text-signal-amber' : 'text-signal-ok'}`}>{synthetic ? 'Synthetic fixture' : 'API'}</span>
+        <span className={`font-mono text-micro uppercase ${synthetic ? 'text-signal-accent' : 'text-signal-ok'}`}>{synthetic ? 'Synthetic fixture' : 'API'}</span>
       </li>
       {synthetic && (
         <li className="flex flex-wrap items-center gap-1.5 px-4 py-3" aria-label="Not available in this build">
@@ -305,6 +303,62 @@ const DataSourcesPanel: React.FC<{ synthetic: boolean }> = ({ synthetic }) => (
     </ul>
   </Panel>
 );
+
+/* ---------------------------------------------------------- Featured case */
+
+/** The investigation in focus, shown through its evidence rather than described. */
+const FeaturedCase: React.FC<{ caseId: string; synthetic: boolean }> = ({ caseId, synthetic }) => {
+  const detail = useCaseDetail(caseId);
+  if (detail.state.status === 'loading') {
+    return (
+      <Panel title="In focus">
+        <LoadingState label={`Loading ${caseId}`} />
+      </Panel>
+    );
+  }
+  if (detail.state.status === 'error') {
+    return (
+      <Panel title="In focus">
+        <ErrorState message={detail.state.error} onRetry={detail.retry} />
+      </Panel>
+    );
+  }
+  const data = detail.state.data;
+  if (!data) return null;
+  const open = data.review_items.filter((item) => item.status !== 'verified');
+  const conflicts = open.filter((item) => item.category === 'conflicting').length;
+  return (
+    <Panel title="In focus" meta={data.case.case_id} actions={<CaseStatusBadge status={data.case.status} />}>
+      <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <Link to={caseHref(caseId)} className="font-serif text-2xl leading-tight text-fg-bright hover:text-paper">
+            {data.case.title}
+          </Link>
+          <p className="mt-1 font-mono text-micro uppercase text-fg-subtle">
+            {data.evidence.length} evidence · {data.events.length} events · {data.entities.length} entities
+          </p>
+        </div>
+        <Link
+          to={caseHref(caseId, 'contradictions')}
+          className={`inline-flex shrink-0 items-center gap-2 border px-3 py-2 font-mono text-micro uppercase transition-colors ${conflicts > 0 ? 'border-crimson/60 text-crimson hover:bg-crimson/10' : 'border-ink-line text-fg-muted hover:text-fg'}`}
+        >
+          <AlertTriangle aria-hidden="true" className="h-3.5 w-3.5" />
+          {open.length} to review{conflicts > 0 ? ` · ${conflicts} conflicting` : ''}
+        </Link>
+      </div>
+      <ul aria-label={`Evidence in ${caseId}`} className="grid grid-cols-3 gap-2 px-4 pb-4 sm:grid-cols-5">
+        {data.evidence.map((evidence) => (
+          <li key={evidence.evidence_id}>
+            <Link to={caseHref(caseId, 'evidence', { evidence: evidence.evidence_id })} className="group block border border-ink-line transition-[border-color,transform] duration-base hover:border-ink-strong motion-safe:hover:-translate-y-0.5">
+              <EvidencePreview evidence={evidence} synthetic={synthetic} />
+              <span className={`block border-t border-ink-line px-2 py-1 font-mono text-micro ${evidence.review === 'flagged' ? 'text-crimson' : 'text-fg-subtle'}`}>{evidence.evidence_id}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </Panel>
+  );
+};
 
 /* -------------------------------------------------------------------- Page */
 
@@ -320,12 +374,12 @@ export const HomePage: React.FC = () => {
       <PageHeader
         eyebrow="Investigation workspace"
         title="Investigation Workspace"
-        description="Manage cases, examine digital evidence, and reconstruct connected events."
+        description="Your connected view of the investigation."
         actions={
           repository.defaultCaseId ? (
             <Link
               to={caseHref(repository.defaultCaseId)}
-              className="inline-flex h-9 items-center gap-2 border border-signal-amber bg-signal-amber px-3.5 font-mono text-[0.75rem] uppercase tracking-[0.04em] text-ink-950 hover:bg-[#ffc457] focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-amber focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950"
+              className="inline-flex h-9 items-center gap-2 border border-signal-accent bg-signal-accent px-3.5 font-mono text-[0.75rem] uppercase tracking-[0.04em] text-ink-950 hover:bg-[#E9D7B8] focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-accent focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950"
             >
               Open {repository.defaultCaseId} <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" />
             </Link>
@@ -336,7 +390,10 @@ export const HomePage: React.FC = () => {
       {cases.state.status === 'success' && <MetricsBand cases={cases.state.data} synthetic={synthetic} />}
 
       <div className="grid grid-cols-1 gap-4 p-4 sm:p-6 lg:p-8 xl:grid-cols-12">
-        <div className="min-w-0 xl:col-span-8">
+        <div className="min-w-0 space-y-4 xl:col-span-8">
+          {repository.defaultCaseId && cases.state.status === 'success' && cases.state.data.length > 0 && (
+            <FeaturedCase caseId={repository.defaultCaseId} synthetic={synthetic} />
+          )}
           {cases.state.status === 'loading' && (
             <Panel title="Investigations">
               <LoadingState label="Loading cases" />

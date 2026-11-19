@@ -64,7 +64,7 @@ export const CorrelationWorkspace: React.FC<{ detail: CaseDetail }> = ({ detail 
               {detail.evidence.map((evidence) => (
                 <tr key={evidence.evidence_id}>
                   <th scope="row" className="border-b border-ink-line px-3 py-2.5 font-normal">
-                    <Link to={caseHref(caseId, 'evidence', { evidence: evidence.evidence_id })} className="block hover:text-signal-amber">
+                    <Link to={caseHref(caseId, 'evidence', { evidence: evidence.evidence_id })} className="block hover:text-signal-accent">
                       <span className="font-mono text-xs text-fg">{evidence.evidence_id}</span>
                       <span className="block max-w-[11rem] truncate font-mono text-[0.625rem] text-fg-subtle">{evidence.source}</span>
                     </Link>
@@ -75,13 +75,13 @@ export const CorrelationWorkspace: React.FC<{ detail: CaseDetail }> = ({ detail 
                     return (
                       <td
                         key={entity.entity_id}
-                        className={`border-b border-l border-ink-line text-center transition-colors ${lit ? 'bg-signal-amber/15' : ''}`}
+                        className={`border-b border-l border-ink-line text-center transition-colors ${lit ? 'bg-signal-accent/15' : ''}`}
                       >
                         {linked ? (
                           <span
                             role="img"
                             aria-label={`${entity.canonical_name} extracted from ${evidence.evidence_id}`}
-                            className={`mx-auto block h-2.5 w-2.5 ${lit ? 'bg-signal-amber' : 'bg-fg'}`}
+                            className={`mx-auto block h-2.5 w-2.5 ${lit ? 'bg-signal-accent' : 'bg-fg'}`}
                           />
                         ) : (
                           <span aria-hidden="true" className="text-fg-subtle/40">·</span>
@@ -118,8 +118,8 @@ export const CorrelationWorkspace: React.FC<{ detail: CaseDetail }> = ({ detail 
                   type="button"
                   aria-pressed={selected}
                   onClick={() => setSelectedRel(selected ? null : rel.relationship_id)}
-                  className={`w-full px-4 py-3 text-left transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-signal-amber ${
-                    selected ? 'bg-signal-amber/[0.07]' : 'hover:bg-white/[0.02]'
+                  className={`w-full px-4 py-3 text-left transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-signal-accent ${
+                    selected ? 'bg-signal-accent/[0.07]' : 'hover:bg-white/[0.02]'
                   }`}
                 >
                   <span className="flex flex-wrap items-center justify-between gap-2">

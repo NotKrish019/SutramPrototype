@@ -93,3 +93,42 @@ pass it to `<WorkspaceApp repository={…}>`. No view changes are needed.
 Cytoscape.js and Leaflet are not installed. Adding them needs team approval, and Leaflet would also need a
 tile service. The graph is a dependency-free SVG with zoom, pan, fit, search, filters, selection and path
 tracing. Spatial is a schematic SVG plan. Both can be swapped behind the same page components later.
+
+## Visual hierarchy (workspace refinement)
+
+Every case view follows the same order: one dominant investigation visual, a compact strip of key
+figures, supporting evidence previews, and secondary detail in a contextual inspector. Explanatory copy is
+kept to short labels; caveats that affect interpretation (synthetic data, clock uncertainty, "not evidence
+of wrongdoing", "movement not reconstructed") stay visible.
+
+| View | Primary visual | Secondary detail |
+| --- | --- | --- |
+| `/workspace` | Metric strip + "In focus" case with evidence thumbnails | Case table, backend telemetry, activity |
+| Overview | Relationship graph preview (entities + events) | Review queue with A ≠ B comparison, site plan, timeline strip, evidence gallery |
+| Evidence | Gallery (list view available) | Inspector: preview → provenance → hash → links; raw metadata collapsed |
+| Graph | Full-width canvas, colour by node type | Node-type chips double as legend and filter; relationship filters collapsed |
+| Timeline | Swimlanes (true to scale) | Event inspector with supporting-artifact preview |
+| Spatial | Schematic plan, or synthetic 3D model for CASE-026 (sensors only, no route) | Place inspector with evidence previews |
+| Contradictions | Records side by side with ≠ connector and a clock axis | Events, entities, verification, limitations |
+
+### Evidence previews
+
+`components/EvidencePreview.tsx` shows original synthetic artwork (shared with the public site) only for
+artifacts registered by `case_id/evidence_id` **and** only when the repository source is `synthetic`.
+Anything else, including future API evidence, gets a neutral type glyph and file extension, never an
+invented picture. Synthetic previews carry a "Synthetic" tag.
+
+The overview timeline strip compresses quiet gaps over 15 minutes into a marked axis break and says so in
+its header; within each cluster spacing is true to scale. The full timeline view remains strictly true to
+scale.
+
+### Motion
+
+`styles/workspace.css` provides an inspector slide-in, a view fade on section change, and one-time path
+drawing. All of it is disabled under `prefers-reduced-motion`.
+
+### Known limitations
+
+- The workspace reuses landing artwork and the 3D model from `features/landing/board/`; if they become
+  shared across more features they should move to a shared components folder.
+- Timeline ranges in `EventReconstruction.tsx` are fixed to CASE-026's evening (pre-existing).

@@ -7,7 +7,7 @@ import { useSharedBackendHealth } from '../data/BackendHealthContext';
 import { WsButton } from '../components/ui';
 
 const STATUS: Record<ConnectionStatus, { label: string; dot: string; text: string }> = {
-  checking: { label: 'Checking', dot: 'bg-signal-amber animate-pulse motion-reduce:animate-none', text: 'text-signal-amber' },
+  checking: { label: 'Checking', dot: 'bg-signal-accent animate-pulse motion-reduce:animate-none', text: 'text-signal-accent' },
   connected: { label: 'Connected', dot: 'bg-signal-ok', text: 'text-signal-ok' },
   offline: { label: 'Offline', dot: 'bg-signal-flag', text: 'text-signal-flag' },
 };
@@ -57,7 +57,7 @@ export const BackendConnectionIndicator: React.FC = () => {
         aria-controls={panelId}
         aria-label={`Backend API: ${style.label}`}
         onClick={() => setOpen((value) => !value)}
-        className="flex h-9 items-center gap-2 border border-ink-line px-2.5 font-mono text-micro uppercase text-fg-muted transition-colors hover:border-ink-strong hover:text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-amber"
+        className="flex h-9 items-center gap-2 border border-ink-line px-2.5 font-mono text-micro uppercase text-fg-muted transition-colors hover:border-ink-strong hover:text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-accent"
       >
         <span aria-hidden="true" className={`h-1.5 w-1.5 ${style.dot}`} />
         <span className="hidden sm:inline">API</span>

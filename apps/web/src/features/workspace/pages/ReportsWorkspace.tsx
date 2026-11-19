@@ -68,7 +68,7 @@ export const ReportsWorkspace: React.FC<{ detail: CaseDetail }> = ({ detail }) =
 
       <article aria-label="Report preview" className="min-w-0 border border-ink-line bg-ink-900 xl:col-span-8">
         <header className="border-b border-ink-line px-6 py-6 sm:px-8">
-          <p className="font-mono text-micro uppercase text-signal-amber">Draft report preview · synthetic demonstration data</p>
+          <p className="font-mono text-micro uppercase text-signal-accent">Draft report preview · synthetic demonstration data</p>
           <h2 className="mt-3 font-display text-3xl font-bold uppercase leading-none text-fg">{c.title}</h2>
           <div className="mt-3 flex flex-wrap items-center gap-3 font-mono text-micro uppercase text-fg-subtle">
             <span>{c.case_id}</span>

@@ -26,7 +26,7 @@ const RouteContent: React.FC<{ route: WorkspaceRoute }> = ({ route }) => {
           icon={Compass}
           title="No workspace view at this path"
           action={
-            <Link to={ROUTES.workspace} className="font-mono text-micro uppercase text-signal-amber hover:underline">
+            <Link to={ROUTES.workspace} className="font-mono text-micro uppercase text-signal-accent hover:underline">
               Back to investigations
             </Link>
           }
