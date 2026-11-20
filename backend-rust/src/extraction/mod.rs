@@ -17,4 +17,4 @@ pub use model::{
     ProvisionalRelationshipCandidate, ReprocessRequest, ResolvedEntityCandidate,
     UnifiedExtractionResult, FORENSIC_DISCLAIMER,
 };
-pub use service::{extract_evidence, EvidenceExtractionService};
+pub use service::{consume_video_frames, extract_evidence, EvidenceExtractionService};

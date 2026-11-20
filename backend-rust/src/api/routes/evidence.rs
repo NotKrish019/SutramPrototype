@@ -70,8 +70,8 @@ pub async fn upload_evidence(
     let mut form_case_id: Option<String> = query.case_id;
     let mut form_auto_extract: bool = query.auto_extract.unwrap_or(false);
     let mut form_source_type: Option<String> = None;
-    let mut form_source_timezone: String = "UTC".to_string();
-    let mut form_clock_offset: f64 = 0.0;
+    let mut form_source_timezone: Option<String> = None;
+    let mut form_clock_offset: Option<f64> = None;
     let mut form_metadata_raw: Option<String> = None;
 
     let mut file_received = false;
@@ -175,11 +175,11 @@ pub async fn upload_evidence(
                     form_source_type = Some(text_val.trim().to_string());
                 }
                 "source_timezone" if !text_val.trim().is_empty() => {
-                    form_source_timezone = text_val.trim().to_string();
+                    form_source_timezone = Some(text_val.trim().to_string());
                 }
                 "clock_offset_seconds" => {
                     if let Ok(v) = text_val.trim().parse::<f64>() {
-                        form_clock_offset = v;
+                        form_clock_offset = Some(v);
                     }
                 }
                 "auto_extract" => {
@@ -234,16 +234,17 @@ pub async fn upload_evidence(
 
     // Parse optional metadata JSON
     let mut metadata_map = serde_json::Map::new();
-    metadata_map.insert(
-        "source_timezone".to_string(),
-        serde_json::Value::String(form_source_timezone),
-    );
-    metadata_map.insert(
-        "clock_offset_seconds".to_string(),
-        serde_json::Value::Number(
-            serde_json::Number::from_f64(form_clock_offset).unwrap_or(0.into()),
-        ),
-    );
+    if let Some(tz) = form_source_timezone {
+        metadata_map.insert("source_timezone".to_string(), serde_json::Value::String(tz));
+    }
+    if let Some(offset) = form_clock_offset {
+        if let Some(num) = serde_json::Number::from_f64(offset) {
+            metadata_map.insert(
+                "clock_offset_seconds".to_string(),
+                serde_json::Value::Number(num),
+            );
+        }
+    }
 
     if let Some(raw_meta) = form_metadata_raw {
         match serde_json::from_str::<serde_json::Value>(&raw_meta) {

@@ -569,3 +569,55 @@ impl EvidenceExtractionService {
         Ok(run_manifest)
     }
 }
+
+/// Consumes extracted video keyframe artifacts into standardized forensic event candidates (Member 1).
+pub fn consume_video_frames(
+    evidence_id: &str,
+    frames: &[crate::reconstruction::model::ExtractedFrameArtifact],
+    base_timestamp_utc: Option<&str>,
+) -> Vec<crate::extraction::model::ExtractedEventCandidate> {
+    frames
+        .iter()
+        .map(|f| {
+            let timestamp_str = if let Some(ref est) = f.estimated_utc {
+                est.to_rfc3339()
+            } else if let Some(base) = base_timestamp_utc {
+                if let Ok(base_dt) = chrono::DateTime::parse_from_rfc3339(base) {
+                    let frame_dt = base_dt
+                        + chrono::Duration::milliseconds((f.pts_seconds * 1000.0).round() as i64);
+                    frame_dt.to_rfc3339()
+                } else {
+                    format!("PTS:{:.3}s", f.pts_seconds)
+                }
+            } else {
+                format!("PTS:{:.3}s", f.pts_seconds)
+            };
+
+            let mut meta = serde_json::Map::new();
+            meta.insert("frame_index".to_string(), serde_json::json!(f.frame_index));
+            meta.insert("pts_seconds".to_string(), serde_json::json!(f.pts_seconds));
+            meta.insert("sha256_hash".to_string(), serde_json::json!(f.sha256_hash));
+            meta.insert(
+                "relative_path".to_string(),
+                serde_json::json!(f.relative_path),
+            );
+
+            crate::extraction::model::ExtractedEventCandidate {
+                candidate_id: format!("evt-frame-{}-{}", evidence_id, f.frame_index),
+                source_evidence_id: evidence_id.to_string(),
+                source_record_id: format!("frame_{:04}", f.frame_index),
+                event_type: "CCTV_KEYFRAME".to_string(),
+                raw_timestamp: timestamp_str,
+                timestamp_precision: Some("EXACT_SECOND".to_string()),
+                description: Some(format!(
+                    "Video keyframe {} at PTS {:.2}s (SHA-256: {})",
+                    f.frame_index, f.pts_seconds, f.sha256_hash
+                )),
+                duration_seconds: None,
+                location_name: None,
+                involved_entity_raw_ids: Vec::new(),
+                metadata: serde_json::Value::Object(meta),
+            }
+        })
+        .collect()
+}

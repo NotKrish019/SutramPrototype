@@ -1866,3 +1866,49 @@ async fn test_31_case_scoped_evidence_listing() {
     let list_other: Vec<EvidenceUploadReceipt> = serde_json::from_slice(&bytes_other).unwrap();
     assert_eq!(list_other.len(), 0);
 }
+
+// 32. Stop recording UTC / 0.0 when nothing is declared (Member 2)
+#[tokio::test]
+async fn test_32_undeclared_timezone_and_offset_are_omitted() {
+    let temp = tempdir().unwrap();
+    let config = test_config(temp.path());
+    let app = create_router(config);
+
+    let cdr_bytes = sample_cdr_bytes();
+    let case_id = "550e8400-e29b-41d4-a716-446655440032";
+    let body_bytes = create_multipart_payload(
+        BOUNDARY,
+        Some(case_id),
+        Some("undeclared.csv"),
+        Some(&cdr_bytes),
+        Some("CellPhoneCDR"),
+        Some(false),
+        None,
+    );
+
+    let req = Request::builder()
+        .method("POST")
+        .uri("/api/v1/evidence/upload")
+        .header(
+            "content-type",
+            format!("multipart/form-data; boundary={}", BOUNDARY),
+        )
+        .body(Body::from(body_bytes))
+        .unwrap();
+
+    let res = app.oneshot(req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::CREATED);
+
+    let bytes = res.into_body().collect().await.unwrap().to_bytes();
+    let receipt: EvidenceUploadReceipt = serde_json::from_slice(&bytes).unwrap();
+
+    // Verify metadata does NOT contain default "source_timezone" or "clock_offset_seconds"
+    assert!(
+        receipt.metadata.get("source_timezone").is_none(),
+        "Undeclared timezone must not be recorded as UTC"
+    );
+    assert!(
+        receipt.metadata.get("clock_offset_seconds").is_none(),
+        "Undeclared clock offset must not be recorded as 0.0"
+    );
+}

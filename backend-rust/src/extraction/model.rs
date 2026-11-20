@@ -127,6 +127,10 @@ pub struct ExtractedEventCandidate {
     pub event_type: String,
     pub raw_timestamp: String,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub timestamp_precision: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub duration_seconds: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub location_name: Option<String>,

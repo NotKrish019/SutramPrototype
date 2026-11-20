@@ -351,12 +351,25 @@ pub fn parse_cdr_csv(
         }
         evt_meta.insert("row_index".to_string(), serde_json::json!(row_idx));
 
+        let desc = format!(
+            "Telephony {} between {} and {}{}",
+            call_type,
+            caller,
+            callee,
+            cell_tower
+                .as_ref()
+                .map(|t| format!(" via {}", t))
+                .unwrap_or_default()
+        );
+
         event_candidates.push(ExtractedEventCandidate {
             candidate_id: format!("evt-cdr-{}-{}", source_evidence_id, rec_id),
             source_evidence_id: source_evidence_id.to_string(),
             source_record_id: rec_id,
             event_type: "TELEPHONY_CALL".to_string(),
             raw_timestamp: timestamp_raw,
+            timestamp_precision: Some("EXACT_SECOND".to_string()),
+            description: Some(desc),
             duration_seconds: Some(duration),
             location_name: cell_tower,
             involved_entity_raw_ids: vec![caller, callee],

@@ -394,12 +394,31 @@ pub fn parse_chat_json(
             serde_json::json!(content_raw.chars().count()),
         );
 
+        let desc = format!(
+            "Message from {}: {}",
+            sender_name.as_deref().unwrap_or(&sender_id),
+            if content_raw.len() > 60 {
+                format!(
+                    "{}...",
+                    &content_raw[..content_raw
+                        .char_indices()
+                        .map(|(i, _)| i)
+                        .nth(60)
+                        .unwrap_or(content_raw.len())]
+                )
+            } else {
+                content_raw.clone()
+            }
+        );
+
         event_candidates.push(ExtractedEventCandidate {
             candidate_id: format!("evt-chat-{}-{}", source_evidence_id, msg_id),
             source_evidence_id: source_evidence_id.to_string(),
             source_record_id: msg_id,
             event_type: "MESSAGING_EXCHANGE".to_string(),
             raw_timestamp: timestamp_raw,
+            timestamp_precision: Some("EXACT_SECOND".to_string()),
+            description: Some(desc),
             duration_seconds: None,
             location_name: None,
             involved_entity_raw_ids: involved,
