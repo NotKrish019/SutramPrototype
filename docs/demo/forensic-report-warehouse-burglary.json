@@ -1,0 +1,1098 @@
+{
+  "report_schema_version": "yukti-forensic-report/1",
+  "report_kind": "RECONSTRUCTION_DECISION_SUPPORT_REPORT",
+  "title": "Reconstruction report — case case-wh-burglary-001",
+  "disclaimer": "DECISION SUPPORT FOR INVESTIGATORS. This report is generated automatically from a reconstruction run over the evidence and extraction inputs listed in it. It organises those inputs and the analytical inferences derived from them for review by a qualified investigator. It does not establish the identity of any person, nor guilt, intent, deception or the occurrence of any offence. Contradictions are analytical leads to be checked against the original evidence, not findings of fact. Entity identifiers are registry references, not identifications. Every finding must be verified against the cited source evidence before it is relied upon.",
+  "metadata": {
+    "case_id": "case-wh-burglary-001",
+    "run_id": "run-d270ccd5108009dd06f3370df6b7aa9f",
+    "run_status": "COMPLETED_WITH_WARNINGS",
+    "run_status_explanation": "The run completed. Warnings were recorded; see Limitations and the diagnostics list.",
+    "algorithm_version": "yukti-m4-reconstruction/3F.2",
+    "configuration_version": "cfg-sha256-c28c593bd11e484064ea5fe9c8e6086c",
+    "snapshot_schema_version": "yukti-reconstruction-snapshot/3",
+    "result_sha256": "c4150a4141038409d52329fd2fb9cdde5a583c1a0b691b1888213e1aaa2b5b92",
+    "report_schema_version": "yukti-forensic-report/1",
+    "report_generator_version": "yukti-m4-report/3I.1",
+    "generated_at_utc": "2026-11-20T06:38:53Z",
+    "relationship_export_status": "EXPORTED",
+    "approved_contract_decisions": [
+      "DEC-001",
+      "DEC-002",
+      "DEC-003",
+      "DEC-004",
+      "DEC-005",
+      "DEC-006",
+      "DEC-007"
+    ],
+    "withheld_contract_decisions": [],
+    "unverified_contract_decisions": [
+      "DEC-001",
+      "DEC-002",
+      "DEC-003",
+      "DEC-004",
+      "DEC-005",
+      "DEC-006",
+      "DEC-007"
+    ],
+    "approval_record": "docs/member-4/team-contract-approvals-2026-11-19.md",
+    "configured_speed_threshold_kmh": 180.0,
+    "estimated_half_width_seconds": 900.0
+  },
+  "summary": {
+    "counts": {
+      "evidence_items": 3,
+      "evidence_verified": 3,
+      "evidence_excluded": 0,
+      "timeline_events": 5,
+      "spatial_observations": 4,
+      "movement_segments": 1,
+      "contradiction_leads": 1,
+      "relationships": 1,
+      "excluded_inputs": 0,
+      "evidence_gaps": 3,
+      "limitations": 6,
+      "diagnostics_error": 0,
+      "diagnostics_warning": 2,
+      "diagnostics_info": 2
+    },
+    "timeline_span_start_utc": "2026-11-10T16:10:00Z",
+    "timeline_span_end_utc": "2026-11-10T16:25:01Z",
+    "key_leads": [
+      {
+        "ref": "L1",
+        "lead_id": "lead-31c75fbcff2a7e22b3d15a3be23a3290ebbb0c1b4dcbf14c8f9c8d8149cfe25d",
+        "statement": "Analytical lead (SPEED_THRESHOLD_EXCEEDANCE_LEAD) for entity reference 'ent-person-ravi': events 'evt-01-shutter-forced' and 'evt-03-location-shared' are 25.33 km apart; reconciling them needs at least 304.0 km/h against a configured reference of 180 km/h. Not a finding of fact.",
+        "basis": "INFERRED",
+        "citations": [
+          {
+            "evidence_id": "ev-cctv-dock",
+            "evidence_sha256": "e77a6607dd66c74a6f1bca53e372ce4ba9d88b77466d3ca479ca7fefee338890",
+            "event_ids": [
+              "evt-01-shutter-forced"
+            ],
+            "source_record_ids": [
+              "osd:2026-11-10T21:42:00"
+            ],
+            "frame_artifact_ids": []
+          },
+          {
+            "evidence_id": "ev-chat-export",
+            "evidence_sha256": "b162a2806d85cfa2f0c374f7186111129d4ab24ba36d8bf0ffa05e2605747d81",
+            "event_ids": [
+              "evt-03-location-shared"
+            ],
+            "source_record_ids": [
+              "line:1"
+            ],
+            "frame_artifact_ids": []
+          }
+        ]
+      }
+    ],
+    "interpretation_notice": "Reconstruction output separates observed source facts from derived analytical inferences. Contradiction leads are investigative prompts for human review; they do not establish identity, deception, guilt or intent. Declared clock offsets are applied as supplied and are not independently verified."
+  },
+  "evidence_inventory": [
+    {
+      "evidence_id": "ev-cctv-dock",
+      "source_type": "CCTV",
+      "sha256": "e77a6607dd66c74a6f1bca53e372ce4ba9d88b77466d3ca479ca7fefee338890",
+      "integrity_status": "VERIFIED",
+      "integrity_note": "SHA-256 and size recomputed from the stored bytes during the run and matched the ingestion record.",
+      "usable": true,
+      "exclusion_reason_code": null,
+      "storage_reference": "urn:yukti:evidence:ev-cctv-dock:storage",
+      "source_timezone": "Asia/Kolkata",
+      "clock_offset_seconds": -120.0,
+      "clock_calibration": "DECLARED_NOT_INDEPENDENTLY_VERIFIED",
+      "timeline_events_cited": 2
+    },
+    {
+      "evidence_id": "ev-cdr-tower",
+      "source_type": "CDR",
+      "sha256": "a4448e5eb36dd93bce2696defbb9e3550bca98150b0802602a7ef90f066f9972",
+      "integrity_status": "VERIFIED",
+      "integrity_note": "SHA-256 and size recomputed from the stored bytes during the run and matched the ingestion record.",
+      "usable": true,
+      "exclusion_reason_code": null,
+      "storage_reference": "urn:yukti:evidence:ev-cdr-tower:storage",
+      "source_timezone": null,
+      "clock_offset_seconds": null,
+      "clock_calibration": "NOT_DECLARED_UNCALIBRATED",
+      "timeline_events_cited": 1
+    },
+    {
+      "evidence_id": "ev-chat-export",
+      "source_type": "CHAT_EXPORT",
+      "sha256": "b162a2806d85cfa2f0c374f7186111129d4ab24ba36d8bf0ffa05e2605747d81",
+      "integrity_status": "VERIFIED",
+      "integrity_note": "SHA-256 and size recomputed from the stored bytes during the run and matched the ingestion record.",
+      "usable": true,
+      "exclusion_reason_code": null,
+      "storage_reference": "urn:yukti:evidence:ev-chat-export:storage",
+      "source_timezone": "Asia/Kolkata",
+      "clock_offset_seconds": 0.0,
+      "clock_calibration": "DECLARED_NOT_INDEPENDENTLY_VERIFIED",
+      "timeline_events_cited": 2
+    }
+  ],
+  "timeline": [
+    {
+      "ref": "E1",
+      "event_id": "evt-01-shutter-forced",
+      "basis": "OBSERVED",
+      "basis_note": "Event extracted from the source by Member 1; corrected UTC and window derived once by Member 4 from raw_timestamp.",
+      "event_type": "FORCED_ENTRY",
+      "description": "Rear shutter forced open at loading dock",
+      "raw_timestamp": "2026-11-10T21:42:00",
+      "raw_precision": "EXACT_SECOND",
+      "timestamp_utc": "2026-11-10T16:10:00Z",
+      "precision": "EXACT_SECOND",
+      "uncertainty_window_start_utc": "2026-11-10T16:10:00Z",
+      "uncertainty_window_end_utc": "2026-11-10T16:10:01Z",
+      "is_estimated_window_assumption": false,
+      "timezone_basis": "SOURCE_TIMEZONE_METADATA",
+      "source_timezone": "Asia/Kolkata",
+      "clock_offset_seconds": -120.0,
+      "clock_calibration": "DECLARED_NOT_INDEPENDENTLY_VERIFIED",
+      "ordering_status": "STRICTLY_ORDERED",
+      "concurrent_event_ids": [],
+      "involved_entity_ids": [
+        "ent-person-ravi"
+      ],
+      "unresolved_entity_references": [],
+      "coordinates": {
+        "lat": 28.5355,
+        "lon": 77.271
+      },
+      "duration_seconds": 30.0,
+      "extraction_confidence": 0.9,
+      "source_evidence_id": "ev-cctv-dock",
+      "source_record_id": "osd:2026-11-10T21:42:00",
+      "frame_artifact_ids": [],
+      "citations": [
+        {
+          "evidence_id": "ev-cctv-dock",
+          "evidence_sha256": "e77a6607dd66c74a6f1bca53e372ce4ba9d88b77466d3ca479ca7fefee338890",
+          "event_ids": [
+            "evt-01-shutter-forced"
+          ],
+          "source_record_ids": [
+            "osd:2026-11-10T21:42:00"
+          ],
+          "frame_artifact_ids": []
+        }
+      ]
+    },
+    {
+      "ref": "E2",
+      "event_id": "evt-02-outbound-call",
+      "basis": "OBSERVED",
+      "basis_note": "Event extracted from the source by Member 1; corrected UTC and window derived once by Member 4 from raw_timestamp.",
+      "event_type": "PHONE_CALL",
+      "description": "Outbound call from handset near warehouse",
+      "raw_timestamp": "2026-11-10T16:12:00Z",
+      "raw_precision": "MINUTE",
+      "timestamp_utc": "2026-11-10T16:12:00Z",
+      "precision": "MINUTE",
+      "uncertainty_window_start_utc": "2026-11-10T16:12:00Z",
+      "uncertainty_window_end_utc": "2026-11-10T16:13:00Z",
+      "is_estimated_window_assumption": false,
+      "timezone_basis": "TIMESTAMP_UTC_OFFSET",
+      "source_timezone": null,
+      "clock_offset_seconds": null,
+      "clock_calibration": "NOT_DECLARED_UNCALIBRATED",
+      "ordering_status": "STRICTLY_ORDERED",
+      "concurrent_event_ids": [],
+      "involved_entity_ids": [
+        "ent-phone-01"
+      ],
+      "unresolved_entity_references": [],
+      "coordinates": {
+        "lat": 28.536,
+        "lon": 77.27
+      },
+      "duration_seconds": null,
+      "extraction_confidence": 0.9,
+      "source_evidence_id": "ev-cdr-tower",
+      "source_record_id": "row:2",
+      "frame_artifact_ids": [],
+      "citations": [
+        {
+          "evidence_id": "ev-cdr-tower",
+          "evidence_sha256": "a4448e5eb36dd93bce2696defbb9e3550bca98150b0802602a7ef90f066f9972",
+          "event_ids": [
+            "evt-02-outbound-call"
+          ],
+          "source_record_ids": [
+            "row:2"
+          ],
+          "frame_artifact_ids": []
+        }
+      ]
+    },
+    {
+      "ref": "E3",
+      "event_id": "evt-03-location-shared",
+      "basis": "OBSERVED",
+      "basis_note": "Event extracted from the source by Member 1; corrected UTC and window derived once by Member 4 from raw_timestamp.",
+      "event_type": "LOCATION_SHARE",
+      "description": "Live location shared in chat",
+      "raw_timestamp": "2026-11-10T21:44:00+05:30",
+      "raw_precision": "MINUTE",
+      "timestamp_utc": "2026-11-10T16:14:00Z",
+      "precision": "MINUTE",
+      "uncertainty_window_start_utc": "2026-11-10T16:14:00Z",
+      "uncertainty_window_end_utc": "2026-11-10T16:15:00Z",
+      "is_estimated_window_assumption": false,
+      "timezone_basis": "TIMESTAMP_UTC_OFFSET",
+      "source_timezone": "Asia/Kolkata",
+      "clock_offset_seconds": 0.0,
+      "clock_calibration": "DECLARED_NOT_INDEPENDENTLY_VERIFIED",
+      "ordering_status": "STRICTLY_ORDERED",
+      "concurrent_event_ids": [],
+      "involved_entity_ids": [
+        "ent-person-ravi"
+      ],
+      "unresolved_entity_references": [],
+      "coordinates": {
+        "lat": 28.4595,
+        "lon": 77.0266
+      },
+      "duration_seconds": null,
+      "extraction_confidence": 0.9,
+      "source_evidence_id": "ev-chat-export",
+      "source_record_id": "line:1",
+      "frame_artifact_ids": [],
+      "citations": [
+        {
+          "evidence_id": "ev-chat-export",
+          "evidence_sha256": "b162a2806d85cfa2f0c374f7186111129d4ab24ba36d8bf0ffa05e2605747d81",
+          "event_ids": [
+            "evt-03-location-shared"
+          ],
+          "source_record_ids": [
+            "line:1"
+          ],
+          "frame_artifact_ids": []
+        }
+      ]
+    },
+    {
+      "ref": "E4",
+      "event_id": "evt-04-vehicle-message",
+      "basis": "OBSERVED",
+      "basis_note": "Event extracted from the source by Member 1; corrected UTC and window derived once by Member 4 from raw_timestamp.",
+      "event_type": "MESSAGE",
+      "description": "Chat message mentioning pickup vehicle",
+      "raw_timestamp": "2026-11-10T21:50:00",
+      "raw_precision": "MINUTE",
+      "timestamp_utc": "2026-11-10T16:20:00Z",
+      "precision": "MINUTE",
+      "uncertainty_window_start_utc": "2026-11-10T16:20:00Z",
+      "uncertainty_window_end_utc": "2026-11-10T16:21:00Z",
+      "is_estimated_window_assumption": false,
+      "timezone_basis": "SOURCE_TIMEZONE_METADATA",
+      "source_timezone": "Asia/Kolkata",
+      "clock_offset_seconds": 0.0,
+      "clock_calibration": "DECLARED_NOT_INDEPENDENTLY_VERIFIED",
+      "ordering_status": "STRICTLY_ORDERED",
+      "concurrent_event_ids": [],
+      "involved_entity_ids": [
+        "ent-person-ravi"
+      ],
+      "unresolved_entity_references": [
+        "ent-unknown-77"
+      ],
+      "coordinates": null,
+      "duration_seconds": null,
+      "extraction_confidence": null,
+      "source_evidence_id": "ev-chat-export",
+      "source_record_id": "line:2",
+      "frame_artifact_ids": [],
+      "citations": [
+        {
+          "evidence_id": "ev-chat-export",
+          "evidence_sha256": "b162a2806d85cfa2f0c374f7186111129d4ab24ba36d8bf0ffa05e2605747d81",
+          "event_ids": [
+            "evt-04-vehicle-message"
+          ],
+          "source_record_ids": [
+            "line:2"
+          ],
+          "frame_artifact_ids": []
+        }
+      ]
+    },
+    {
+      "ref": "E5",
+      "event_id": "evt-05-van-departs",
+      "basis": "OBSERVED",
+      "basis_note": "Event extracted from the source by Member 1; corrected UTC and window derived once by Member 4 from raw_timestamp.",
+      "event_type": "VEHICLE_DEPARTURE",
+      "description": "Van leaves warehouse premises",
+      "raw_timestamp": "2026-11-10T21:57:00",
+      "raw_precision": "EXACT_SECOND",
+      "timestamp_utc": "2026-11-10T16:25:00Z",
+      "precision": "EXACT_SECOND",
+      "uncertainty_window_start_utc": "2026-11-10T16:25:00Z",
+      "uncertainty_window_end_utc": "2026-11-10T16:25:01Z",
+      "is_estimated_window_assumption": false,
+      "timezone_basis": "SOURCE_TIMEZONE_METADATA",
+      "source_timezone": "Asia/Kolkata",
+      "clock_offset_seconds": -120.0,
+      "clock_calibration": "DECLARED_NOT_INDEPENDENTLY_VERIFIED",
+      "ordering_status": "STRICTLY_ORDERED",
+      "concurrent_event_ids": [],
+      "involved_entity_ids": [
+        "ent-vehicle-van"
+      ],
+      "unresolved_entity_references": [],
+      "coordinates": {
+        "lat": 28.5355,
+        "lon": 77.271
+      },
+      "duration_seconds": null,
+      "extraction_confidence": 0.9,
+      "source_evidence_id": "ev-cctv-dock",
+      "source_record_id": "osd:2026-11-10T21:57:00",
+      "frame_artifact_ids": [],
+      "citations": [
+        {
+          "evidence_id": "ev-cctv-dock",
+          "evidence_sha256": "e77a6607dd66c74a6f1bca53e372ce4ba9d88b77466d3ca479ca7fefee338890",
+          "event_ids": [
+            "evt-05-van-departs"
+          ],
+          "source_record_ids": [
+            "osd:2026-11-10T21:57:00"
+          ],
+          "frame_artifact_ids": []
+        }
+      ]
+    }
+  ],
+  "frame_notice": "Frame references are temporal alignment only: the frame was captured during the event's uncertainty window from the same source. They do not show or confirm the event. No semantic recognition was performed on any frame.",
+  "spatial_observations": [
+    {
+      "ref": "S1",
+      "observation_id": "obs:ent-person-ravi:evt-01-shutter-forced",
+      "basis": "OBSERVED",
+      "entity_id": "ent-person-ravi",
+      "event_id": "evt-01-shutter-forced",
+      "coordinates": {
+        "lat": 28.5355,
+        "lon": 77.271
+      },
+      "timestamp_utc": "2026-11-10T16:10:00Z",
+      "uncertainty_window_start_utc": "2026-11-10T16:10:00Z",
+      "uncertainty_window_end_utc": "2026-11-10T16:10:01Z",
+      "citations": [
+        {
+          "evidence_id": "ev-cctv-dock",
+          "evidence_sha256": "e77a6607dd66c74a6f1bca53e372ce4ba9d88b77466d3ca479ca7fefee338890",
+          "event_ids": [
+            "evt-01-shutter-forced"
+          ],
+          "source_record_ids": [
+            "osd:2026-11-10T21:42:00"
+          ],
+          "frame_artifact_ids": []
+        }
+      ]
+    },
+    {
+      "ref": "S2",
+      "observation_id": "obs:ent-person-ravi:evt-03-location-shared",
+      "basis": "OBSERVED",
+      "entity_id": "ent-person-ravi",
+      "event_id": "evt-03-location-shared",
+      "coordinates": {
+        "lat": 28.4595,
+        "lon": 77.0266
+      },
+      "timestamp_utc": "2026-11-10T16:14:00Z",
+      "uncertainty_window_start_utc": "2026-11-10T16:14:00Z",
+      "uncertainty_window_end_utc": "2026-11-10T16:15:00Z",
+      "citations": [
+        {
+          "evidence_id": "ev-chat-export",
+          "evidence_sha256": "b162a2806d85cfa2f0c374f7186111129d4ab24ba36d8bf0ffa05e2605747d81",
+          "event_ids": [
+            "evt-03-location-shared"
+          ],
+          "source_record_ids": [
+            "line:1"
+          ],
+          "frame_artifact_ids": []
+        }
+      ]
+    },
+    {
+      "ref": "S3",
+      "observation_id": "obs:ent-phone-01:evt-02-outbound-call",
+      "basis": "OBSERVED",
+      "entity_id": "ent-phone-01",
+      "event_id": "evt-02-outbound-call",
+      "coordinates": {
+        "lat": 28.536,
+        "lon": 77.27
+      },
+      "timestamp_utc": "2026-11-10T16:12:00Z",
+      "uncertainty_window_start_utc": "2026-11-10T16:12:00Z",
+      "uncertainty_window_end_utc": "2026-11-10T16:13:00Z",
+      "citations": [
+        {
+          "evidence_id": "ev-cdr-tower",
+          "evidence_sha256": "a4448e5eb36dd93bce2696defbb9e3550bca98150b0802602a7ef90f066f9972",
+          "event_ids": [
+            "evt-02-outbound-call"
+          ],
+          "source_record_ids": [
+            "row:2"
+          ],
+          "frame_artifact_ids": []
+        }
+      ]
+    },
+    {
+      "ref": "S4",
+      "observation_id": "obs:ent-vehicle-van:evt-05-van-departs",
+      "basis": "OBSERVED",
+      "entity_id": "ent-vehicle-van",
+      "event_id": "evt-05-van-departs",
+      "coordinates": {
+        "lat": 28.5355,
+        "lon": 77.271
+      },
+      "timestamp_utc": "2026-11-10T16:25:00Z",
+      "uncertainty_window_start_utc": "2026-11-10T16:25:00Z",
+      "uncertainty_window_end_utc": "2026-11-10T16:25:01Z",
+      "citations": [
+        {
+          "evidence_id": "ev-cctv-dock",
+          "evidence_sha256": "e77a6607dd66c74a6f1bca53e372ce4ba9d88b77466d3ca479ca7fefee338890",
+          "event_ids": [
+            "evt-05-van-departs"
+          ],
+          "source_record_ids": [
+            "osd:2026-11-10T21:57:00"
+          ],
+          "frame_artifact_ids": []
+        }
+      ]
+    }
+  ],
+  "movement_segments": [
+    {
+      "ref": "M1",
+      "segment_id": "seg-ent-person-ravi-evt-01-shutter-forced-to-evt-03-location-shared",
+      "basis": "INFERRED",
+      "entity_id": "ent-person-ravi",
+      "origin_event_id": "evt-01-shutter-forced",
+      "destination_event_id": "evt-03-location-shared",
+      "origin_coordinates": {
+        "lat": 28.5355,
+        "lon": 77.271
+      },
+      "destination_coordinates": {
+        "lat": 28.4595,
+        "lon": 77.0266
+      },
+      "distance_km": 25.334390986584886,
+      "nominal_elapsed_seconds": 240.0,
+      "min_possible_elapsed_seconds": 239.0,
+      "max_possible_elapsed_seconds": 300.0,
+      "min_required_speed_kmh": 304.0126918390186,
+      "configured_speed_threshold_kmh": 180.0,
+      "threshold_evaluation": "EXCEEDS_CONFIGURED_THRESHOLD",
+      "feasibility_statement": "Inferred: covering the straight-line distance in the longest possible elapsed time needs at least 304.0 km/h, above the configured reference of 180 km/h. Analytical indicator only; see the contradiction leads.",
+      "threshold_assumption_note": "configured_speed_threshold_kmh is a user-configurable reference assumption for analytical triage and does not establish a physical transit limit or statistical likelihood.",
+      "continuity_note": null,
+      "intervening_unlocated_event_ids": [],
+      "citations": [
+        {
+          "evidence_id": "ev-cctv-dock",
+          "evidence_sha256": "e77a6607dd66c74a6f1bca53e372ce4ba9d88b77466d3ca479ca7fefee338890",
+          "event_ids": [
+            "evt-01-shutter-forced"
+          ],
+          "source_record_ids": [
+            "osd:2026-11-10T21:42:00"
+          ],
+          "frame_artifact_ids": []
+        },
+        {
+          "evidence_id": "ev-chat-export",
+          "evidence_sha256": "b162a2806d85cfa2f0c374f7186111129d4ab24ba36d8bf0ffa05e2605747d81",
+          "event_ids": [
+            "evt-03-location-shared"
+          ],
+          "source_record_ids": [
+            "line:1"
+          ],
+          "frame_artifact_ids": []
+        }
+      ]
+    }
+  ],
+  "contradiction_notice": "Each item below is an ANALYTICAL LEAD produced by a configured rule, not a proven fact. It indicates that two observations are hard to reconcile under the stated assumptions. Possible explanations include clock error, location error, extraction error, shared devices or accounts, and wrong entity linkage. Verify against the cited evidence.",
+  "contradictions": [
+    {
+      "ref": "L1",
+      "lead_id": "lead-31c75fbcff2a7e22b3d15a3be23a3290ebbb0c1b4dcbf14c8f9c8d8149cfe25d",
+      "basis": "INFERRED",
+      "classification": "ANALYTICAL_LEAD_NOT_A_FINDING_OF_FACT",
+      "lead_type": "SPEED_THRESHOLD_EXCEEDANCE_LEAD",
+      "entity_id": "ent-person-ravi",
+      "origin_event_id": "evt-01-shutter-forced",
+      "destination_event_id": "evt-03-location-shared",
+      "origin_window_utc": [
+        "2026-11-10T16:10:00Z",
+        "2026-11-10T16:10:01Z"
+      ],
+      "destination_window_utc": [
+        "2026-11-10T16:14:00Z",
+        "2026-11-10T16:15:00Z"
+      ],
+      "distance_km": 25.334390986584886,
+      "max_possible_elapsed_seconds": 300.0,
+      "min_required_speed_kmh": 304.0126918390186,
+      "configured_speed_threshold_kmh": 180.0,
+      "threshold_evaluation": "EXCEEDS_CONFIGURED_THRESHOLD",
+      "explanation": "Observed event 'evt-01-shutter-forced' (evidence 'ev-cctv-dock') at (28.5355, 77.2710) ([2026-11-10T16:10:00+00:00, 2026-11-10T16:10:01+00:00)) and subsequent strictly ordered event 'evt-03-location-shared' (evidence 'ev-chat-export') at (28.4595, 77.0266) ([2026-11-10T16:14:00+00:00, 2026-11-10T16:15:00+00:00)) for entity 'ent-person-ravi' are separated by 25.33 km over a conservative maximum elapsed window of 300.0s, requiring at least 304.01 km/h compared against the configured reference threshold of 180.00 km/h.",
+      "lead_limitations": [
+        "The configured speed threshold is a user-adjustable reference benchmark for investigative triage and does not establish a physical upper bound on transit.",
+        "This indicator is a derived analytical lead for human investigator review and does not establish factual inaccuracy, actor state of mind, or statistical likelihood.",
+        "Alternative explanations include uncalibrated device clock offsets, shared or transferred device possession, high-speed transport modes, or coarse cell-tower location centroids."
+      ],
+      "relationship_id": "rel-contra-6d7b1756a205fd04a7d537f3869d2351",
+      "frame_artifact_ids": [],
+      "citations": [
+        {
+          "evidence_id": "ev-cctv-dock",
+          "evidence_sha256": "e77a6607dd66c74a6f1bca53e372ce4ba9d88b77466d3ca479ca7fefee338890",
+          "event_ids": [
+            "evt-01-shutter-forced"
+          ],
+          "source_record_ids": [
+            "osd:2026-11-10T21:42:00"
+          ],
+          "frame_artifact_ids": []
+        },
+        {
+          "evidence_id": "ev-chat-export",
+          "evidence_sha256": "b162a2806d85cfa2f0c374f7186111129d4ab24ba36d8bf0ffa05e2605747d81",
+          "event_ids": [
+            "evt-03-location-shared"
+          ],
+          "source_record_ids": [
+            "line:1"
+          ],
+          "frame_artifact_ids": []
+        }
+      ]
+    }
+  ],
+  "contradiction_pairs_not_evaluated": [],
+  "relationships": [
+    {
+      "ref": "R1",
+      "relationship_id": "rel-contra-6d7b1756a205fd04a7d537f3869d2351",
+      "basis": "INFERRED",
+      "relation_type": "CONTRADICTS",
+      "source_id": "evt-01-shutter-forced",
+      "target_id": "evt-03-location-shared",
+      "is_observed": false,
+      "weight": null,
+      "weight_display": "Not provided",
+      "evidence_basis": [
+        "ev-cctv-dock",
+        "ev-chat-export"
+      ],
+      "lead_id": "lead-31c75fbcff2a7e22b3d15a3be23a3290ebbb0c1b4dcbf14c8f9c8d8149cfe25d",
+      "citations": [
+        {
+          "evidence_id": "ev-cctv-dock",
+          "evidence_sha256": "e77a6607dd66c74a6f1bca53e372ce4ba9d88b77466d3ca479ca7fefee338890",
+          "event_ids": [
+            "evt-01-shutter-forced"
+          ],
+          "source_record_ids": [
+            "osd:2026-11-10T21:42:00"
+          ],
+          "frame_artifact_ids": []
+        },
+        {
+          "evidence_id": "ev-chat-export",
+          "evidence_sha256": "b162a2806d85cfa2f0c374f7186111129d4ab24ba36d8bf0ffa05e2605747d81",
+          "event_ids": [
+            "evt-03-location-shared"
+          ],
+          "source_record_ids": [
+            "line:1"
+          ],
+          "frame_artifact_ids": []
+        }
+      ]
+    }
+  ],
+  "limitations": {
+    "limitations": [
+      {
+        "code": "REPORT_SCOPE",
+        "message": "This report covers only the inputs supplied to this run, processed by the stated algorithm and configuration versions. Evidence not supplied to the run is not reflected, and the absence of a finding does not mean the absence of an event.",
+        "subject_ids": []
+      },
+      {
+        "code": "REFERENCE_SPEED_THRESHOLD_ASSUMPTION",
+        "message": "Travel feasibility uses a configured reference speed of 180 km/h and straight-line (haversine) distance. Both are analytical assumptions, not measurements of the actual route or vehicle.",
+        "subject_ids": [
+          "seg-ent-person-ravi-evt-01-shutter-forced-to-evt-03-location-shared"
+        ]
+      },
+      {
+        "code": "UNCALIBRATED_CLOCKS",
+        "message": "No clock offset was declared for these sources. Their timestamps are used as recorded; the clocks are not known to be accurate.",
+        "subject_ids": [
+          "ev-cdr-tower"
+        ]
+      },
+      {
+        "code": "DECLARED_CLOCK_OFFSETS_NOT_VERIFIED",
+        "message": "Declared clock offsets were applied once, as supplied at ingestion. Member 4 does not independently verify them.",
+        "subject_ids": [
+          "ev-cctv-dock",
+          "ev-chat-export"
+        ]
+      },
+      {
+        "code": "UNRESOLVED_ENTITY_REFERENCES",
+        "message": "Entity references without an exact registration were withheld from trajectories and contradiction analysis.",
+        "subject_ids": [
+          "evt-04-vehicle-message"
+        ]
+      },
+      {
+        "code": "FRAMES_NOT_SEMANTICALLY_ANALYZED",
+        "message": "Video was processed by frame extraction with provenance only. No semantic event recognition was performed; frame links to events are temporal alignment only.",
+        "subject_ids": []
+      }
+    ],
+    "evidence_gaps": [
+      {
+        "gap_type": "EVENT_WITHOUT_COORDINATES",
+        "subject_type": "EVENT",
+        "subject_id": "evt-04-vehicle-message",
+        "description": "Event has no coordinates; it cannot place entities spatially.",
+        "reason_code": null
+      },
+      {
+        "gap_type": "UNRESOLVED_ENTITY_REFERENCE",
+        "subject_type": "EVENT",
+        "subject_id": "evt-04-vehicle-message",
+        "description": "Entity reference 'ent-unknown-77' has no exact registration.",
+        "reason_code": null
+      },
+      {
+        "gap_type": "VIDEO_WITHOUT_FRAMES",
+        "subject_type": "EVIDENCE",
+        "subject_id": "ev-cctv-dock",
+        "description": "No frame artifacts were extracted or supplied for this video evidence.",
+        "reason_code": null
+      }
+    ],
+    "unverified_clock_calibrations": [
+      {
+        "evidence_id": "ev-cctv-dock",
+        "clock_calibration": "DECLARED_NOT_INDEPENDENTLY_VERIFIED",
+        "clock_offset_seconds": -120.0,
+        "source_timezone": "Asia/Kolkata",
+        "note": "Declared offset applied once as supplied at ingestion; not independently verified."
+      },
+      {
+        "evidence_id": "ev-cdr-tower",
+        "clock_calibration": "NOT_DECLARED_UNCALIBRATED",
+        "clock_offset_seconds": null,
+        "source_timezone": null,
+        "note": "No offset declared; timestamps used as recorded. The clock is not known to be accurate."
+      },
+      {
+        "evidence_id": "ev-chat-export",
+        "clock_calibration": "DECLARED_NOT_INDEPENDENTLY_VERIFIED",
+        "clock_offset_seconds": 0.0,
+        "source_timezone": "Asia/Kolkata",
+        "note": "Declared offset applied once as supplied at ingestion; not independently verified."
+      }
+    ],
+    "pending_items": [
+      {
+        "code": "CONTRACT_DECISION_NOT_TEAM_APPROVED",
+        "subject_id": "DEC-001",
+        "description": "This decision was enabled for the run as a proposal only; no verified team sign-off exists. Findings that depend on it are conditional on its approval."
+      },
+      {
+        "code": "CONTRACT_DECISION_NOT_TEAM_APPROVED",
+        "subject_id": "DEC-002",
+        "description": "This decision was enabled for the run as a proposal only; no verified team sign-off exists. Findings that depend on it are conditional on its approval."
+      },
+      {
+        "code": "CONTRACT_DECISION_NOT_TEAM_APPROVED",
+        "subject_id": "DEC-003",
+        "description": "This decision was enabled for the run as a proposal only; no verified team sign-off exists. Findings that depend on it are conditional on its approval."
+      },
+      {
+        "code": "CONTRACT_DECISION_NOT_TEAM_APPROVED",
+        "subject_id": "DEC-004",
+        "description": "This decision was enabled for the run as a proposal only; no verified team sign-off exists. Findings that depend on it are conditional on its approval."
+      },
+      {
+        "code": "CONTRACT_DECISION_NOT_TEAM_APPROVED",
+        "subject_id": "DEC-005",
+        "description": "This decision was enabled for the run as a proposal only; no verified team sign-off exists. Findings that depend on it are conditional on its approval."
+      },
+      {
+        "code": "CONTRACT_DECISION_NOT_TEAM_APPROVED",
+        "subject_id": "DEC-006",
+        "description": "This decision was enabled for the run as a proposal only; no verified team sign-off exists. Findings that depend on it are conditional on its approval."
+      },
+      {
+        "code": "CONTRACT_DECISION_NOT_TEAM_APPROVED",
+        "subject_id": "DEC-007",
+        "description": "This decision was enabled for the run as a proposal only; no verified team sign-off exists. Findings that depend on it are conditional on its approval."
+      },
+      {
+        "code": "VIDEO_FRAMES_NOT_EXTRACTED",
+        "subject_id": "ev-cctv-dock",
+        "description": "Frame extraction was skipped (no derived-artifact store configured)."
+      }
+    ],
+    "excluded_inputs": [],
+    "diagnostics": [
+      {
+        "severity": "WARNING",
+        "stage": "VIDEO",
+        "code": "VIDEO_STAGE_SKIPPED",
+        "subject_type": "EVIDENCE",
+        "subject_id": "ev-cctv-dock",
+        "message": "No artifact_root configured; frames were not extracted."
+      },
+      {
+        "severity": "WARNING",
+        "stage": "ENTITY_RESOLUTION",
+        "code": "ENTITY_REFERENCE_UNRESOLVED",
+        "subject_type": "EVENT_CANDIDATE",
+        "subject_id": "evt-04-vehicle-message",
+        "message": "Event 'evt-04-vehicle-message' reference 'ent-unknown-77': No registered entity_id or exact alias matches this reference; it is preserved but excluded from spatial reconstruction. No similarity matching is attempted."
+      }
+    ]
+  },
+  "chain_of_custody": {
+    "statement": "Original evidence is read through a read-only, no-follow descriptor and never modified. Hashes below are those recorded at ingestion and recomputed in the run. Derived frames are written to new directories and never overwrite earlier artifacts.",
+    "evidence": [
+      {
+        "evidence_id": "ev-cctv-dock",
+        "sha256": "e77a6607dd66c74a6f1bca53e372ce4ba9d88b77466d3ca479ca7fefee338890",
+        "storage_reference": "urn:yukti:evidence:ev-cctv-dock:storage",
+        "storage_key": "data/evidence/raw/case-wh-burglary-001/ev-cctv-dock/ev-cctv-dock.raw",
+        "integrity_status": "VERIFIED",
+        "video_sha256_before_processing": null,
+        "video_sha256_after_processing": null,
+        "video_source_unchanged": null
+      },
+      {
+        "evidence_id": "ev-cdr-tower",
+        "sha256": "a4448e5eb36dd93bce2696defbb9e3550bca98150b0802602a7ef90f066f9972",
+        "storage_reference": "urn:yukti:evidence:ev-cdr-tower:storage",
+        "storage_key": "data/evidence/raw/case-wh-burglary-001/ev-cdr-tower/ev-cdr-tower.raw",
+        "integrity_status": "VERIFIED",
+        "video_sha256_before_processing": null,
+        "video_sha256_after_processing": null,
+        "video_source_unchanged": null
+      },
+      {
+        "evidence_id": "ev-chat-export",
+        "sha256": "b162a2806d85cfa2f0c374f7186111129d4ab24ba36d8bf0ffa05e2605747d81",
+        "storage_reference": "urn:yukti:evidence:ev-chat-export:storage",
+        "storage_key": "data/evidence/raw/case-wh-burglary-001/ev-chat-export/ev-chat-export.raw",
+        "integrity_status": "VERIFIED",
+        "video_sha256_before_processing": null,
+        "video_sha256_after_processing": null,
+        "video_source_unchanged": null
+      }
+    ],
+    "video_processing": [
+      {
+        "evidence_id": "ev-cctv-dock",
+        "status": "SKIPPED_NO_ARTIFACT_ROOT",
+        "processing_kind": "FRAME_EXTRACTION_WITH_PROVENANCE",
+        "processing_note": "Frame extraction with provenance only (FFmpeg sampling bound to the source SHA-256). No semantic event recognition was performed and no events were derived from frames.",
+        "frame_handoff_status": null,
+        "frames_extracted": 0
+      }
+    ],
+    "frame_artifacts": [],
+    "finding_provenance": [
+      {
+        "finding_type": "TIMELINE_EVENT",
+        "finding_id": "evt-01-shutter-forced",
+        "is_observed": true,
+        "evidence_ids": [
+          "ev-cctv-dock"
+        ],
+        "evidence_sha256": {
+          "ev-cctv-dock": "e77a6607dd66c74a6f1bca53e372ce4ba9d88b77466d3ca479ca7fefee338890"
+        },
+        "event_ids": [
+          "evt-01-shutter-forced"
+        ],
+        "source_record_ids": [
+          "osd:2026-11-10T21:42:00"
+        ],
+        "frame_artifact_ids": []
+      },
+      {
+        "finding_type": "TIMELINE_EVENT",
+        "finding_id": "evt-02-outbound-call",
+        "is_observed": true,
+        "evidence_ids": [
+          "ev-cdr-tower"
+        ],
+        "evidence_sha256": {
+          "ev-cdr-tower": "a4448e5eb36dd93bce2696defbb9e3550bca98150b0802602a7ef90f066f9972"
+        },
+        "event_ids": [
+          "evt-02-outbound-call"
+        ],
+        "source_record_ids": [
+          "row:2"
+        ],
+        "frame_artifact_ids": []
+      },
+      {
+        "finding_type": "TIMELINE_EVENT",
+        "finding_id": "evt-03-location-shared",
+        "is_observed": true,
+        "evidence_ids": [
+          "ev-chat-export"
+        ],
+        "evidence_sha256": {
+          "ev-chat-export": "b162a2806d85cfa2f0c374f7186111129d4ab24ba36d8bf0ffa05e2605747d81"
+        },
+        "event_ids": [
+          "evt-03-location-shared"
+        ],
+        "source_record_ids": [
+          "line:1"
+        ],
+        "frame_artifact_ids": []
+      },
+      {
+        "finding_type": "TIMELINE_EVENT",
+        "finding_id": "evt-04-vehicle-message",
+        "is_observed": true,
+        "evidence_ids": [
+          "ev-chat-export"
+        ],
+        "evidence_sha256": {
+          "ev-chat-export": "b162a2806d85cfa2f0c374f7186111129d4ab24ba36d8bf0ffa05e2605747d81"
+        },
+        "event_ids": [
+          "evt-04-vehicle-message"
+        ],
+        "source_record_ids": [
+          "line:2"
+        ],
+        "frame_artifact_ids": []
+      },
+      {
+        "finding_type": "TIMELINE_EVENT",
+        "finding_id": "evt-05-van-departs",
+        "is_observed": true,
+        "evidence_ids": [
+          "ev-cctv-dock"
+        ],
+        "evidence_sha256": {
+          "ev-cctv-dock": "e77a6607dd66c74a6f1bca53e372ce4ba9d88b77466d3ca479ca7fefee338890"
+        },
+        "event_ids": [
+          "evt-05-van-departs"
+        ],
+        "source_record_ids": [
+          "osd:2026-11-10T21:57:00"
+        ],
+        "frame_artifact_ids": []
+      },
+      {
+        "finding_type": "SPATIAL_OBSERVATION",
+        "finding_id": "obs:ent-person-ravi:evt-01-shutter-forced",
+        "is_observed": true,
+        "evidence_ids": [
+          "ev-cctv-dock"
+        ],
+        "evidence_sha256": {
+          "ev-cctv-dock": "e77a6607dd66c74a6f1bca53e372ce4ba9d88b77466d3ca479ca7fefee338890"
+        },
+        "event_ids": [
+          "evt-01-shutter-forced"
+        ],
+        "source_record_ids": [
+          "osd:2026-11-10T21:42:00"
+        ],
+        "frame_artifact_ids": []
+      },
+      {
+        "finding_type": "SPATIAL_OBSERVATION",
+        "finding_id": "obs:ent-person-ravi:evt-03-location-shared",
+        "is_observed": true,
+        "evidence_ids": [
+          "ev-chat-export"
+        ],
+        "evidence_sha256": {
+          "ev-chat-export": "b162a2806d85cfa2f0c374f7186111129d4ab24ba36d8bf0ffa05e2605747d81"
+        },
+        "event_ids": [
+          "evt-03-location-shared"
+        ],
+        "source_record_ids": [
+          "line:1"
+        ],
+        "frame_artifact_ids": []
+      },
+      {
+        "finding_type": "SPATIAL_OBSERVATION",
+        "finding_id": "obs:ent-phone-01:evt-02-outbound-call",
+        "is_observed": true,
+        "evidence_ids": [
+          "ev-cdr-tower"
+        ],
+        "evidence_sha256": {
+          "ev-cdr-tower": "a4448e5eb36dd93bce2696defbb9e3550bca98150b0802602a7ef90f066f9972"
+        },
+        "event_ids": [
+          "evt-02-outbound-call"
+        ],
+        "source_record_ids": [
+          "row:2"
+        ],
+        "frame_artifact_ids": []
+      },
+      {
+        "finding_type": "SPATIAL_OBSERVATION",
+        "finding_id": "obs:ent-vehicle-van:evt-05-van-departs",
+        "is_observed": true,
+        "evidence_ids": [
+          "ev-cctv-dock"
+        ],
+        "evidence_sha256": {
+          "ev-cctv-dock": "e77a6607dd66c74a6f1bca53e372ce4ba9d88b77466d3ca479ca7fefee338890"
+        },
+        "event_ids": [
+          "evt-05-van-departs"
+        ],
+        "source_record_ids": [
+          "osd:2026-11-10T21:57:00"
+        ],
+        "frame_artifact_ids": []
+      },
+      {
+        "finding_type": "MOVEMENT_SEGMENT",
+        "finding_id": "seg-ent-person-ravi-evt-01-shutter-forced-to-evt-03-location-shared",
+        "is_observed": false,
+        "evidence_ids": [
+          "ev-cctv-dock",
+          "ev-chat-export"
+        ],
+        "evidence_sha256": {
+          "ev-cctv-dock": "e77a6607dd66c74a6f1bca53e372ce4ba9d88b77466d3ca479ca7fefee338890",
+          "ev-chat-export": "b162a2806d85cfa2f0c374f7186111129d4ab24ba36d8bf0ffa05e2605747d81"
+        },
+        "event_ids": [
+          "evt-01-shutter-forced",
+          "evt-03-location-shared"
+        ],
+        "source_record_ids": [
+          "line:1",
+          "osd:2026-11-10T21:42:00"
+        ],
+        "frame_artifact_ids": []
+      },
+      {
+        "finding_type": "CONTRADICTION_LEAD",
+        "finding_id": "lead-31c75fbcff2a7e22b3d15a3be23a3290ebbb0c1b4dcbf14c8f9c8d8149cfe25d",
+        "is_observed": false,
+        "evidence_ids": [
+          "ev-cctv-dock",
+          "ev-chat-export"
+        ],
+        "evidence_sha256": {
+          "ev-cctv-dock": "e77a6607dd66c74a6f1bca53e372ce4ba9d88b77466d3ca479ca7fefee338890",
+          "ev-chat-export": "b162a2806d85cfa2f0c374f7186111129d4ab24ba36d8bf0ffa05e2605747d81"
+        },
+        "event_ids": [
+          "evt-01-shutter-forced",
+          "evt-03-location-shared"
+        ],
+        "source_record_ids": [
+          "line:1",
+          "osd:2026-11-10T21:42:00"
+        ],
+        "frame_artifact_ids": []
+      },
+      {
+        "finding_type": "RELATIONSHIP",
+        "finding_id": "rel-contra-6d7b1756a205fd04a7d537f3869d2351",
+        "is_observed": false,
+        "evidence_ids": [
+          "ev-cctv-dock",
+          "ev-chat-export"
+        ],
+        "evidence_sha256": {
+          "ev-cctv-dock": "e77a6607dd66c74a6f1bca53e372ce4ba9d88b77466d3ca479ca7fefee338890",
+          "ev-chat-export": "b162a2806d85cfa2f0c374f7186111129d4ab24ba36d8bf0ffa05e2605747d81"
+        },
+        "event_ids": [
+          "evt-01-shutter-forced",
+          "evt-03-location-shared"
+        ],
+        "source_record_ids": [
+          "line:1",
+          "osd:2026-11-10T21:42:00"
+        ],
+        "frame_artifact_ids": []
+      }
+    ],
+    "processing_configuration": {
+      "approved_contract_decisions": [
+        "DEC-001",
+        "DEC-002",
+        "DEC-003",
+        "DEC-004",
+        "DEC-005",
+        "DEC-006",
+        "DEC-007"
+      ],
+      "speed_threshold_kmh": 180.0,
+      "estimated_half_width_seconds": 900.0,
+      "video_extraction_options": {
+        "interval_seconds": 1.0,
+        "fps": null,
+        "max_frames": 100,
+        "start_time_seconds": null,
+        "end_time_seconds": null,
+        "image_format": "jpg",
+        "keyframes_only": false,
+        "create_unique_run_subdir": true,
+        "recording_start_timestamp": null,
+        "source_timezone": "UTC",
+        "clock_offset_seconds": 0.0,
+        "timeout_seconds": 30.0
+      },
+      "verify_all_evidence_integrity": true,
+      "explicit_entity_aliases": {},
+      "artifact_root_configured": false
+    },
+    "run_interpretation_notice": "Reconstruction output separates observed source facts from derived analytical inferences. Contradiction leads are investigative prompts for human review; they do not establish identity, deception, guilt or intent. Declared clock offsets are applied as supplied and are not independently verified."
+  },
+  "content_sha256": "a61125bd653409a460e19df8b6c99c2904765ae2239c24c8591ef65104067fcb"
+}

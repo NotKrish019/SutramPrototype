@@ -230,7 +230,7 @@ class TestPrecisionAndUncertaintyWindows:
 
         for bad_width in (0.0, -60.0, math.nan, math.inf, True):
             with pytest.raises(ValueError, match="estimated_half_width_seconds"):
-                normalize_event_time(event, estimated_half_width_seconds=bad_width)  # type: ignore[arg-type]
+                normalize_event_time(event, estimated_half_width_seconds=bad_width)
 
     def test_explicit_uncertainty_bounds_validated_and_normalized(self) -> None:
         event = {
@@ -673,7 +673,7 @@ class TestTimelineReconstructionAndOverlapSemantics:
         assert raw_evidence == evidence_snapshot
 
         # Also verify Pydantic model instances produce identical output
-        model_events = [_MockEventModel(**raw_events[0])]
+        model_events = [_MockEventModel.model_validate(raw_events[0])]
         result_from_model = reconstruct_timeline(model_events, evidence_by_id=raw_evidence)
         assert result_from_model == result_from_dict
 

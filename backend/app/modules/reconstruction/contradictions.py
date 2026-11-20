@@ -17,6 +17,8 @@ Core forensic principles enforced:
 6. Original Event, Evidence, and Relationship inputs are never mutated.
 """
 
+import hashlib
+import json
 from datetime import timedelta
 from typing import Any, Mapping, Optional, Sequence
 
@@ -50,6 +52,39 @@ from app.schemas.reconstruction import (
     TimelineEntry,
     extract_field,
 )
+
+
+# Contradiction identifiers (Phase 3D.2). The identity tuple is serialized as a JSON array, so
+# no choice of IDs (hyphens, "-to-" or any other characters) can make two different tuples
+# serialize to the same string. Then it is hashed with SHA-256. Hyphen-joined IDs used to collide,
+# e.g. ("ent", "ev-a-to-ev-b", "ev-c") and ("ent", "ev-a", "ev-b-to-ev-c").
+LEAD_ID_SCHEME = "lead-sha256-v1"
+RELATIONSHIP_ID_SCHEME = "sha256-v1"
+CONTRADICTS_RELATION_TYPE = "CONTRADICTS"
+
+
+def _canonical_sha256(identity: Sequence[str]) -> str:
+    encoded = json.dumps(list(identity), ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def contradiction_lead_id(case_id: str, entity_id: str, origin_event_id: str, destination_event_id: str) -> str:
+    """Deterministic, collision-safe lead identifier (full SHA-256)."""
+    digest = _canonical_sha256([LEAD_ID_SCHEME, case_id, entity_id, origin_event_id, destination_event_id])
+    return f"lead-{digest}"
+
+
+def contradiction_relationship_id(
+    case_id: str, entity_id: str, origin_event_id: str, destination_event_id: str
+) -> str:
+    """Deterministic, collision-safe CONTRADICTS relationship identifier.
+
+    It is the same value the relationship adapter exports, so engine and shared records agree.
+    """
+    digest = _canonical_sha256(
+        [RELATIONSHIP_ID_SCHEME, CONTRADICTS_RELATION_TYPE, case_id, entity_id, origin_event_id, destination_event_id]
+    )
+    return f"rel-contra-{digest[:32]}"
 
 
 def _validate_evidence_provenance(
@@ -272,13 +307,11 @@ def evaluate_segment_for_contradiction(
         else ContradictionLeadType.SPEED_THRESHOLD_EXCEEDANCE_LEAD
     )
 
-    lead_id = (
-        f"lead-{segment.case_id}-{segment.entity_id}-"
-        f"{segment.origin_event_id}-to-{segment.destination_event_id}"
+    lead_id = contradiction_lead_id(
+        segment.case_id, segment.entity_id, segment.origin_event_id, segment.destination_event_id
     )
-    relationship_id = (
-        f"rel-contra-{segment.case_id}-{segment.entity_id}-"
-        f"{segment.origin_event_id}-to-{segment.destination_event_id}"
+    relationship_id = contradiction_relationship_id(
+        segment.case_id, segment.entity_id, segment.origin_event_id, segment.destination_event_id
     )
 
     evidence_basis = list(
@@ -466,13 +499,11 @@ def _evaluate_unlocated_pair_for_activity_conflict(
     min_elapsed = (win_b.window_start_utc - win_a.window_end_utc).total_seconds()
     max_elapsed = (win_b.window_end_utc - win_a.window_start_utc).total_seconds()
 
-    lead_id = (
-        f"lead-{origin_entry.case_id}-{entity_id}-"
-        f"{origin_entry.event_id}-to-{destination_entry.event_id}"
+    lead_id = contradiction_lead_id(
+        origin_entry.case_id, entity_id, origin_entry.event_id, destination_entry.event_id
     )
-    relationship_id = (
-        f"rel-contra-{origin_entry.case_id}-{entity_id}-"
-        f"{origin_entry.event_id}-to-{destination_entry.event_id}"
+    relationship_id = contradiction_relationship_id(
+        origin_entry.case_id, entity_id, origin_entry.event_id, destination_entry.event_id
     )
     evidence_basis = list(
         dict.fromkeys(

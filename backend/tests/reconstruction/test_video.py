@@ -11,6 +11,7 @@ Verifies:
 8. Failure resilience and partial artifact cleanup (missing files, unsupported formats, corrupt files, timeouts, and empty extractions).
 """
 
+from typing import Any
 from datetime import datetime, timezone
 import json
 import os
@@ -232,7 +233,7 @@ class TestVideoIntegrityAndImmutability:
 
         real_subprocess_run = subprocess.run
 
-        def tamper_side_effect(cmd, *args, **kwargs):
+        def tamper_side_effect(cmd: list[str], *args: Any, **kwargs: Any) -> Any:
             if any("ffprobe" in str(arg) for arg in cmd):
                 return real_subprocess_run(cmd, *args, **kwargs)
             # Tamper with the video copy during ffmpeg extraction
@@ -572,7 +573,7 @@ class TestFailureModesAndCleanup:
 
         real_subprocess_run = subprocess.run
 
-        def timeout_effect(cmd, *args, **kwargs):
+        def timeout_effect(cmd: list[str], *args: Any, **kwargs: Any) -> Any:
             if any("ffprobe" in str(arg) for arg in cmd):
                 return real_subprocess_run(cmd, *args, **kwargs)
             # Write a partial artifact before timing out
@@ -607,7 +608,7 @@ class TestFailureModesAndCleanup:
 
         real_subprocess_run = subprocess.run
 
-        def error_effect(cmd, *args, **kwargs):
+        def error_effect(cmd: list[str], *args: Any, **kwargs: Any) -> Any:
             if any("ffprobe" in str(arg) for arg in cmd):
                 return real_subprocess_run(cmd, *args, **kwargs)
             partial = out_dir / "EV-001_frame_000001.jpg"
@@ -634,7 +635,7 @@ class TestFailureModesAndCleanup:
 
         real_subprocess_run = subprocess.run
 
-        def empty_effect(cmd, *args, **kwargs):
+        def empty_effect(cmd: list[str], *args: Any, **kwargs: Any) -> Any:
             if any("ffprobe" in str(arg) for arg in cmd):
                 return real_subprocess_run(cmd, *args, **kwargs)
             # FFmpeg finishes with 0 frames written
@@ -919,7 +920,7 @@ class TestPhase2D1ForensicIntegrityAudit:
 
         real_subprocess_run = subprocess.run
 
-        def missing_pts_effect(cmd, *args, **kwargs):
+        def missing_pts_effect(cmd: list[str], *args: Any, **kwargs: Any) -> Any:
             if any("ffprobe" in str(arg) for arg in cmd):
                 return real_subprocess_run(cmd, *args, **kwargs)
             res = real_subprocess_run(cmd, *args, **kwargs)
@@ -950,7 +951,7 @@ class TestPhase2D1ForensicIntegrityAudit:
 
         real_subprocess_run = subprocess.run
 
-        def conflict_pts_effect(cmd, *args, **kwargs):
+        def conflict_pts_effect(cmd: list[str], *args: Any, **kwargs: Any) -> Any:
             if any("ffprobe" in str(arg) for arg in cmd):
                 return real_subprocess_run(cmd, *args, **kwargs)
             res = real_subprocess_run(cmd, *args, **kwargs)
@@ -1014,7 +1015,7 @@ class TestPhase2D1ForensicIntegrityAudit:
         assert compute_file_sha256(vid) == initial_hash
 
         # 3. Extraction failure (aborted FFmpeg)
-        def err_run(cmd, *args, **kwargs):
+        def err_run(cmd: list[str], *args: Any, **kwargs: Any) -> Any:
             if any("ffprobe" in str(arg) for arg in cmd):
                 return _REAL_SUBPROCESS_RUN(cmd, *args, **kwargs)
             return MagicMock(returncode=1, stderr="Simulated crash")
@@ -1143,7 +1144,7 @@ class TestPhase2D2DerivedArtifactOverwriteSafety:
         pre_existing.write_text("Do not remove this file under any circumstance")
         pre_hash = compute_file_sha256(pre_existing)
 
-        def mock_failing_ffmpeg(cmd, *args, **kwargs):
+        def mock_failing_ffmpeg(cmd: list[str], *args: Any, **kwargs: Any) -> Any:
             if any("ffprobe" in str(arg) for arg in cmd):
                 return _REAL_SUBPROCESS_RUN(cmd, *args, **kwargs)
             # Create a partial artifact during execution before crashing
@@ -1231,7 +1232,7 @@ class TestPhase2D2DerivedArtifactOverwriteSafety:
         pre_doc.write_bytes(b"%PDF-1.4 test document content")
         initial_doc_hash = compute_file_sha256(pre_doc)
 
-        def mock_timeout_run(cmd, *args, **kwargs):
+        def mock_timeout_run(cmd: list[str], *args: Any, **kwargs: Any) -> Any:
             if any("ffprobe" in str(arg) for arg in cmd):
                 return _REAL_SUBPROCESS_RUN(cmd, *args, **kwargs)
             # Write a partial file before timing out

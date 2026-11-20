@@ -16,6 +16,10 @@ Key Forensic Guarantees:
    into false UTC timestamps.
 5. Resource & Path Security: Subprocess calls use explicit argument lists (no shell interpolation),
    configurable timeouts, strict frame-count ceilings, and path-traversal prevention.
+
+Scope: this module performs frame extraction with provenance only. It does not perform semantic
+event recognition (no detection, classification or identification of frame contents), and it
+never derives events from frames. Semantic analysis belongs to Member 1.
 """
 
 from datetime import datetime, timedelta, timezone

@@ -6,10 +6,14 @@ All tests use fixed, deterministic timestamps and coordinates.
 from datetime import datetime, timezone
 from copy import deepcopy
 import itertools
+from typing import Any
+import re
 
 import pytest
 
 from app.modules.reconstruction.contradictions import (
+    contradiction_lead_id,
+    contradiction_relationship_id,
     check_temporal_activity_feasibility,
     detect_contradictions,
     detect_contradictions_from_spatial_result,
@@ -62,7 +66,8 @@ class TestContradictionDetectionRules:
         assert len(result.relationships) == 1
 
         lead = result.leads[0]
-        assert lead.lead_id == "lead-case-2c-ent-suspect-1-evt-delhi-to-evt-mumbai"
+        assert lead.lead_id == contradiction_lead_id("case-2c", "ent-suspect-1", "evt-delhi", "evt-mumbai")
+        assert re.fullmatch(r"lead-[0-9a-f]{64}", lead.lead_id)
         assert lead.lead_type == ContradictionLeadType.SPEED_THRESHOLD_EXCEEDANCE_LEAD
         assert lead.entity_id == "ent-suspect-1"
         assert lead.origin_event_id == "evt-delhi"
@@ -75,7 +80,7 @@ class TestContradictionDetectionRules:
         assert lead.observed_facts.origin_location_name == "New Delhi Connaught Place"
         assert lead.observed_facts.destination_location_name == "Mumbai Nariman Point"
         assert lead.derived_inference.is_observed is False
-        assert lead.derived_inference.distance_km > 1140.0
+        assert (lead.derived_inference.distance_km or 0.0) > 1140.0
         assert lead.derived_inference.max_possible_elapsed_seconds == 601.0
         assert (lead.derived_inference.min_required_speed_kmh or 0.0) > 6800.0
         assert (
@@ -86,7 +91,10 @@ class TestContradictionDetectionRules:
         # Verify canonical Relationship contract compatibility
         rel = lead.relationship
         assert rel == result.relationships[0]
-        assert rel.relationship_id == "rel-contra-case-2c-ent-suspect-1-evt-delhi-to-evt-mumbai"
+        assert rel.relationship_id == contradiction_relationship_id(
+            "case-2c", "ent-suspect-1", "evt-delhi", "evt-mumbai"
+        )
+        assert re.fullmatch(r"rel-contra-[0-9a-f]{32}", rel.relationship_id)
         assert rel.source_id == "evt-delhi"
         assert rel.target_id == "evt-mumbai"
         assert rel.relation_type == "CONTRADICTS"
@@ -576,7 +584,7 @@ class TestPhase2C1ContradictionLogicAudit:
         self,
     ) -> None:
         # 1. Zero-distance events where duration fits -> 0 leads
-        zero_dist_ok = [
+        zero_dist_ok: list[dict[str, Any]] = [
             {
                 "event_id": "evt-z1",
                 "case_id": "case-z",

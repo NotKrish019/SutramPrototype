@@ -1,0 +1,5857 @@
+{
+  "components": {
+    "schemas": {
+      "Body_reprocess_evidence_api_v1_evidence__evidence_id__reprocess_post": {
+        "properties": {
+          "clock_offset_seconds": {
+            "default": 0.0,
+            "title": "Clock Offset Seconds",
+            "type": "number"
+          },
+          "source_timezone": {
+            "default": "UTC",
+            "title": "Source Timezone",
+            "type": "string"
+          }
+        },
+        "title": "Body_reprocess_evidence_api_v1_evidence__evidence_id__reprocess_post",
+        "type": "object"
+      },
+      "Body_upload_evidence_api_v1_evidence_upload_post": {
+        "properties": {
+          "case_id": {
+            "description": "Target forensic case identifier (UUID or safe string)",
+            "title": "Case Id",
+            "type": "string"
+          },
+          "clock_offset_seconds": {
+            "default": 0.0,
+            "description": "Signed additive clock correction in seconds per DEC-001 (nominal = device + offset).",
+            "title": "Clock Offset Seconds",
+            "type": "number"
+          },
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "description": "Binary evidence file payload",
+            "title": "File",
+            "type": "string"
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional JSON-encoded dictionary of technical/investigator metadata.",
+            "title": "Metadata"
+          },
+          "source_timezone": {
+            "default": "UTC",
+            "description": "IANA timezone (e.g. 'Asia/Kolkata') for device clock normalization per DEC-006.",
+            "title": "Source Timezone",
+            "type": "string"
+          },
+          "source_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Explicit modality (e.g. CALL_DETAIL_RECORD, CHAT_EXPORT). Inferred if omitted.",
+            "title": "Source Type"
+          },
+          "trigger_extraction": {
+            "default": false,
+            "description": "If True, immediately invokes modality extraction and generates candidates.",
+            "title": "Trigger Extraction",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "file",
+          "case_id"
+        ],
+        "title": "Body_upload_evidence_api_v1_evidence_upload_post",
+        "type": "object"
+      },
+      "CanonicalTimePrecision": {
+        "description": "Canonical TimePrecision values committed in shared/enums/README.md (lines 39-44).",
+        "enum": [
+          "EXACT_SECOND",
+          "MINUTE",
+          "HOUR",
+          "DAY",
+          "ESTIMATED"
+        ],
+        "title": "CanonicalTimePrecision",
+        "type": "string"
+      },
+      "CaseSummary": {
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Counts",
+            "type": "object"
+          },
+          "interpretation_notice": {
+            "title": "Interpretation Notice",
+            "type": "string"
+          },
+          "key_leads": {
+            "items": {
+              "$ref": "#/components/schemas/LeadSummary"
+            },
+            "title": "Key Leads",
+            "type": "array"
+          },
+          "timeline_span_end_utc": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timeline Span End Utc"
+          },
+          "timeline_span_start_utc": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timeline Span Start Utc"
+          }
+        },
+        "required": [
+          "counts",
+          "interpretation_notice"
+        ],
+        "title": "CaseSummary",
+        "type": "object"
+      },
+      "Citation": {
+        "description": "One evidence item supporting a finding, with the records and frames used from it.",
+        "properties": {
+          "event_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Event Ids",
+            "type": "array"
+          },
+          "evidence_id": {
+            "title": "Evidence Id",
+            "type": "string"
+          },
+          "evidence_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "SHA-256 of the evidence item as verified in the run.",
+            "title": "Evidence Sha256"
+          },
+          "frame_artifact_ids": {
+            "description": "Frames captured during the event window (alignment only).",
+            "items": {
+              "type": "string"
+            },
+            "title": "Frame Artifact Ids",
+            "type": "array"
+          },
+          "source_record_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Source Record Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "evidence_id"
+        ],
+        "title": "Citation",
+        "type": "object"
+      },
+      "ClockCalibrationEntry": {
+        "properties": {
+          "clock_calibration": {
+            "$ref": "#/components/schemas/ClockCalibrationStatus"
+          },
+          "clock_offset_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clock Offset Seconds"
+          },
+          "evidence_id": {
+            "title": "Evidence Id",
+            "type": "string"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "source_timezone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Timezone"
+          }
+        },
+        "required": [
+          "evidence_id",
+          "clock_calibration",
+          "note"
+        ],
+        "title": "ClockCalibrationEntry",
+        "type": "object"
+      },
+      "ClockCalibrationStatus": {
+        "description": "How ``clock_offset_seconds`` was obtained. No value means *independently verified*.",
+        "enum": [
+          "DECLARED_NOT_INDEPENDENTLY_VERIFIED",
+          "NOT_DECLARED_UNCALIBRATED",
+          "NOT_APPLIED_DECISION_WITHHELD"
+        ],
+        "title": "ClockCalibrationStatus",
+        "type": "string"
+      },
+      "ContradictionEntry": {
+        "properties": {
+          "basis": {
+            "$ref": "#/components/schemas/FindingBasis",
+            "default": "INFERRED"
+          },
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/Citation"
+            },
+            "title": "Citations",
+            "type": "array"
+          },
+          "classification": {
+            "default": "ANALYTICAL_LEAD_NOT_A_FINDING_OF_FACT",
+            "title": "Classification",
+            "type": "string"
+          },
+          "configured_speed_threshold_kmh": {
+            "title": "Configured Speed Threshold Kmh",
+            "type": "number"
+          },
+          "destination_event_id": {
+            "title": "Destination Event Id",
+            "type": "string"
+          },
+          "destination_window_utc": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Destination Window Utc",
+            "type": "array"
+          },
+          "distance_km": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distance Km"
+          },
+          "entity_id": {
+            "title": "Entity Id",
+            "type": "string"
+          },
+          "explanation": {
+            "title": "Explanation",
+            "type": "string"
+          },
+          "frame_artifact_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Frame Artifact Ids",
+            "type": "array"
+          },
+          "lead_id": {
+            "title": "Lead Id",
+            "type": "string"
+          },
+          "lead_limitations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Lead Limitations",
+            "type": "array"
+          },
+          "lead_type": {
+            "title": "Lead Type",
+            "type": "string"
+          },
+          "max_possible_elapsed_seconds": {
+            "title": "Max Possible Elapsed Seconds",
+            "type": "number"
+          },
+          "min_required_speed_kmh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Required Speed Kmh"
+          },
+          "origin_event_id": {
+            "title": "Origin Event Id",
+            "type": "string"
+          },
+          "origin_window_utc": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Origin Window Utc",
+            "type": "array"
+          },
+          "ref": {
+            "title": "Ref",
+            "type": "string"
+          },
+          "relationship_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Relationship Id"
+          },
+          "threshold_evaluation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Threshold Evaluation"
+          }
+        },
+        "required": [
+          "ref",
+          "lead_id",
+          "lead_type",
+          "entity_id",
+          "origin_event_id",
+          "destination_event_id",
+          "origin_window_utc",
+          "destination_window_utc",
+          "max_possible_elapsed_seconds",
+          "configured_speed_threshold_kmh",
+          "explanation",
+          "lead_limitations",
+          "citations"
+        ],
+        "title": "ContradictionEntry",
+        "type": "object"
+      },
+      "ContradictionLeadRecord": {
+        "description": "A contradiction lead, kept separate from its canonical Relationship record.",
+        "properties": {
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          },
+          "derived_inference": {
+            "$ref": "#/components/schemas/DerivedLeadInference"
+          },
+          "destination_event_id": {
+            "title": "Destination Event Id",
+            "type": "string"
+          },
+          "entity_id": {
+            "title": "Entity Id",
+            "type": "string"
+          },
+          "evidence_basis": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Evidence Basis",
+            "type": "array"
+          },
+          "explanation": {
+            "title": "Explanation",
+            "type": "string"
+          },
+          "lead_id": {
+            "title": "Lead Id",
+            "type": "string"
+          },
+          "lead_type": {
+            "$ref": "#/components/schemas/ContradictionLeadType"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Limitations",
+            "type": "array"
+          },
+          "observed_facts": {
+            "$ref": "#/components/schemas/ObservedLeadBasis"
+          },
+          "origin_event_id": {
+            "title": "Origin Event Id",
+            "type": "string"
+          },
+          "relationship_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Canonical Relationship record exported for this lead, if any.",
+            "title": "Relationship Id"
+          },
+          "supporting_frame_artifact_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Supporting Frame Artifact Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "lead_id",
+          "case_id",
+          "entity_id",
+          "lead_type",
+          "origin_event_id",
+          "destination_event_id",
+          "evidence_basis",
+          "observed_facts",
+          "derived_inference",
+          "explanation",
+          "limitations"
+        ],
+        "title": "ContradictionLeadRecord",
+        "type": "object"
+      },
+      "ContradictionLeadType": {
+        "description": "Classification of conservative, non-accusatory investigative contradiction leads.",
+        "enum": [
+          "SPEED_THRESHOLD_EXCEEDANCE_LEAD",
+          "TEMPORAL_ACTIVITY_OVERLAP_LEAD"
+        ],
+        "title": "ContradictionLeadType",
+        "type": "string"
+      },
+      "ContradictionsView": {
+        "properties": {
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          },
+          "contradiction_leads": {
+            "items": {
+              "$ref": "#/components/schemas/ContradictionLeadRecord"
+            },
+            "title": "Contradiction Leads",
+            "type": "array"
+          },
+          "contradiction_overlaps_not_evaluated": {
+            "items": {
+              "$ref": "#/components/schemas/SpatialTemporalOverlap"
+            },
+            "title": "Contradiction Overlaps Not Evaluated",
+            "type": "array"
+          },
+          "relationship_export_status": {
+            "$ref": "#/components/schemas/RelationshipExportStatus"
+          },
+          "result_sha256": {
+            "title": "Result Sha256",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PipelineStatus"
+          }
+        },
+        "required": [
+          "run_id",
+          "case_id",
+          "status",
+          "result_sha256",
+          "relationship_export_status",
+          "contradiction_leads",
+          "contradiction_overlaps_not_evaluated"
+        ],
+        "title": "ContradictionsView",
+        "type": "object"
+      },
+      "CustodyAppendix": {
+        "properties": {
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceCustodyEntry"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "finding_provenance": {
+            "items": {
+              "$ref": "#/components/schemas/FindingProvenance"
+            },
+            "title": "Finding Provenance",
+            "type": "array"
+          },
+          "frame_artifacts": {
+            "items": {
+              "$ref": "#/components/schemas/FrameCustodyEntry"
+            },
+            "title": "Frame Artifacts",
+            "type": "array"
+          },
+          "processing_configuration": {
+            "additionalProperties": true,
+            "title": "Processing Configuration",
+            "type": "object"
+          },
+          "run_interpretation_notice": {
+            "title": "Run Interpretation Notice",
+            "type": "string"
+          },
+          "statement": {
+            "default": "Original evidence is read through a read-only, no-follow descriptor and never modified. Hashes below are those recorded at ingestion and recomputed in the run. Derived frames are written to new directories and never overwrite earlier artifacts.",
+            "title": "Statement",
+            "type": "string"
+          },
+          "video_processing": {
+            "items": {
+              "$ref": "#/components/schemas/VideoCustodyEntry"
+            },
+            "title": "Video Processing",
+            "type": "array"
+          }
+        },
+        "required": [
+          "evidence",
+          "video_processing",
+          "frame_artifacts",
+          "finding_provenance",
+          "processing_configuration",
+          "run_interpretation_notice"
+        ],
+        "title": "CustodyAppendix",
+        "type": "object"
+      },
+      "DerivedLeadInference": {
+        "description": "Algorithmically derived quantities separated explicitly from observed facts.",
+        "properties": {
+          "configured_speed_threshold_kmh": {
+            "exclusiveMinimum": 0.0,
+            "title": "Configured Speed Threshold Kmh",
+            "type": "number"
+          },
+          "distance_km": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distance Km"
+          },
+          "has_unlocated_intervening_events": {
+            "default": false,
+            "title": "Has Unlocated Intervening Events",
+            "type": "boolean"
+          },
+          "intervening_unlocated_event_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Intervening Unlocated Event Ids",
+            "type": "array"
+          },
+          "is_observed": {
+            "default": false,
+            "description": "Always False because transit speeds and temporal conflicts are derived inferences.",
+            "title": "Is Observed",
+            "type": "boolean"
+          },
+          "max_possible_elapsed_seconds": {
+            "title": "Max Possible Elapsed Seconds",
+            "type": "number"
+          },
+          "min_possible_elapsed_seconds": {
+            "title": "Min Possible Elapsed Seconds",
+            "type": "number"
+          },
+          "min_required_speed_kmh": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Required Speed Kmh"
+          },
+          "nominal_elapsed_seconds": {
+            "title": "Nominal Elapsed Seconds",
+            "type": "number"
+          },
+          "ordering_status": {
+            "$ref": "#/components/schemas/TemporalOrderingStatus",
+            "default": "STRICTLY_ORDERED",
+            "description": "Leads are emitted only when start-time windows are strictly ordered."
+          },
+          "post_activity_max_elapsed_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Conservative maximum remaining elapsed seconds after subtracting origin duration_seconds from the earliest origin start time (B_end - (A_start + D)).",
+            "title": "Post Activity Max Elapsed Seconds"
+          },
+          "post_activity_min_elapsed_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Minimum remaining elapsed seconds after subtracting origin duration_seconds from the latest origin start time (B_start - (A_end + D)).",
+            "title": "Post Activity Min Elapsed Seconds"
+          },
+          "post_activity_min_required_speed_kmh": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Post Activity Min Required Speed Kmh"
+          },
+          "threshold_evaluation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SpeedThresholdEvaluation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "nominal_elapsed_seconds",
+          "min_possible_elapsed_seconds",
+          "max_possible_elapsed_seconds",
+          "configured_speed_threshold_kmh"
+        ],
+        "title": "DerivedLeadInference",
+        "type": "object"
+      },
+      "DiagnosticEntry": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "severity": {
+            "title": "Severity",
+            "type": "string"
+          },
+          "stage": {
+            "title": "Stage",
+            "type": "string"
+          },
+          "subject_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject Id"
+          },
+          "subject_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject Type"
+          }
+        },
+        "required": [
+          "severity",
+          "stage",
+          "code",
+          "message"
+        ],
+        "title": "DiagnosticEntry",
+        "type": "object"
+      },
+      "DiagnosticSeverity": {
+        "description": "INFO = informational; WARNING = capability withheld; ERROR = input or stage failure.",
+        "enum": [
+          "INFO",
+          "WARNING",
+          "ERROR"
+        ],
+        "title": "DiagnosticSeverity",
+        "type": "string"
+      },
+      "DiagnosticsView": {
+        "properties": {
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          },
+          "diagnostics": {
+            "items": {
+              "$ref": "#/components/schemas/ReconstructionDiagnostic"
+            },
+            "title": "Diagnostics",
+            "type": "array"
+          },
+          "evidence_gaps": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceGap"
+            },
+            "title": "Evidence Gaps",
+            "type": "array"
+          },
+          "excluded_inputs": {
+            "items": {
+              "$ref": "#/components/schemas/ExcludedInput"
+            },
+            "title": "Excluded Inputs",
+            "type": "array"
+          },
+          "limitations": {
+            "items": {
+              "$ref": "#/components/schemas/Limitation"
+            },
+            "title": "Limitations",
+            "type": "array"
+          },
+          "result_sha256": {
+            "title": "Result Sha256",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PipelineStatus"
+          },
+          "video": {
+            "items": {
+              "$ref": "#/components/schemas/VideoProcessingRecord"
+            },
+            "title": "Video",
+            "type": "array"
+          }
+        },
+        "required": [
+          "run_id",
+          "case_id",
+          "status",
+          "result_sha256",
+          "diagnostics",
+          "limitations",
+          "evidence_gaps",
+          "excluded_inputs",
+          "video"
+        ],
+        "title": "DiagnosticsView",
+        "type": "object"
+      },
+      "EntityReferenceResolution": {
+        "description": "Outcome of resolving one reference. ``canonical_entity_id`` is set only when RESOLVED.",
+        "properties": {
+          "candidate_entity_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Candidate Entity Ids",
+            "type": "array"
+          },
+          "canonical_entity_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Canonical Entity Id"
+          },
+          "method": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EntityResolutionMethod"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "reference": {
+            "title": "Reference",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/EntityReferenceStatus"
+          }
+        },
+        "required": [
+          "reference",
+          "status",
+          "note"
+        ],
+        "title": "EntityReferenceResolution",
+        "type": "object"
+      },
+      "EntityReferenceStatus": {
+        "enum": [
+          "RESOLVED",
+          "UNRESOLVED_UNKNOWN",
+          "UNRESOLVED_AMBIGUOUS"
+        ],
+        "title": "EntityReferenceStatus",
+        "type": "string"
+      },
+      "EntityResolutionMethod": {
+        "enum": [
+          "ENTITY_ID",
+          "ENTITY_ALIAS",
+          "EXPLICIT_REGISTRATION"
+        ],
+        "title": "EntityResolutionMethod",
+        "type": "string"
+      },
+      "EntityTrajectory": {
+        "description": "Reconstructed spatial-temporal record for a single entity across a case.",
+        "properties": {
+          "case_id": {
+            "description": "Parent case ID.",
+            "title": "Case Id",
+            "type": "string"
+          },
+          "entity_id": {
+            "description": "Entity ID.",
+            "title": "Entity Id",
+            "type": "string"
+          },
+          "located_event_ids": {
+            "description": "Event IDs with validated WGS84 coordinates for this entity.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Located Event Ids",
+            "type": "array"
+          },
+          "segments": {
+            "description": "Directed movement segments generated only between strictly ordered consecutive located events.",
+            "items": {
+              "$ref": "#/components/schemas/MovementSegment"
+            },
+            "title": "Segments",
+            "type": "array"
+          },
+          "timeline_entries": {
+            "description": "All normalized timeline entries involving this entity, preserving unlocated events.",
+            "items": {
+              "$ref": "#/components/schemas/app__schemas__reconstruction__TimelineEntry"
+            },
+            "title": "Timeline Entries",
+            "type": "array"
+          },
+          "total_strictly_ordered_distance_km": {
+            "default": 0.0,
+            "description": "Sum of distance_km across strictly ordered segments.",
+            "minimum": 0.0,
+            "title": "Total Strictly Ordered Distance Km",
+            "type": "number"
+          },
+          "uncertain_spatial_overlaps": {
+            "description": "Pairs of located events with overlapping time windows where sequence is uncertain.",
+            "items": {
+              "$ref": "#/components/schemas/SpatialTemporalOverlap"
+            },
+            "title": "Uncertain Spatial Overlaps",
+            "type": "array"
+          },
+          "unlocated_event_ids": {
+            "description": "Event IDs involving this entity that lack geographic coordinates.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Unlocated Event Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "case_id",
+          "entity_id"
+        ],
+        "title": "EntityTrajectory",
+        "type": "object"
+      },
+      "ErrorBody": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "details": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Details"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorBody",
+        "type": "object"
+      },
+      "ErrorEnvelope": {
+        "description": "Standard error envelope (``.agents/rules/project-standards.md`` §5).",
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorBody"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "title": "ErrorEnvelope",
+        "type": "object"
+      },
+      "EventEntityResolution": {
+        "description": "Resolution of all entity references on one Event.",
+        "properties": {
+          "canonical_entity_ids": {
+            "description": "Deduplicated canonical IDs in first-seen order.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Canonical Entity Ids",
+            "type": "array"
+          },
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "resolutions": {
+            "items": {
+              "$ref": "#/components/schemas/EntityReferenceResolution"
+            },
+            "title": "Resolutions",
+            "type": "array"
+          },
+          "unresolved_references": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Unresolved References",
+            "type": "array"
+          }
+        },
+        "required": [
+          "event_id"
+        ],
+        "title": "EventEntityResolution",
+        "type": "object"
+      },
+      "EvidenceCustodyEntry": {
+        "properties": {
+          "evidence_id": {
+            "title": "Evidence Id",
+            "type": "string"
+          },
+          "integrity_status": {
+            "$ref": "#/components/schemas/IntegrityStatus"
+          },
+          "sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sha256"
+          },
+          "storage_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Storage Key"
+          },
+          "storage_reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Storage Reference"
+          },
+          "video_sha256_after_processing": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Sha256 After Processing"
+          },
+          "video_sha256_before_processing": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Sha256 Before Processing"
+          },
+          "video_source_unchanged": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Source Unchanged"
+          }
+        },
+        "required": [
+          "evidence_id",
+          "integrity_status"
+        ],
+        "title": "EvidenceCustodyEntry",
+        "type": "object"
+      },
+      "EvidenceGap": {
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "gap_type": {
+            "$ref": "#/components/schemas/EvidenceGapType"
+          },
+          "reason_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason Code"
+          },
+          "subject_id": {
+            "title": "Subject Id",
+            "type": "string"
+          },
+          "subject_type": {
+            "title": "Subject Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "gap_type",
+          "subject_type",
+          "subject_id",
+          "description"
+        ],
+        "title": "EvidenceGap",
+        "type": "object"
+      },
+      "EvidenceGapEntry": {
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "gap_type": {
+            "title": "Gap Type",
+            "type": "string"
+          },
+          "reason_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason Code"
+          },
+          "subject_id": {
+            "title": "Subject Id",
+            "type": "string"
+          },
+          "subject_type": {
+            "title": "Subject Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "gap_type",
+          "subject_type",
+          "subject_id",
+          "description"
+        ],
+        "title": "EvidenceGapEntry",
+        "type": "object"
+      },
+      "EvidenceGapType": {
+        "enum": [
+          "EVIDENCE_EXCLUDED",
+          "EVIDENCE_WITHOUT_EVENTS",
+          "CANDIDATE_EXCLUDED",
+          "FRAME_EXCLUDED",
+          "EVENT_WITHOUT_COORDINATES",
+          "UNRESOLVED_ENTITY_REFERENCE",
+          "SPATIAL_CONTINUITY_GAP",
+          "VIDEO_WITHOUT_FRAMES"
+        ],
+        "title": "EvidenceGapType",
+        "type": "string"
+      },
+      "EvidenceInventoryItem": {
+        "properties": {
+          "clock_calibration": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ClockCalibrationStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "clock_offset_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clock Offset Seconds"
+          },
+          "evidence_id": {
+            "title": "Evidence Id",
+            "type": "string"
+          },
+          "exclusion_reason_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exclusion Reason Code"
+          },
+          "integrity_note": {
+            "title": "Integrity Note",
+            "type": "string"
+          },
+          "integrity_status": {
+            "$ref": "#/components/schemas/IntegrityStatus"
+          },
+          "sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sha256"
+          },
+          "source_timezone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Timezone"
+          },
+          "source_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Type"
+          },
+          "storage_reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Storage Reference"
+          },
+          "timeline_events_cited": {
+            "default": 0,
+            "title": "Timeline Events Cited",
+            "type": "integer"
+          },
+          "usable": {
+            "title": "Usable",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "evidence_id",
+          "integrity_status",
+          "integrity_note",
+          "usable"
+        ],
+        "title": "EvidenceInventoryItem",
+        "type": "object"
+      },
+      "EvidenceUploadResponse": {
+        "description": "Response returned upon successful evidence file upload and ingestion.",
+        "properties": {
+          "active_extraction_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "UUID of the active extraction run if extraction was executed.",
+            "title": "Active Extraction Run Id"
+          },
+          "case_id": {
+            "description": "Forensic case identifier.",
+            "title": "Case Id",
+            "type": "string"
+          },
+          "created_at": {
+            "description": "UTC ISO 8601 timestamp with trailing 'Z'.",
+            "title": "Created At",
+            "type": "string"
+          },
+          "evidence_id": {
+            "description": "Generated canonical UUIDv4 for this evidence item.",
+            "title": "Evidence Id",
+            "type": "string"
+          },
+          "extraction_summary": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Summary of extraction counts and status if extraction was triggered.",
+            "title": "Extraction Summary"
+          },
+          "file_size_bytes": {
+            "description": "Exact file size in bytes.",
+            "minimum": 0.0,
+            "title": "File Size Bytes",
+            "type": "integer"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "description": "Preserved ingestion metadata (source timezone, clock offset, etc.).",
+            "title": "Metadata",
+            "type": "object"
+          },
+          "mime_type": {
+            "description": "Validated MIME type determined via content inspection.",
+            "title": "Mime Type",
+            "type": "string"
+          },
+          "original_filename": {
+            "description": "Original uploaded filename (sanitized).",
+            "title": "Original Filename",
+            "type": "string"
+          },
+          "sha256_hash": {
+            "description": "Cryptographic SHA-256 hash computed incrementally from upload bytes.",
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Sha256 Hash",
+            "type": "string"
+          },
+          "source_type": {
+            "description": "Categorical modality (e.g. CALL_DETAIL_RECORD, CHAT_EXPORT).",
+            "title": "Source Type",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/IngestionStatus",
+            "description": "Current lifecycle status of the evidence item."
+          },
+          "storage_uri": {
+            "description": "Safe storage path URI within the evidence repository.",
+            "title": "Storage Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "evidence_id",
+          "case_id",
+          "original_filename",
+          "source_type",
+          "mime_type",
+          "file_size_bytes",
+          "sha256_hash",
+          "storage_uri",
+          "status",
+          "created_at"
+        ],
+        "title": "EvidenceUploadResponse",
+        "type": "object"
+      },
+      "EvidenceValidationRecord": {
+        "properties": {
+          "clock_calibration": {
+            "$ref": "#/components/schemas/ClockCalibrationStatus"
+          },
+          "clock_offset_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clock Offset Seconds"
+          },
+          "device_coordinates": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GeoPoint"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "evidence_id": {
+            "title": "Evidence Id",
+            "type": "string"
+          },
+          "ignored_time_metadata_keys": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ignored Time Metadata Keys",
+            "type": "array"
+          },
+          "integrity_verified": {
+            "title": "Integrity Verified",
+            "type": "boolean"
+          },
+          "recording_start_timestamp": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recording Start Timestamp"
+          },
+          "sha256_hash": {
+            "title": "Sha256 Hash",
+            "type": "string"
+          },
+          "source_timezone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Timezone"
+          },
+          "source_type": {
+            "title": "Source Type",
+            "type": "string"
+          },
+          "storage_key": {
+            "title": "Storage Key",
+            "type": "string"
+          },
+          "storage_reference": {
+            "title": "Storage Reference",
+            "type": "string"
+          },
+          "time_metadata_applied": {
+            "title": "Time Metadata Applied",
+            "type": "boolean"
+          },
+          "usable": {
+            "description": "False when the item was excluded from reconstruction.",
+            "title": "Usable",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "evidence_id",
+          "source_type",
+          "sha256_hash",
+          "integrity_verified",
+          "usable",
+          "storage_reference",
+          "storage_key",
+          "time_metadata_applied",
+          "clock_calibration"
+        ],
+        "title": "EvidenceValidationRecord",
+        "type": "object"
+      },
+      "ExcludedInput": {
+        "description": "An input item that failed validation and was left out of this run.",
+        "properties": {
+          "reason_code": {
+            "title": "Reason Code",
+            "type": "string"
+          },
+          "subject_id": {
+            "title": "Subject Id",
+            "type": "string"
+          },
+          "subject_type": {
+            "description": "EVIDENCE, EVENT_CANDIDATE or FRAME_ARTIFACT.",
+            "title": "Subject Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "subject_type",
+          "subject_id",
+          "reason_code"
+        ],
+        "title": "ExcludedInput",
+        "type": "object"
+      },
+      "ExtractionRunDTO": {
+        "description": "Record of an individual extraction execution.\n\nPrevents destructive blind deletion of forensic history by tracking multiple\nruns per evidence item with explicit versioning and status.",
+        "properties": {
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "UTC ISO 8601 timestamp with trailing 'Z' when run terminated.",
+            "title": "Completed At"
+          },
+          "configuration_hash": {
+            "description": "Deterministic hash of extraction parameters (e.g. timezone, offsets, keywords).",
+            "title": "Configuration Hash",
+            "type": "string"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Explanatory error diagnostic if status is FAILED.",
+            "title": "Error Message"
+          },
+          "evidence_id": {
+            "description": "Target Evidence item UUIDv4.",
+            "title": "Evidence Id",
+            "type": "string"
+          },
+          "extraction_run_id": {
+            "description": "Unique UUIDv4 identifier for this extraction execution.",
+            "title": "Extraction Run Id",
+            "type": "string"
+          },
+          "extractor_name": {
+            "description": "Name of the extractor module (e.g. 'cdr_extractor', 'chat_extractor').",
+            "title": "Extractor Name",
+            "type": "string"
+          },
+          "extractor_version": {
+            "description": "Version string of the extraction logic (e.g. '1.0.0').",
+            "title": "Extractor Version",
+            "type": "string"
+          },
+          "is_active": {
+            "default": true,
+            "description": "True if this is the currently accepted, active extraction run for the evidence item.",
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "records_processed": {
+            "default": 0,
+            "description": "Total records/rows examined.",
+            "minimum": 0.0,
+            "title": "Records Processed",
+            "type": "integer"
+          },
+          "rejected_records_count": {
+            "default": 0,
+            "description": "Rejected/malformed records.",
+            "minimum": 0.0,
+            "title": "Rejected Records Count",
+            "type": "integer"
+          },
+          "source_sha256": {
+            "description": "SHA-256 hash of the evidence file verified prior to run.",
+            "title": "Source Sha256",
+            "type": "string"
+          },
+          "started_at": {
+            "description": "UTC ISO 8601 timestamp with trailing 'Z' when run commenced.",
+            "title": "Started At",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ExtractionRunStatus",
+            "description": "Execution outcome."
+          },
+          "valid_records_count": {
+            "default": 0,
+            "description": "Successfully parsed records.",
+            "minimum": 0.0,
+            "title": "Valid Records Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "extraction_run_id",
+          "evidence_id",
+          "source_sha256",
+          "extractor_name",
+          "extractor_version",
+          "configuration_hash",
+          "status",
+          "started_at"
+        ],
+        "title": "ExtractionRunDTO",
+        "type": "object"
+      },
+      "ExtractionRunStatus": {
+        "description": "Lifecycle status of an individual, versioned extraction run.",
+        "enum": [
+          "PENDING",
+          "RUNNING",
+          "SUCCESS",
+          "PARTIAL_SUCCESS",
+          "FAILED",
+          "SUPERSEDED"
+        ],
+        "title": "ExtractionRunStatus",
+        "type": "string"
+      },
+      "FindingBasis": {
+        "enum": [
+          "OBSERVED",
+          "INFERRED"
+        ],
+        "title": "FindingBasis",
+        "type": "string"
+      },
+      "FindingProvenance": {
+        "description": "Which evidence, records and frames support one finding.",
+        "properties": {
+          "event_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Event Ids",
+            "type": "array"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Evidence Ids",
+            "type": "array"
+          },
+          "evidence_sha256": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Evidence Sha256",
+            "type": "object"
+          },
+          "finding_id": {
+            "title": "Finding Id",
+            "type": "string"
+          },
+          "finding_type": {
+            "$ref": "#/components/schemas/FindingType"
+          },
+          "frame_artifact_ids": {
+            "description": "Frames temporally aligned with the supporting events (not semantic confirmation).",
+            "items": {
+              "type": "string"
+            },
+            "title": "Frame Artifact Ids",
+            "type": "array"
+          },
+          "is_observed": {
+            "description": "True for extracted facts; false for derived inferences (segments, leads, relationships).",
+            "title": "Is Observed",
+            "type": "boolean"
+          },
+          "source_record_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Source Record Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "finding_type",
+          "finding_id",
+          "is_observed",
+          "evidence_ids",
+          "evidence_sha256"
+        ],
+        "title": "FindingProvenance",
+        "type": "object"
+      },
+      "FindingType": {
+        "enum": [
+          "TIMELINE_EVENT",
+          "SPATIAL_OBSERVATION",
+          "MOVEMENT_SEGMENT",
+          "CONTRADICTION_LEAD",
+          "RELATIONSHIP"
+        ],
+        "title": "FindingType",
+        "type": "string"
+      },
+      "ForensicReport": {
+        "description": "Structured, evidence-linked investigation report for one reconstruction run.",
+        "properties": {
+          "chain_of_custody": {
+            "$ref": "#/components/schemas/CustodyAppendix"
+          },
+          "content_sha256": {
+            "default": "",
+            "description": "SHA-256 of the canonical report JSON, excluding generated_at_utc and this field.",
+            "title": "Content Sha256",
+            "type": "string"
+          },
+          "contradiction_notice": {
+            "default": "Each item below is an ANALYTICAL LEAD produced by a configured rule, not a proven fact. It indicates that two observations are hard to reconcile under the stated assumptions. Possible explanations include clock error, location error, extraction error, shared devices or accounts, and wrong entity linkage. Verify against the cited evidence.",
+            "title": "Contradiction Notice",
+            "type": "string"
+          },
+          "contradiction_pairs_not_evaluated": {
+            "items": {
+              "$ref": "#/components/schemas/UnevaluatedPair"
+            },
+            "title": "Contradiction Pairs Not Evaluated",
+            "type": "array"
+          },
+          "contradictions": {
+            "items": {
+              "$ref": "#/components/schemas/ContradictionEntry"
+            },
+            "title": "Contradictions",
+            "type": "array"
+          },
+          "disclaimer": {
+            "default": "DECISION SUPPORT FOR INVESTIGATORS. This report is generated automatically from a reconstruction run over the evidence and extraction inputs listed in it. It organises those inputs and the analytical inferences derived from them for review by a qualified investigator. It does not establish the identity of any person, nor guilt, intent, deception or the occurrence of any offence. Contradictions are analytical leads to be checked against the original evidence, not findings of fact. Entity identifiers are registry references, not identifications. Every finding must be verified against the cited source evidence before it is relied upon.",
+            "title": "Disclaimer",
+            "type": "string"
+          },
+          "evidence_inventory": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceInventoryItem"
+            },
+            "title": "Evidence Inventory",
+            "type": "array"
+          },
+          "frame_notice": {
+            "default": "Frame references are temporal alignment only: the frame was captured during the event's uncertainty window from the same source. They do not show or confirm the event. No semantic recognition was performed on any frame.",
+            "title": "Frame Notice",
+            "type": "string"
+          },
+          "limitations": {
+            "$ref": "#/components/schemas/LimitationsSection"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/ReportMetadata"
+          },
+          "movement_segments": {
+            "items": {
+              "$ref": "#/components/schemas/MovementEntry"
+            },
+            "title": "Movement Segments",
+            "type": "array"
+          },
+          "relationships": {
+            "items": {
+              "$ref": "#/components/schemas/RelationshipEntry"
+            },
+            "title": "Relationships",
+            "type": "array"
+          },
+          "report_kind": {
+            "default": "RECONSTRUCTION_DECISION_SUPPORT_REPORT",
+            "title": "Report Kind",
+            "type": "string"
+          },
+          "report_schema_version": {
+            "default": "yukti-forensic-report/1",
+            "title": "Report Schema Version",
+            "type": "string"
+          },
+          "spatial_observations": {
+            "items": {
+              "$ref": "#/components/schemas/SpatialObservationEntry"
+            },
+            "title": "Spatial Observations",
+            "type": "array"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/CaseSummary"
+          },
+          "timeline": {
+            "items": {
+              "$ref": "#/components/schemas/app__modules__reporting__forensic_report__TimelineEntry"
+            },
+            "title": "Timeline",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "metadata",
+          "summary",
+          "evidence_inventory",
+          "timeline",
+          "spatial_observations",
+          "movement_segments",
+          "contradictions",
+          "contradiction_pairs_not_evaluated",
+          "relationships",
+          "limitations",
+          "chain_of_custody"
+        ],
+        "title": "ForensicReport",
+        "type": "object"
+      },
+      "FrameArtifactOrigin": {
+        "enum": [
+          "EXTRACTED_IN_RUN",
+          "SUPPLIED"
+        ],
+        "title": "FrameArtifactOrigin",
+        "type": "string"
+      },
+      "FrameArtifactReference": {
+        "description": "Serializable reference to one derived frame. It never contains absolute host paths.",
+        "properties": {
+          "artifact_id": {
+            "title": "Artifact Id",
+            "type": "string"
+          },
+          "artifact_reference": {
+            "description": "urn:yukti:artifact:{artifact_id}",
+            "title": "Artifact Reference",
+            "type": "string"
+          },
+          "artifact_relative_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "POSIX path relative to the artifact root. Each extraction writes to a new run directory (derived artifacts are never overwritten), so this value differs between runs and is excluded from result_sha256.",
+            "title": "Artifact Relative Path"
+          },
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          },
+          "extraction_method": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extraction Method"
+          },
+          "file_size_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Size Bytes"
+          },
+          "frame_index": {
+            "title": "Frame Index",
+            "type": "integer"
+          },
+          "height": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height"
+          },
+          "image_format": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Format"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/FrameArtifactOrigin",
+            "default": "EXTRACTED_IN_RUN"
+          },
+          "pts_offset_seconds": {
+            "title": "Pts Offset Seconds",
+            "type": "number"
+          },
+          "sha256_hash": {
+            "title": "Sha256 Hash",
+            "type": "string"
+          },
+          "source_evidence_id": {
+            "title": "Source Evidence Id",
+            "type": "string"
+          },
+          "source_video_sha256": {
+            "title": "Source Video Sha256",
+            "type": "string"
+          },
+          "time_window": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NormalizedTimeWindow"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "timestamp_precision": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CanonicalTimePrecision"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "timestamp_utc": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestamp Utc"
+          },
+          "timestamp_utc_anchored": {
+            "title": "Timestamp Utc Anchored",
+            "type": "boolean"
+          },
+          "width": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Width"
+          }
+        },
+        "required": [
+          "artifact_id",
+          "artifact_reference",
+          "case_id",
+          "source_evidence_id",
+          "source_video_sha256",
+          "frame_index",
+          "pts_offset_seconds",
+          "timestamp_utc_anchored",
+          "sha256_hash"
+        ],
+        "title": "FrameArtifactReference",
+        "type": "object"
+      },
+      "FrameCustodyEntry": {
+        "properties": {
+          "artifact_id": {
+            "title": "Artifact Id",
+            "type": "string"
+          },
+          "artifact_reference": {
+            "title": "Artifact Reference",
+            "type": "string"
+          },
+          "frame_index": {
+            "title": "Frame Index",
+            "type": "integer"
+          },
+          "origin": {
+            "title": "Origin",
+            "type": "string"
+          },
+          "pts_offset_seconds": {
+            "title": "Pts Offset Seconds",
+            "type": "number"
+          },
+          "sha256": {
+            "title": "Sha256",
+            "type": "string"
+          },
+          "source_evidence_id": {
+            "title": "Source Evidence Id",
+            "type": "string"
+          },
+          "source_video_sha256": {
+            "title": "Source Video Sha256",
+            "type": "string"
+          },
+          "timestamp_utc": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestamp Utc"
+          },
+          "timestamp_utc_anchored": {
+            "title": "Timestamp Utc Anchored",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "artifact_id",
+          "artifact_reference",
+          "origin",
+          "source_evidence_id",
+          "source_video_sha256",
+          "frame_index",
+          "pts_offset_seconds",
+          "timestamp_utc_anchored",
+          "sha256"
+        ],
+        "title": "FrameCustodyEntry",
+        "type": "object"
+      },
+      "FrameHandoffStatus": {
+        "enum": [
+          "SUBMITTED",
+          "NOT_SUBMITTED_NO_CONSUMER",
+          "NOT_SUBMITTED_NO_FRAMES",
+          "FAILED"
+        ],
+        "title": "FrameHandoffStatus",
+        "type": "string"
+      },
+      "GeoPoint": {
+        "additionalProperties": false,
+        "description": "Validated WGS84 geographic coordinates in decimal degrees.\n\nLatitude must be within [-90.0, 90.0] and longitude within [-180.0, 180.0].\nLatitude and longitude are never silently swapped.",
+        "properties": {
+          "lat": {
+            "description": "WGS84 latitude in decimal degrees [-90.0, 90.0].",
+            "title": "Lat",
+            "type": "number"
+          },
+          "lon": {
+            "description": "WGS84 longitude in decimal degrees [-180.0, 180.0].",
+            "title": "Lon",
+            "type": "number"
+          }
+        },
+        "required": [
+          "lat",
+          "lon"
+        ],
+        "title": "GeoPoint",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HealthResponse": {
+        "description": "Schema for service health check response.",
+        "properties": {
+          "project": {
+            "default": "sutram-digital-forensics",
+            "description": "Registered project identifier",
+            "title": "Project",
+            "type": "string"
+          },
+          "status": {
+            "default": "ok",
+            "description": "Operational status of the service",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "title": "HealthResponse",
+        "type": "object"
+      },
+      "IngestionStatus": {
+        "description": "Lifecycle status of an ingested evidence record.",
+        "enum": [
+          "INGESTED",
+          "EXTRACTION_PENDING",
+          "EXTRACTED",
+          "EXTRACTION_FAILED",
+          "CORRUPTED"
+        ],
+        "title": "IngestionStatus",
+        "type": "string"
+      },
+      "IntegrityStatus": {
+        "enum": [
+          "VERIFIED",
+          "SHA256_MISMATCH",
+          "FILE_UNAVAILABLE",
+          "STORAGE_REFERENCE_REJECTED",
+          "RECORD_INVALID",
+          "DUPLICATE_EVIDENCE_ID",
+          "NOT_VERIFIED"
+        ],
+        "title": "IntegrityStatus",
+        "type": "string"
+      },
+      "LeadSummary": {
+        "properties": {
+          "basis": {
+            "$ref": "#/components/schemas/FindingBasis",
+            "default": "INFERRED"
+          },
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/Citation"
+            },
+            "title": "Citations",
+            "type": "array"
+          },
+          "lead_id": {
+            "title": "Lead Id",
+            "type": "string"
+          },
+          "ref": {
+            "title": "Ref",
+            "type": "string"
+          },
+          "statement": {
+            "title": "Statement",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ref",
+          "lead_id",
+          "statement",
+          "citations"
+        ],
+        "title": "LeadSummary",
+        "type": "object"
+      },
+      "Limitation": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "subject_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Subject Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "Limitation",
+        "type": "object"
+      },
+      "LimitationEntry": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "subject_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Subject Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "LimitationEntry",
+        "type": "object"
+      },
+      "LimitationsSection": {
+        "properties": {
+          "diagnostics": {
+            "description": "ERROR and WARNING diagnostics of the run (INFO diagnostics are omitted).",
+            "items": {
+              "$ref": "#/components/schemas/DiagnosticEntry"
+            },
+            "title": "Diagnostics",
+            "type": "array"
+          },
+          "evidence_gaps": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceGapEntry"
+            },
+            "title": "Evidence Gaps",
+            "type": "array"
+          },
+          "excluded_inputs": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "title": "Excluded Inputs",
+            "type": "array"
+          },
+          "limitations": {
+            "items": {
+              "$ref": "#/components/schemas/LimitationEntry"
+            },
+            "title": "Limitations",
+            "type": "array"
+          },
+          "pending_items": {
+            "items": {
+              "$ref": "#/components/schemas/PendingItem"
+            },
+            "title": "Pending Items",
+            "type": "array"
+          },
+          "unverified_clock_calibrations": {
+            "items": {
+              "$ref": "#/components/schemas/ClockCalibrationEntry"
+            },
+            "title": "Unverified Clock Calibrations",
+            "type": "array"
+          }
+        },
+        "required": [
+          "limitations",
+          "evidence_gaps",
+          "unverified_clock_calibrations",
+          "pending_items",
+          "excluded_inputs",
+          "diagnostics"
+        ],
+        "title": "LimitationsSection",
+        "type": "object"
+      },
+      "MovementEntry": {
+        "properties": {
+          "basis": {
+            "$ref": "#/components/schemas/FindingBasis",
+            "default": "INFERRED"
+          },
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/Citation"
+            },
+            "title": "Citations",
+            "type": "array"
+          },
+          "configured_speed_threshold_kmh": {
+            "title": "Configured Speed Threshold Kmh",
+            "type": "number"
+          },
+          "continuity_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Continuity Note"
+          },
+          "destination_coordinates": {
+            "$ref": "#/components/schemas/GeoPoint"
+          },
+          "destination_event_id": {
+            "title": "Destination Event Id",
+            "type": "string"
+          },
+          "distance_km": {
+            "title": "Distance Km",
+            "type": "number"
+          },
+          "entity_id": {
+            "title": "Entity Id",
+            "type": "string"
+          },
+          "feasibility_statement": {
+            "title": "Feasibility Statement",
+            "type": "string"
+          },
+          "intervening_unlocated_event_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Intervening Unlocated Event Ids",
+            "type": "array"
+          },
+          "max_possible_elapsed_seconds": {
+            "title": "Max Possible Elapsed Seconds",
+            "type": "number"
+          },
+          "min_possible_elapsed_seconds": {
+            "title": "Min Possible Elapsed Seconds",
+            "type": "number"
+          },
+          "min_required_speed_kmh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Required Speed Kmh"
+          },
+          "nominal_elapsed_seconds": {
+            "title": "Nominal Elapsed Seconds",
+            "type": "number"
+          },
+          "origin_coordinates": {
+            "$ref": "#/components/schemas/GeoPoint"
+          },
+          "origin_event_id": {
+            "title": "Origin Event Id",
+            "type": "string"
+          },
+          "ref": {
+            "title": "Ref",
+            "type": "string"
+          },
+          "segment_id": {
+            "title": "Segment Id",
+            "type": "string"
+          },
+          "threshold_assumption_note": {
+            "title": "Threshold Assumption Note",
+            "type": "string"
+          },
+          "threshold_evaluation": {
+            "$ref": "#/components/schemas/SpeedThresholdEvaluation"
+          }
+        },
+        "required": [
+          "ref",
+          "segment_id",
+          "entity_id",
+          "origin_event_id",
+          "destination_event_id",
+          "origin_coordinates",
+          "destination_coordinates",
+          "distance_km",
+          "nominal_elapsed_seconds",
+          "min_possible_elapsed_seconds",
+          "max_possible_elapsed_seconds",
+          "configured_speed_threshold_kmh",
+          "threshold_evaluation",
+          "feasibility_statement",
+          "threshold_assumption_note",
+          "citations"
+        ],
+        "title": "MovementEntry",
+        "type": "object"
+      },
+      "MovementSegment": {
+        "description": "Directed spatiotemporal movement segment between two strictly ordered events for an entity.",
+        "properties": {
+          "case_id": {
+            "description": "Parent case identifier.",
+            "title": "Case Id",
+            "type": "string"
+          },
+          "configured_speed_threshold_kmh": {
+            "exclusiveMinimum": 0.0,
+            "title": "Configured Speed Threshold Kmh",
+            "type": "number"
+          },
+          "continuity_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Explicit provenance note when intervening unlocated events exist between origin and destination.",
+            "title": "Continuity Note"
+          },
+          "destination_coordinates": {
+            "$ref": "#/components/schemas/GeoPoint",
+            "description": "Validated WGS84 destination coordinates."
+          },
+          "destination_event_id": {
+            "description": "Destination event ID.",
+            "title": "Destination Event Id",
+            "type": "string"
+          },
+          "destination_location_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Destination Location Name"
+          },
+          "destination_source_evidence_id": {
+            "description": "Source evidence ID of the destination event.",
+            "title": "Destination Source Evidence Id",
+            "type": "string"
+          },
+          "destination_time_window": {
+            "$ref": "#/components/schemas/NormalizedTimeWindow",
+            "description": "Normalized half-open UTC uncertainty window [start, end) of destination event."
+          },
+          "distance_km": {
+            "description": "Haversine distance in kilometers.",
+            "minimum": 0.0,
+            "title": "Distance Km",
+            "type": "number"
+          },
+          "entity_id": {
+            "description": "Entity identifier moving between origin and destination.",
+            "title": "Entity Id",
+            "type": "string"
+          },
+          "exceeds_configured_speed_threshold": {
+            "title": "Exceeds Configured Speed Threshold",
+            "type": "boolean"
+          },
+          "has_unlocated_intervening_events": {
+            "default": false,
+            "description": "True when one or more unlocated events intervened between origin and destination; indicates this segment is net displacement between known points, not uninterrupted movement.",
+            "title": "Has Unlocated Intervening Events",
+            "type": "boolean"
+          },
+          "intervening_unlocated_event_ids": {
+            "description": "Ordered event IDs for this entity that occurred or overlapped between origin and destination but lacked geographic coordinates.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Intervening Unlocated Event Ids",
+            "type": "array"
+          },
+          "max_possible_elapsed_seconds": {
+            "description": "Conservative maximum possible elapsed time (destination.window_end_utc - origin.window_start_utc) in seconds.",
+            "title": "Max Possible Elapsed Seconds",
+            "type": "number"
+          },
+          "min_possible_elapsed_seconds": {
+            "description": "Minimum possible elapsed time (destination.window_start_utc - origin.window_end_utc) in seconds.",
+            "title": "Min Possible Elapsed Seconds",
+            "type": "number"
+          },
+          "min_required_speed_kmh": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Conservative minimum speed (km/h) using max_possible_elapsed_seconds.",
+            "title": "Min Required Speed Kmh"
+          },
+          "nominal_elapsed_seconds": {
+            "description": "Nominal elapsed time (destination.nominal_utc - origin.nominal_utc) in seconds.",
+            "title": "Nominal Elapsed Seconds",
+            "type": "number"
+          },
+          "nominal_speed_kmh": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nominal Speed Kmh"
+          },
+          "ordering_status": {
+            "$ref": "#/components/schemas/TemporalOrderingStatus",
+            "default": "STRICTLY_ORDERED",
+            "description": "Movement segments are generated only when origin is strictly before destination."
+          },
+          "origin_coordinates": {
+            "$ref": "#/components/schemas/GeoPoint",
+            "description": "Validated WGS84 origin coordinates."
+          },
+          "origin_event_id": {
+            "description": "Origin event ID.",
+            "title": "Origin Event Id",
+            "type": "string"
+          },
+          "origin_location_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origin Location Name"
+          },
+          "origin_source_evidence_id": {
+            "description": "Source evidence ID of the origin event.",
+            "title": "Origin Source Evidence Id",
+            "type": "string"
+          },
+          "origin_time_window": {
+            "$ref": "#/components/schemas/NormalizedTimeWindow",
+            "description": "Normalized half-open UTC uncertainty window [start, end) of origin event."
+          },
+          "segment_id": {
+            "description": "Deterministic identifier for this movement segment.",
+            "title": "Segment Id",
+            "type": "string"
+          },
+          "threshold_assumption_note": {
+            "title": "Threshold Assumption Note",
+            "type": "string"
+          },
+          "threshold_evaluation": {
+            "$ref": "#/components/schemas/SpeedThresholdEvaluation"
+          }
+        },
+        "required": [
+          "segment_id",
+          "case_id",
+          "entity_id",
+          "origin_event_id",
+          "destination_event_id",
+          "origin_source_evidence_id",
+          "destination_source_evidence_id",
+          "origin_coordinates",
+          "destination_coordinates",
+          "origin_time_window",
+          "destination_time_window",
+          "distance_km",
+          "nominal_elapsed_seconds",
+          "min_possible_elapsed_seconds",
+          "max_possible_elapsed_seconds",
+          "configured_speed_threshold_kmh",
+          "exceeds_configured_speed_threshold",
+          "threshold_evaluation",
+          "threshold_assumption_note"
+        ],
+        "title": "MovementSegment",
+        "type": "object"
+      },
+      "NormalizedTimeWindow": {
+        "description": "Normalized UTC half-open interval [window_start_utc, window_end_utc) for an event.\n\nPreserves epistemic start-time uncertainty strictly separate from event duration.",
+        "properties": {
+          "clock_offset_seconds": {
+            "default": 0.0,
+            "description": "Signed clock drift correction (seconds) applied to nominal and interval boundaries.",
+            "title": "Clock Offset Seconds",
+            "type": "number"
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Elapsed duration of the activity if explicitly known; never inferred from uncertainty.",
+            "title": "Duration Seconds"
+          },
+          "estimated_half_width_seconds": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Configurable half-width in seconds used when precision is ESTIMATED.",
+            "title": "Estimated Half Width Seconds"
+          },
+          "has_explicit_bounds": {
+            "default": false,
+            "description": "True if interval bounds were explicitly supplied rather than derived from precision.",
+            "title": "Has Explicit Bounds",
+            "type": "boolean"
+          },
+          "is_estimated_window_assumption": {
+            "default": false,
+            "description": "True when bounds were derived using a configurable ESTIMATED half-width assumption (not a hard forensic measurement).",
+            "title": "Is Estimated Window Assumption",
+            "type": "boolean"
+          },
+          "nominal_utc": {
+            "description": "Clock-corrected UTC nominal timestamp of the event.",
+            "format": "date-time",
+            "title": "Nominal Utc",
+            "type": "string"
+          },
+          "precision": {
+            "$ref": "#/components/schemas/CanonicalTimePrecision",
+            "description": "Canonical precision level applied to derive the uncertainty interval."
+          },
+          "raw_precision_input": {
+            "description": "Original timestamp_precision value provided on the input Event.",
+            "title": "Raw Precision Input",
+            "type": "string"
+          },
+          "source_timezone": {
+            "default": "UTC",
+            "description": "IANA timezone identifier used to interpret local boundaries before UTC conversion.",
+            "title": "Source Timezone",
+            "type": "string"
+          },
+          "uncertainty_span_seconds": {
+            "description": "Width of [window_start_utc, window_end_utc) in seconds.",
+            "exclusiveMinimum": 0.0,
+            "title": "Uncertainty Span Seconds",
+            "type": "number"
+          },
+          "window_end_utc": {
+            "description": "Exclusive upper bound of the half-open UTC uncertainty interval [start, end).",
+            "format": "date-time",
+            "title": "Window End Utc",
+            "type": "string"
+          },
+          "window_start_utc": {
+            "description": "Inclusive lower bound of the half-open UTC uncertainty interval [start, end).",
+            "format": "date-time",
+            "title": "Window Start Utc",
+            "type": "string"
+          }
+        },
+        "required": [
+          "nominal_utc",
+          "precision",
+          "raw_precision_input",
+          "window_start_utc",
+          "window_end_utc",
+          "uncertainty_span_seconds"
+        ],
+        "title": "NormalizedTimeWindow",
+        "type": "object"
+      },
+      "ObservedLeadBasis": {
+        "description": "Strictly observed facts from source evidence supporting a contradiction lead.",
+        "properties": {
+          "destination_coordinates": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GeoPoint"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "destination_event_id": {
+            "title": "Destination Event Id",
+            "type": "string"
+          },
+          "destination_location_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Destination Location Name"
+          },
+          "destination_source_evidence_id": {
+            "title": "Destination Source Evidence Id",
+            "type": "string"
+          },
+          "destination_time_window": {
+            "$ref": "#/components/schemas/NormalizedTimeWindow"
+          },
+          "entity_id": {
+            "title": "Entity Id",
+            "type": "string"
+          },
+          "origin_coordinates": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GeoPoint"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "origin_duration_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origin Duration Seconds"
+          },
+          "origin_event_id": {
+            "title": "Origin Event Id",
+            "type": "string"
+          },
+          "origin_location_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origin Location Name"
+          },
+          "origin_source_evidence_id": {
+            "title": "Origin Source Evidence Id",
+            "type": "string"
+          },
+          "origin_time_window": {
+            "$ref": "#/components/schemas/NormalizedTimeWindow"
+          }
+        },
+        "required": [
+          "entity_id",
+          "origin_event_id",
+          "destination_event_id",
+          "origin_source_evidence_id",
+          "destination_source_evidence_id",
+          "origin_time_window",
+          "destination_time_window"
+        ],
+        "title": "ObservedLeadBasis",
+        "type": "object"
+      },
+      "PendingItem": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "subject_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject Id"
+          }
+        },
+        "required": [
+          "code",
+          "description"
+        ],
+        "title": "PendingItem",
+        "type": "object"
+      },
+      "PipelineStage": {
+        "description": "Pipeline stages in execution order (used for deterministic diagnostic ordering).",
+        "enum": [
+          "INPUT",
+          "EVIDENCE",
+          "EVENTS",
+          "ENTITIES",
+          "VIDEO",
+          "FRAME_HANDOFF",
+          "ENTITY_RESOLUTION",
+          "SPATIAL",
+          "CONTRADICTIONS",
+          "RELATIONSHIPS"
+        ],
+        "title": "PipelineStage",
+        "type": "string"
+      },
+      "PipelineStatus": {
+        "enum": [
+          "COMPLETED",
+          "COMPLETED_WITH_WARNINGS",
+          "COMPLETED_WITH_ERRORS",
+          "FAILED"
+        ],
+        "title": "PipelineStatus",
+        "type": "string"
+      },
+      "ReconstructedEvent": {
+        "description": "Shared-facing timeline event produced by the Member 4 temporal engine.\n\nIt carries the untouched candidate inputs next to the derived UTC values. ``timestamp_utc``\nis the value for shared ``Event.timestamp``. The candidate-contract fields keep their\nnames, so a snapshot's events can be fed back as candidates, and every derived field is then\nignored.",
+        "properties": {
+          "candidate_id": {
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          },
+          "clock_calibration": {
+            "$ref": "#/components/schemas/ClockCalibrationStatus"
+          },
+          "clock_offset_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Declared additive correction (DEC-001); null when not declared.",
+            "title": "Clock Offset Seconds"
+          },
+          "concurrent_event_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Concurrent Event Ids",
+            "type": "array"
+          },
+          "coordinates": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GeoPoint"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
+          },
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "event_type": {
+            "title": "Event Type",
+            "type": "string"
+          },
+          "evidence_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "SHA-256 of the source evidence recorded at ingestion.",
+            "title": "Evidence Sha256"
+          },
+          "extraction_confidence": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extraction Confidence"
+          },
+          "involved_entity_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Involved Entity Ids",
+            "type": "array"
+          },
+          "involved_entity_raw_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Involved Entity Raw Ids",
+            "type": "array"
+          },
+          "is_estimated_window_assumption": {
+            "default": false,
+            "title": "Is Estimated Window Assumption",
+            "type": "boolean"
+          },
+          "ordering_status": {
+            "$ref": "#/components/schemas/TemporalOrderingStatus"
+          },
+          "raw_timestamp": {
+            "title": "Raw Timestamp",
+            "type": "string"
+          },
+          "raw_timestamp_precision": {
+            "title": "Raw Timestamp Precision",
+            "type": "string"
+          },
+          "source_evidence_id": {
+            "title": "Source Evidence Id",
+            "type": "string"
+          },
+          "source_fields_preserved": {
+            "additionalProperties": true,
+            "description": "Producer fields outside the candidate contract (e.g. Member 1 location_name, metadata), kept verbatim. Member 4 does not interpret them.",
+            "title": "Source Fields Preserved",
+            "type": "object"
+          },
+          "source_record_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Record Id"
+          },
+          "source_timezone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Declared IANA timezone of the source; null when not declared.",
+            "title": "Source Timezone"
+          },
+          "supporting_frame_artifact_ids": {
+            "description": "Frames from the same evidence whose UTC window overlaps (temporal alignment only).",
+            "items": {
+              "type": "string"
+            },
+            "title": "Supporting Frame Artifact Ids",
+            "type": "array"
+          },
+          "time_derivation": {
+            "default": "YUKTI_M4_TEMPORAL_ENGINE_FROM_RAW_TIMESTAMP",
+            "title": "Time Derivation",
+            "type": "string"
+          },
+          "timestamp_precision": {
+            "$ref": "#/components/schemas/CanonicalTimePrecision"
+          },
+          "timestamp_utc": {
+            "format": "date-time",
+            "title": "Timestamp Utc",
+            "type": "string"
+          },
+          "timezone_basis": {
+            "$ref": "#/components/schemas/TimezoneBasis"
+          },
+          "uncertainty_window_end": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uncertainty Window End"
+          },
+          "uncertainty_window_start": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uncertainty Window Start"
+          },
+          "unresolved_entity_raw_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Unresolved Entity Raw Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "candidate_id",
+          "source_evidence_id",
+          "raw_timestamp",
+          "timestamp_precision",
+          "event_type",
+          "description",
+          "event_id",
+          "case_id",
+          "raw_timestamp_precision",
+          "timestamp_utc",
+          "timezone_basis",
+          "clock_calibration",
+          "ordering_status"
+        ],
+        "title": "ReconstructedEvent",
+        "type": "object"
+      },
+      "ReconstructionDiagnostic": {
+        "description": "A single explainable pipeline finding. Never contains evidence contents.",
+        "properties": {
+          "code": {
+            "description": "Stable machine-readable diagnostic code.",
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "pending_contract_decisions": {
+            "description": "Shared contract decisions withheld in this run that caused this diagnostic.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Pending Contract Decisions",
+            "type": "array"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/DiagnosticSeverity"
+          },
+          "stage": {
+            "$ref": "#/components/schemas/PipelineStage"
+          },
+          "subject_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject Id"
+          },
+          "subject_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "EVIDENCE, EVENT, ENTITY, ENTITY_REFERENCE or LEAD.",
+            "title": "Subject Type"
+          }
+        },
+        "required": [
+          "severity",
+          "stage",
+          "code",
+          "message"
+        ],
+        "title": "ReconstructionDiagnostic",
+        "type": "object"
+      },
+      "ReconstructionResult": {
+        "description": "Complete, persistence-agnostic output of one reconstruction run.",
+        "properties": {
+          "algorithm_version": {
+            "default": "yukti-m4-reconstruction/3F.2",
+            "title": "Algorithm Version",
+            "type": "string"
+          },
+          "approval_record": {
+            "default": "docs/member-4/team-contract-approvals-2026-11-19.md",
+            "title": "Approval Record",
+            "type": "string"
+          },
+          "approved_contract_decisions": {
+            "description": "Decisions enabled for this run (explicitly configured or verified approvals).",
+            "items": {
+              "type": "string"
+            },
+            "title": "Approved Contract Decisions",
+            "type": "array"
+          },
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          },
+          "configuration": {
+            "additionalProperties": true,
+            "title": "Configuration",
+            "type": "object"
+          },
+          "configuration_version": {
+            "title": "Configuration Version",
+            "type": "string"
+          },
+          "contradiction_leads": {
+            "items": {
+              "$ref": "#/components/schemas/ContradictionLeadRecord"
+            },
+            "title": "Contradiction Leads",
+            "type": "array"
+          },
+          "contradiction_overlaps_not_evaluated": {
+            "items": {
+              "$ref": "#/components/schemas/SpatialTemporalOverlap"
+            },
+            "title": "Contradiction Overlaps Not Evaluated",
+            "type": "array"
+          },
+          "diagnostics": {
+            "items": {
+              "$ref": "#/components/schemas/ReconstructionDiagnostic"
+            },
+            "title": "Diagnostics",
+            "type": "array"
+          },
+          "entity_resolution": {
+            "items": {
+              "$ref": "#/components/schemas/EventEntityResolution"
+            },
+            "title": "Entity Resolution",
+            "type": "array"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceValidationRecord"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "evidence_gaps": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceGap"
+            },
+            "title": "Evidence Gaps",
+            "type": "array"
+          },
+          "excluded_inputs": {
+            "items": {
+              "$ref": "#/components/schemas/ExcludedInput"
+            },
+            "title": "Excluded Inputs",
+            "type": "array"
+          },
+          "finding_provenance": {
+            "items": {
+              "$ref": "#/components/schemas/FindingProvenance"
+            },
+            "title": "Finding Provenance",
+            "type": "array"
+          },
+          "frame_artifacts": {
+            "items": {
+              "$ref": "#/components/schemas/FrameArtifactReference"
+            },
+            "title": "Frame Artifacts",
+            "type": "array"
+          },
+          "interpretation_notice": {
+            "default": "Reconstruction output separates observed source facts from derived analytical inferences. Contradiction leads are investigative prompts for human review; they do not establish identity, deception, guilt or intent. Declared clock offsets are applied as supplied and are not independently verified.",
+            "title": "Interpretation Notice",
+            "type": "string"
+          },
+          "limitations": {
+            "items": {
+              "$ref": "#/components/schemas/Limitation"
+            },
+            "title": "Limitations",
+            "type": "array"
+          },
+          "movement_segments": {
+            "items": {
+              "$ref": "#/components/schemas/MovementSegment"
+            },
+            "title": "Movement Segments",
+            "type": "array"
+          },
+          "relationship_export_status": {
+            "$ref": "#/components/schemas/RelationshipExportStatus",
+            "default": "NOT_RUN"
+          },
+          "relationships": {
+            "description": "Canonical relationship output.",
+            "items": {
+              "$ref": "#/components/schemas/SharedRelationshipRecord"
+            },
+            "title": "Relationships",
+            "type": "array"
+          },
+          "result_sha256": {
+            "default": "",
+            "description": "SHA-256 of the canonical snapshot, excluding this field and frame artifact paths.",
+            "title": "Result Sha256",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "snapshot_schema_version": {
+            "default": "yukti-reconstruction-snapshot/3",
+            "title": "Snapshot Schema Version",
+            "type": "string"
+          },
+          "spatial": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SpatialReconstructionResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "spatial_observations": {
+            "items": {
+              "$ref": "#/components/schemas/SpatialObservation"
+            },
+            "title": "Spatial Observations",
+            "type": "array"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PipelineStatus"
+          },
+          "timeline_events": {
+            "items": {
+              "$ref": "#/components/schemas/ReconstructedEvent"
+            },
+            "title": "Timeline Events",
+            "type": "array"
+          },
+          "timeline_overlaps": {
+            "items": {
+              "$ref": "#/components/schemas/TimelineOverlapPair"
+            },
+            "title": "Timeline Overlaps",
+            "type": "array"
+          },
+          "unverified_contract_decisions": {
+            "description": "Enabled decisions without a verified team sign-off (proposal only). Results that depend on them are conditional on the proposal being approved.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Unverified Contract Decisions",
+            "type": "array"
+          },
+          "video": {
+            "items": {
+              "$ref": "#/components/schemas/VideoProcessingRecord"
+            },
+            "title": "Video",
+            "type": "array"
+          },
+          "withheld_contract_decisions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Withheld Contract Decisions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "configuration_version",
+          "configuration",
+          "run_id",
+          "case_id",
+          "status",
+          "approved_contract_decisions",
+          "withheld_contract_decisions"
+        ],
+        "title": "ReconstructionResult",
+        "type": "object"
+      },
+      "ReconstructionRunRequest": {
+        "additionalProperties": false,
+        "description": "Inputs of one reconstruction run. ``case_id`` comes from the path.",
+        "examples": [
+          {
+            "entities": [
+              {
+                "aliases": [
+                  "R. Kumar"
+                ],
+                "canonical_name": "Ravi Kumar",
+                "case_id": "case-wh-burglary-001",
+                "confidence": 1.0,
+                "entity_id": "ent-person-ravi",
+                "entity_type": "PERSON",
+                "source_evidence_ids": [
+                  "ev-cctv-dock"
+                ]
+              }
+            ],
+            "event_candidates": [
+              {
+                "candidate_id": "evt-01-shutter-forced",
+                "coordinates": {
+                  "lat": 28.5355,
+                  "lon": 77.271
+                },
+                "description": "Rear shutter forced open at loading dock",
+                "duration_seconds": 30.0,
+                "event_type": "FORCED_ENTRY",
+                "extraction_confidence": 0.9,
+                "involved_entity_raw_ids": [
+                  "ent-person-ravi"
+                ],
+                "raw_timestamp": "2026-11-10T21:42:00",
+                "source_evidence_id": "ev-cctv-dock",
+                "source_record_id": "osd:2026-11-10T21:42:00",
+                "timestamp_precision": "EXACT_SECOND"
+              }
+            ],
+            "evidence": [
+              {
+                "case_id": "case-wh-burglary-001",
+                "evidence_id": "ev-cctv-dock",
+                "file_size_bytes": 32,
+                "metadata": {
+                  "clock_offset_seconds": -120.0,
+                  "device_coordinates": {
+                    "lat": 28.5355,
+                    "lon": 77.271
+                  },
+                  "recording_start_timestamp": "2026-11-10T21:30:00",
+                  "source_timezone": "Asia/Kolkata"
+                },
+                "original_filename": "dock_cam_01.mp4",
+                "sha256_hash": "e77a6607dd66c74a6f1bca53e372ce4ba9d88b77466d3ca479ca7fefee338890",
+                "source_type": "CCTV",
+                "storage_uri": "urn:yukti:evidence:ev-cctv-dock:storage"
+              }
+            ],
+            "frame_artifacts": []
+          }
+        ],
+        "properties": {
+          "entities": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "maxItems": 10000,
+            "title": "Entities",
+            "type": "array"
+          },
+          "event_candidates": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "maxItems": 10000,
+                "type": "array"
+              },
+              {
+                "$ref": "#/components/schemas/UnifiedExtractionPayload"
+              }
+            ],
+            "description": "Member 1 event candidates: an array (at most 10,000 items), or a UnifiedExtractionResult object with an event_candidates array. raw_timestamp is preserved; UTC is derived once by Member 4.",
+            "title": "Event Candidates"
+          },
+          "evidence": {
+            "description": "Shared Evidence records. storage_uri must be the canonical key data/evidence/raw/{case_id}/{evidence_id}/{evidence_id}.raw or urn:yukti:evidence:{evidence_id}:storage. metadata may carry the DEC-006 keys source_timezone, clock_offset_seconds, recording_start_timestamp, device_coordinates.",
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "maxItems": 10000,
+            "minItems": 1,
+            "title": "Evidence",
+            "type": "array"
+          },
+          "frame_artifacts": {
+            "description": "Optional, previously extracted frame artifacts. No filesystem paths allowed.",
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "maxItems": 10000,
+            "title": "Frame Artifacts",
+            "type": "array"
+          }
+        },
+        "required": [
+          "evidence",
+          "event_candidates"
+        ],
+        "title": "ReconstructionRunRequest",
+        "type": "object"
+      },
+      "ReconstructionRunSummary": {
+        "description": "Response of POST .../reconstruction/run.",
+        "properties": {
+          "algorithm_version": {
+            "title": "Algorithm Version",
+            "type": "string"
+          },
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          },
+          "configuration_version": {
+            "title": "Configuration Version",
+            "type": "string"
+          },
+          "counts": {
+            "$ref": "#/components/schemas/RunCounts"
+          },
+          "links": {
+            "$ref": "#/components/schemas/RunLinks"
+          },
+          "relationship_export_status": {
+            "$ref": "#/components/schemas/RelationshipExportStatus"
+          },
+          "result_sha256": {
+            "title": "Result Sha256",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PipelineStatus"
+          }
+        },
+        "required": [
+          "run_id",
+          "case_id",
+          "status",
+          "result_sha256",
+          "algorithm_version",
+          "configuration_version",
+          "relationship_export_status",
+          "counts",
+          "links"
+        ],
+        "title": "ReconstructionRunSummary",
+        "type": "object"
+      },
+      "RelationshipEntry": {
+        "properties": {
+          "basis": {
+            "$ref": "#/components/schemas/FindingBasis"
+          },
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/Citation"
+            },
+            "title": "Citations",
+            "type": "array"
+          },
+          "evidence_basis": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Evidence Basis",
+            "type": "array"
+          },
+          "is_observed": {
+            "title": "Is Observed",
+            "type": "boolean"
+          },
+          "lead_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lead Id"
+          },
+          "ref": {
+            "title": "Ref",
+            "type": "string"
+          },
+          "relation_type": {
+            "title": "Relation Type",
+            "type": "string"
+          },
+          "relationship_id": {
+            "title": "Relationship Id",
+            "type": "string"
+          },
+          "source_id": {
+            "title": "Source Id",
+            "type": "string"
+          },
+          "target_id": {
+            "title": "Target Id",
+            "type": "string"
+          },
+          "weight": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Copied as is; null means not computed.",
+            "title": "Weight"
+          },
+          "weight_display": {
+            "title": "Weight Display",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ref",
+          "relationship_id",
+          "basis",
+          "relation_type",
+          "source_id",
+          "target_id",
+          "is_observed",
+          "weight_display",
+          "evidence_basis",
+          "citations"
+        ],
+        "title": "RelationshipEntry",
+        "type": "object"
+      },
+      "RelationshipExportStatus": {
+        "enum": [
+          "EXPORTED",
+          "NO_CONTRADICTION_LEADS",
+          "RELATIONSHIP_EXPORT_BLOCKED",
+          "NOT_RUN"
+        ],
+        "title": "RelationshipExportStatus",
+        "type": "string"
+      },
+      "RelationshipsView": {
+        "properties": {
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          },
+          "relationship_export_status": {
+            "$ref": "#/components/schemas/RelationshipExportStatus"
+          },
+          "relationships": {
+            "description": "Canonical relationship output. weight is null when not computed.",
+            "items": {
+              "$ref": "#/components/schemas/SharedRelationshipRecord"
+            },
+            "title": "Relationships",
+            "type": "array"
+          },
+          "result_sha256": {
+            "title": "Result Sha256",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PipelineStatus"
+          }
+        },
+        "required": [
+          "run_id",
+          "case_id",
+          "status",
+          "result_sha256",
+          "relationship_export_status",
+          "relationships"
+        ],
+        "title": "RelationshipsView",
+        "type": "object"
+      },
+      "ReportFormat": {
+        "description": "Formats of GET .../runs/{run_id}/report.",
+        "enum": [
+          "json",
+          "markdown",
+          "html"
+        ],
+        "title": "ReportFormat",
+        "type": "string"
+      },
+      "ReportMetadata": {
+        "properties": {
+          "algorithm_version": {
+            "title": "Algorithm Version",
+            "type": "string"
+          },
+          "approval_record": {
+            "title": "Approval Record",
+            "type": "string"
+          },
+          "approved_contract_decisions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Approved Contract Decisions",
+            "type": "array"
+          },
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          },
+          "configuration_version": {
+            "title": "Configuration Version",
+            "type": "string"
+          },
+          "configured_speed_threshold_kmh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Configured Speed Threshold Kmh"
+          },
+          "estimated_half_width_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Half Width Seconds"
+          },
+          "generated_at_utc": {
+            "description": "Report generation time, ISO 8601 UTC ('Z').",
+            "title": "Generated At Utc",
+            "type": "string"
+          },
+          "relationship_export_status": {
+            "$ref": "#/components/schemas/RelationshipExportStatus"
+          },
+          "report_generator_version": {
+            "default": "yukti-m4-report/3I.1",
+            "title": "Report Generator Version",
+            "type": "string"
+          },
+          "report_schema_version": {
+            "default": "yukti-forensic-report/1",
+            "title": "Report Schema Version",
+            "type": "string"
+          },
+          "result_sha256": {
+            "title": "Result Sha256",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "run_status": {
+            "$ref": "#/components/schemas/PipelineStatus"
+          },
+          "run_status_explanation": {
+            "title": "Run Status Explanation",
+            "type": "string"
+          },
+          "snapshot_schema_version": {
+            "title": "Snapshot Schema Version",
+            "type": "string"
+          },
+          "unverified_contract_decisions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Unverified Contract Decisions",
+            "type": "array"
+          },
+          "withheld_contract_decisions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Withheld Contract Decisions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "case_id",
+          "run_id",
+          "run_status",
+          "run_status_explanation",
+          "algorithm_version",
+          "configuration_version",
+          "snapshot_schema_version",
+          "result_sha256",
+          "generated_at_utc",
+          "relationship_export_status",
+          "approved_contract_decisions",
+          "withheld_contract_decisions",
+          "approval_record"
+        ],
+        "title": "ReportMetadata",
+        "type": "object"
+      },
+      "RunCounts": {
+        "properties": {
+          "contradiction_leads": {
+            "title": "Contradiction Leads",
+            "type": "integer"
+          },
+          "diagnostics_by_severity": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Diagnostics By Severity",
+            "type": "object"
+          },
+          "excluded_inputs": {
+            "title": "Excluded Inputs",
+            "type": "integer"
+          },
+          "movement_segments": {
+            "title": "Movement Segments",
+            "type": "integer"
+          },
+          "relationships": {
+            "title": "Relationships",
+            "type": "integer"
+          },
+          "timeline_events": {
+            "title": "Timeline Events",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "timeline_events",
+          "movement_segments",
+          "contradiction_leads",
+          "relationships",
+          "excluded_inputs",
+          "diagnostics_by_severity"
+        ],
+        "title": "RunCounts",
+        "type": "object"
+      },
+      "RunLinks": {
+        "properties": {
+          "contradictions": {
+            "title": "Contradictions",
+            "type": "string"
+          },
+          "diagnostics": {
+            "title": "Diagnostics",
+            "type": "string"
+          },
+          "relationships": {
+            "title": "Relationships",
+            "type": "string"
+          },
+          "report": {
+            "title": "Report",
+            "type": "string"
+          },
+          "result": {
+            "title": "Result",
+            "type": "string"
+          },
+          "spatial": {
+            "title": "Spatial",
+            "type": "string"
+          },
+          "timeline": {
+            "title": "Timeline",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result",
+          "timeline",
+          "spatial",
+          "contradictions",
+          "relationships",
+          "diagnostics",
+          "report"
+        ],
+        "title": "RunLinks",
+        "type": "object"
+      },
+      "SharedRelationshipRecord": {
+        "additionalProperties": false,
+        "description": "Backend view of a shared Relationship record (exactly the committed field set).",
+        "properties": {
+          "evidence_basis": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Evidence Basis",
+            "type": "array"
+          },
+          "is_observed": {
+            "title": "Is Observed",
+            "type": "boolean"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "title": "Metadata",
+            "type": "object"
+          },
+          "relation_type": {
+            "title": "Relation Type",
+            "type": "string"
+          },
+          "relationship_id": {
+            "title": "Relationship Id",
+            "type": "string"
+          },
+          "source_id": {
+            "title": "Source Id",
+            "type": "string"
+          },
+          "target_id": {
+            "title": "Target Id",
+            "type": "string"
+          },
+          "weight": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weight"
+          }
+        },
+        "required": [
+          "relationship_id",
+          "source_id",
+          "target_id",
+          "relation_type",
+          "is_observed",
+          "evidence_basis"
+        ],
+        "title": "SharedRelationshipRecord",
+        "type": "object"
+      },
+      "SpatialObservation": {
+        "description": "An entity placed at the coordinates of an event, exactly as extracted (no inference).",
+        "properties": {
+          "basis": {
+            "default": "EVENT_CANDIDATE_COORDINATES",
+            "title": "Basis",
+            "type": "string"
+          },
+          "coordinates": {
+            "$ref": "#/components/schemas/GeoPoint"
+          },
+          "entity_id": {
+            "title": "Entity Id",
+            "type": "string"
+          },
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "is_observed": {
+            "default": true,
+            "title": "Is Observed",
+            "type": "boolean"
+          },
+          "source_evidence_id": {
+            "title": "Source Evidence Id",
+            "type": "string"
+          },
+          "timestamp_utc": {
+            "format": "date-time",
+            "title": "Timestamp Utc",
+            "type": "string"
+          },
+          "uncertainty_window_end": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uncertainty Window End"
+          },
+          "uncertainty_window_start": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uncertainty Window Start"
+          }
+        },
+        "required": [
+          "entity_id",
+          "event_id",
+          "source_evidence_id",
+          "coordinates",
+          "timestamp_utc"
+        ],
+        "title": "SpatialObservation",
+        "type": "object"
+      },
+      "SpatialObservationEntry": {
+        "properties": {
+          "basis": {
+            "$ref": "#/components/schemas/FindingBasis",
+            "default": "OBSERVED"
+          },
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/Citation"
+            },
+            "title": "Citations",
+            "type": "array"
+          },
+          "coordinates": {
+            "$ref": "#/components/schemas/GeoPoint"
+          },
+          "entity_id": {
+            "title": "Entity Id",
+            "type": "string"
+          },
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "observation_id": {
+            "title": "Observation Id",
+            "type": "string"
+          },
+          "ref": {
+            "title": "Ref",
+            "type": "string"
+          },
+          "timestamp_utc": {
+            "title": "Timestamp Utc",
+            "type": "string"
+          },
+          "uncertainty_window_end_utc": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uncertainty Window End Utc"
+          },
+          "uncertainty_window_start_utc": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uncertainty Window Start Utc"
+          }
+        },
+        "required": [
+          "ref",
+          "observation_id",
+          "entity_id",
+          "event_id",
+          "coordinates",
+          "timestamp_utc",
+          "citations"
+        ],
+        "title": "SpatialObservationEntry",
+        "type": "object"
+      },
+      "SpatialReconstructionResult": {
+        "description": "Complete spatial reconstruction output across all entities in a case.",
+        "properties": {
+          "case_id": {
+            "description": "Case identifier.",
+            "title": "Case Id",
+            "type": "string"
+          },
+          "configured_speed_threshold_kmh": {
+            "description": "Configurable reference speed threshold (km/h) used during evaluation.",
+            "exclusiveMinimum": 0.0,
+            "title": "Configured Speed Threshold Kmh",
+            "type": "number"
+          },
+          "timeline": {
+            "$ref": "#/components/schemas/TimelineReconstructionResult",
+            "description": "Underlying normalized timeline across all case events."
+          },
+          "trajectories_by_entity": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/EntityTrajectory"
+            },
+            "description": "Deterministic mapping of entity_id to its reconstructed EntityTrajectory.",
+            "title": "Trajectories By Entity",
+            "type": "object"
+          }
+        },
+        "required": [
+          "case_id",
+          "timeline",
+          "configured_speed_threshold_kmh"
+        ],
+        "title": "SpatialReconstructionResult",
+        "type": "object"
+      },
+      "SpatialTemporalOverlap": {
+        "description": "Pair of geolocated events for the same entity whose uncertainty windows [start, end) overlap.\n\nBecause their temporal windows intersect, no definite sequential direction (A -> B vs B -> A)\nis claimed.",
+        "properties": {
+          "coordinates_a": {
+            "$ref": "#/components/schemas/GeoPoint"
+          },
+          "coordinates_b": {
+            "$ref": "#/components/schemas/GeoPoint"
+          },
+          "distance_km": {
+            "description": "Haversine distance in kilometers between the two concurrent/overlapping locations.",
+            "minimum": 0.0,
+            "title": "Distance Km",
+            "type": "number"
+          },
+          "entity_id": {
+            "description": "Involved entity ID.",
+            "title": "Entity Id",
+            "type": "string"
+          },
+          "event_a_id": {
+            "description": "First overlapping located event ID.",
+            "title": "Event A Id",
+            "type": "string"
+          },
+          "event_b_id": {
+            "description": "Second overlapping located event ID.",
+            "title": "Event B Id",
+            "type": "string"
+          },
+          "location_a_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location A Name"
+          },
+          "location_b_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location B Name"
+          },
+          "max_possible_separation_seconds": {
+            "description": "Conservative maximum time separation between an instant in A and an instant in B.",
+            "minimum": 0.0,
+            "title": "Max Possible Separation Seconds",
+            "type": "number"
+          },
+          "ordering_note": {
+            "default": "Temporal uncertainty windows [start, end) overlap; a directed movement segment is withheld because chronological sequence between these two sightings is unproven.",
+            "title": "Ordering Note",
+            "type": "string"
+          },
+          "ordering_status": {
+            "$ref": "#/components/schemas/TemporalOrderingStatus",
+            "default": "CONCURRENT_UNCERTAIN",
+            "description": "Marks that chronological sequence between event_a_id and event_b_id is uncertain."
+          },
+          "overlap_end_utc": {
+            "format": "date-time",
+            "title": "Overlap End Utc",
+            "type": "string"
+          },
+          "overlap_seconds": {
+            "exclusiveMinimum": 0.0,
+            "title": "Overlap Seconds",
+            "type": "number"
+          },
+          "overlap_start_utc": {
+            "format": "date-time",
+            "title": "Overlap Start Utc",
+            "type": "string"
+          },
+          "source_evidence_a_id": {
+            "description": "Origin evidence ID for event_a_id.",
+            "title": "Source Evidence A Id",
+            "type": "string"
+          },
+          "source_evidence_b_id": {
+            "description": "Origin evidence ID for event_b_id.",
+            "title": "Source Evidence B Id",
+            "type": "string"
+          },
+          "time_window_a": {
+            "$ref": "#/components/schemas/NormalizedTimeWindow"
+          },
+          "time_window_b": {
+            "$ref": "#/components/schemas/NormalizedTimeWindow"
+          }
+        },
+        "required": [
+          "entity_id",
+          "event_a_id",
+          "event_b_id",
+          "source_evidence_a_id",
+          "source_evidence_b_id",
+          "coordinates_a",
+          "coordinates_b",
+          "time_window_a",
+          "time_window_b",
+          "overlap_start_utc",
+          "overlap_end_utc",
+          "overlap_seconds",
+          "distance_km",
+          "max_possible_separation_seconds"
+        ],
+        "title": "SpatialTemporalOverlap",
+        "type": "object"
+      },
+      "SpatialView": {
+        "properties": {
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          },
+          "movement_segments": {
+            "items": {
+              "$ref": "#/components/schemas/MovementSegment"
+            },
+            "title": "Movement Segments",
+            "type": "array"
+          },
+          "result_sha256": {
+            "title": "Result Sha256",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "spatial_observations": {
+            "items": {
+              "$ref": "#/components/schemas/SpatialObservation"
+            },
+            "title": "Spatial Observations",
+            "type": "array"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PipelineStatus"
+          },
+          "uncertain_spatial_overlaps": {
+            "items": {
+              "$ref": "#/components/schemas/SpatialTemporalOverlap"
+            },
+            "title": "Uncertain Spatial Overlaps",
+            "type": "array"
+          }
+        },
+        "required": [
+          "run_id",
+          "case_id",
+          "status",
+          "result_sha256",
+          "spatial_observations",
+          "movement_segments",
+          "uncertain_spatial_overlaps"
+        ],
+        "title": "SpatialView",
+        "type": "object"
+      },
+      "SpeedThresholdEvaluation": {
+        "description": "Comparison of conservative minimum required speed against a configurable reference threshold.\n\nA threshold comparison is an analytical reference indicator and never proves physical impossibility.",
+        "enum": [
+          "ZERO_DISTANCE_STATIONARY",
+          "WITHIN_CONFIGURED_THRESHOLD",
+          "EXCEEDS_CONFIGURED_THRESHOLD",
+          "NON_POSITIVE_ELAPSED_TIME"
+        ],
+        "title": "SpeedThresholdEvaluation",
+        "type": "string"
+      },
+      "TemporalOrderingStatus": {
+        "description": "Epistemic chronological status of a timeline entry or event pair.",
+        "enum": [
+          "STRICTLY_ORDERED",
+          "CONCURRENT_UNCERTAIN"
+        ],
+        "title": "TemporalOrderingStatus",
+        "type": "string"
+      },
+      "TimelineOverlapPair": {
+        "description": "Represents a pair of events whose half-open uncertainty intervals [start, end) intersect.\n\nOverlapping windows indicate that relative chronological order is epistemically uncertain.",
+        "properties": {
+          "event_a_id": {
+            "description": "First overlapping event ID.",
+            "title": "Event A Id",
+            "type": "string"
+          },
+          "event_b_id": {
+            "description": "Second overlapping event ID.",
+            "title": "Event B Id",
+            "type": "string"
+          },
+          "ordering_status": {
+            "$ref": "#/components/schemas/TemporalOrderingStatus",
+            "default": "CONCURRENT_UNCERTAIN",
+            "description": "Marks that strict sequential ordering between event_a_id and event_b_id is unproven."
+          },
+          "overlap_end_utc": {
+            "description": "Exclusive end of the intersection interval [overlap_start_utc, overlap_end_utc).",
+            "format": "date-time",
+            "title": "Overlap End Utc",
+            "type": "string"
+          },
+          "overlap_seconds": {
+            "description": "Duration of the intersecting uncertainty window in seconds.",
+            "exclusiveMinimum": 0.0,
+            "title": "Overlap Seconds",
+            "type": "number"
+          },
+          "overlap_start_utc": {
+            "description": "Inclusive start of the intersection interval [overlap_start_utc, overlap_end_utc).",
+            "format": "date-time",
+            "title": "Overlap Start Utc",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_a_id",
+          "event_b_id",
+          "overlap_start_utc",
+          "overlap_end_utc",
+          "overlap_seconds"
+        ],
+        "title": "TimelineOverlapPair",
+        "type": "object"
+      },
+      "TimelineReconstructionResult": {
+        "description": "Complete chronological reconstruction output for a set of case events.",
+        "properties": {
+          "case_id": {
+            "description": "Case identifier for the reconstructed timeline.",
+            "title": "Case Id",
+            "type": "string"
+          },
+          "entries": {
+            "description": "Deterministically sorted timeline entries (display order does not imply strict sequence when overlapping).",
+            "items": {
+              "$ref": "#/components/schemas/app__schemas__reconstruction__TimelineEntry"
+            },
+            "title": "Entries",
+            "type": "array"
+          },
+          "ordering_note": {
+            "default": "Display order is deterministic by window start, window end, nominal timestamp, and event_id. Events listed in overlaps or concurrent_event_ids have intersecting half-open uncertainty windows [start, end) and their relative chronological sequence is not proven.",
+            "description": "Forensic interpretation disclaimer.",
+            "title": "Ordering Note",
+            "type": "string"
+          },
+          "overlaps": {
+            "description": "All pairwise overlapping event uncertainty intervals.",
+            "items": {
+              "$ref": "#/components/schemas/TimelineOverlapPair"
+            },
+            "title": "Overlaps",
+            "type": "array"
+          }
+        },
+        "required": [
+          "case_id"
+        ],
+        "title": "TimelineReconstructionResult",
+        "type": "object"
+      },
+      "TimelineView": {
+        "properties": {
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          },
+          "result_sha256": {
+            "title": "Result Sha256",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PipelineStatus"
+          },
+          "timeline_events": {
+            "items": {
+              "$ref": "#/components/schemas/ReconstructedEvent"
+            },
+            "title": "Timeline Events",
+            "type": "array"
+          },
+          "timeline_overlaps": {
+            "items": {
+              "$ref": "#/components/schemas/TimelineOverlapPair"
+            },
+            "title": "Timeline Overlaps",
+            "type": "array"
+          }
+        },
+        "required": [
+          "run_id",
+          "case_id",
+          "status",
+          "result_sha256",
+          "timeline_events",
+          "timeline_overlaps"
+        ],
+        "title": "TimelineView",
+        "type": "object"
+      },
+      "TimezoneBasis": {
+        "description": "How the UTC instant of a raw timestamp was established.",
+        "enum": [
+          "TIMESTAMP_UTC_OFFSET",
+          "SOURCE_TIMEZONE_METADATA"
+        ],
+        "title": "TimezoneBasis",
+        "type": "string"
+      },
+      "UnevaluatedPair": {
+        "properties": {
+          "entity_id": {
+            "title": "Entity Id",
+            "type": "string"
+          },
+          "event_a_id": {
+            "title": "Event A Id",
+            "type": "string"
+          },
+          "event_b_id": {
+            "title": "Event B Id",
+            "type": "string"
+          },
+          "note": {
+            "default": "Uncertainty windows overlap; order unknown, so travel feasibility was not evaluated.",
+            "title": "Note",
+            "type": "string"
+          }
+        },
+        "required": [
+          "entity_id",
+          "event_a_id",
+          "event_b_id"
+        ],
+        "title": "UnevaluatedPair",
+        "type": "object"
+      },
+      "UnifiedExtractionPayload": {
+        "additionalProperties": true,
+        "description": "Member 1 ``UnifiedExtractionResult`` serialization; only ``event_candidates`` is read.",
+        "properties": {
+          "event_candidates": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "maxItems": 10000,
+            "title": "Event Candidates",
+            "type": "array"
+          }
+        },
+        "required": [
+          "event_candidates"
+        ],
+        "title": "UnifiedExtractionPayload",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "VideoCustodyEntry": {
+        "properties": {
+          "evidence_id": {
+            "title": "Evidence Id",
+            "type": "string"
+          },
+          "frame_handoff_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frame Handoff Status"
+          },
+          "frames_extracted": {
+            "title": "Frames Extracted",
+            "type": "integer"
+          },
+          "processing_kind": {
+            "title": "Processing Kind",
+            "type": "string"
+          },
+          "processing_note": {
+            "title": "Processing Note",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "evidence_id",
+          "status",
+          "processing_kind",
+          "processing_note",
+          "frames_extracted"
+        ],
+        "title": "VideoCustodyEntry",
+        "type": "object"
+      },
+      "VideoProcessingRecord": {
+        "properties": {
+          "evidence_id": {
+            "title": "Evidence Id",
+            "type": "string"
+          },
+          "frame_artifact_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Frame Artifact Ids",
+            "type": "array"
+          },
+          "frame_handoff_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FrameHandoffStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "frames_extracted": {
+            "default": 0,
+            "title": "Frames Extracted",
+            "type": "integer"
+          },
+          "processing_kind": {
+            "default": "FRAME_EXTRACTION_WITH_PROVENANCE",
+            "title": "Processing Kind",
+            "type": "string"
+          },
+          "processing_note": {
+            "default": "Frame extraction with provenance only (FFmpeg sampling bound to the source SHA-256). No semantic event recognition was performed and no events were derived from frames.",
+            "title": "Processing Note",
+            "type": "string"
+          },
+          "source_integrity_verified": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Integrity Verified"
+          },
+          "source_video_sha256_after": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Video Sha256 After"
+          },
+          "source_video_sha256_before": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Video Sha256 Before"
+          },
+          "status": {
+            "$ref": "#/components/schemas/VideoStageStatus"
+          },
+          "timestamps_utc_anchored": {
+            "default": false,
+            "title": "Timestamps Utc Anchored",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "evidence_id",
+          "status"
+        ],
+        "title": "VideoProcessingRecord",
+        "type": "object"
+      },
+      "VideoStageStatus": {
+        "enum": [
+          "EXTRACTED",
+          "FAILED",
+          "SKIPPED_NO_ARTIFACT_ROOT"
+        ],
+        "title": "VideoStageStatus",
+        "type": "string"
+      },
+      "app__modules__reporting__forensic_report__TimelineEntry": {
+        "properties": {
+          "basis": {
+            "$ref": "#/components/schemas/FindingBasis",
+            "default": "OBSERVED"
+          },
+          "basis_note": {
+            "default": "Event extracted from the source by Member 1; corrected UTC and window derived once by Member 4 from raw_timestamp.",
+            "title": "Basis Note",
+            "type": "string"
+          },
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/Citation"
+            },
+            "title": "Citations",
+            "type": "array"
+          },
+          "clock_calibration": {
+            "$ref": "#/components/schemas/ClockCalibrationStatus"
+          },
+          "clock_offset_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clock Offset Seconds"
+          },
+          "concurrent_event_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Concurrent Event Ids",
+            "type": "array"
+          },
+          "coordinates": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GeoPoint"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
+          },
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "event_type": {
+            "title": "Event Type",
+            "type": "string"
+          },
+          "extraction_confidence": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extraction Confidence"
+          },
+          "frame_artifact_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Frame Artifact Ids",
+            "type": "array"
+          },
+          "involved_entity_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Involved Entity Ids",
+            "type": "array"
+          },
+          "is_estimated_window_assumption": {
+            "title": "Is Estimated Window Assumption",
+            "type": "boolean"
+          },
+          "ordering_status": {
+            "title": "Ordering Status",
+            "type": "string"
+          },
+          "precision": {
+            "title": "Precision",
+            "type": "string"
+          },
+          "raw_precision": {
+            "title": "Raw Precision",
+            "type": "string"
+          },
+          "raw_timestamp": {
+            "title": "Raw Timestamp",
+            "type": "string"
+          },
+          "ref": {
+            "title": "Ref",
+            "type": "string"
+          },
+          "source_evidence_id": {
+            "title": "Source Evidence Id",
+            "type": "string"
+          },
+          "source_record_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Record Id"
+          },
+          "source_timezone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Timezone"
+          },
+          "timestamp_utc": {
+            "title": "Timestamp Utc",
+            "type": "string"
+          },
+          "timezone_basis": {
+            "title": "Timezone Basis",
+            "type": "string"
+          },
+          "uncertainty_window_end_utc": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uncertainty Window End Utc"
+          },
+          "uncertainty_window_start_utc": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uncertainty Window Start Utc"
+          },
+          "unresolved_entity_references": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Unresolved Entity References",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ref",
+          "event_id",
+          "event_type",
+          "description",
+          "raw_timestamp",
+          "raw_precision",
+          "timestamp_utc",
+          "precision",
+          "is_estimated_window_assumption",
+          "timezone_basis",
+          "clock_calibration",
+          "ordering_status",
+          "source_evidence_id",
+          "citations"
+        ],
+        "title": "TimelineEntry",
+        "type": "object"
+      },
+      "app__schemas__reconstruction__TimelineEntry": {
+        "description": "Single reconstructed event entry preserving full provenance and temporal uncertainty.",
+        "properties": {
+          "case_id": {
+            "description": "Parent case identifier.",
+            "title": "Case Id",
+            "type": "string"
+          },
+          "concurrent_event_ids": {
+            "description": "Deterministic list of event IDs whose uncertainty windows intersect this event's window.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Concurrent Event Ids",
+            "type": "array"
+          },
+          "coordinates": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "number"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional geographic coordinates preserved from the source event.",
+            "title": "Coordinates"
+          },
+          "event_id": {
+            "description": "Unique event identifier.",
+            "title": "Event Id",
+            "type": "string"
+          },
+          "involved_entity_ids": {
+            "description": "Entity IDs participating in this event.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Involved Entity Ids",
+            "type": "array"
+          },
+          "location_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional human-readable location description.",
+            "title": "Location Name"
+          },
+          "ordering_status": {
+            "$ref": "#/components/schemas/TemporalOrderingStatus",
+            "default": "STRICTLY_ORDERED",
+            "description": "CONCURRENT_UNCERTAIN if this event overlaps with at least one other event in the timeline."
+          },
+          "source_evidence_id": {
+            "description": "Direct reference to origin Evidence ID.",
+            "title": "Source Evidence Id",
+            "type": "string"
+          },
+          "time_window": {
+            "$ref": "#/components/schemas/NormalizedTimeWindow",
+            "description": "Normalized UTC timestamp and half-open uncertainty interval [start, end)."
+          },
+          "title": {
+            "description": "Short description of the occurrence.",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_id",
+          "case_id",
+          "title",
+          "source_evidence_id",
+          "time_window"
+        ],
+        "title": "TimelineEntry",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "AI-Powered Digital Evidence Correlation and Crime Reconstruction Platform",
+    "title": "YUKTI Digital Forensics API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/evidence/upload": {
+      "post": {
+        "description": "Streams evidence bytes to secure storage, calculates SHA-256 incrementally, validates content signatures, and optionally triggers extraction candidate generation.",
+        "operationId": "upload_evidence_api_v1_evidence_upload_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_evidence_api_v1_evidence_upload_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvidenceUploadResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Upload and ingest digital evidence file",
+        "tags": [
+          "Evidence Ingestion"
+        ]
+      }
+    },
+    "/api/v1/evidence/{evidence_id}": {
+      "get": {
+        "description": "Returns metadata and current status for an ingested evidence item.",
+        "operationId": "get_evidence_item_api_v1_evidence__evidence_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "evidence_id",
+            "required": true,
+            "schema": {
+              "title": "Evidence Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvidenceUploadResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Retrieve evidence item metadata",
+        "tags": [
+          "Evidence Ingestion"
+        ]
+      }
+    },
+    "/api/v1/evidence/{evidence_id}/reprocess": {
+      "post": {
+        "description": "Executes a new extraction run without deleting or modifying raw evidence. Upon success, marks previous active run as SUPERSEDED.",
+        "operationId": "reprocess_evidence_api_v1_evidence__evidence_id__reprocess_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "evidence_id",
+            "required": true,
+            "schema": {
+              "title": "Evidence Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_reprocess_evidence_api_v1_evidence__evidence_id__reprocess_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtractionRunDTO"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Re-execute extraction for an evidence item",
+        "tags": [
+          "Evidence Ingestion"
+        ]
+      }
+    },
+    "/api/v1/evidence/{evidence_id}/runs": {
+      "get": {
+        "description": "Returns the full audit history of all extraction runs executed for this evidence.",
+        "operationId": "list_extraction_runs_api_v1_evidence__evidence_id__runs_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "evidence_id",
+            "required": true,
+            "schema": {
+              "title": "Evidence Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ExtractionRunDTO"
+                  },
+                  "title": "Response List Extraction Runs Api V1 Evidence  Evidence Id  Runs Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List all versioned extraction runs for an evidence item",
+        "tags": [
+          "Evidence Ingestion"
+        ]
+      }
+    },
+    "/cases/{case_id}/reconstruction/run": {
+      "post": {
+        "description": "Validates evidence (hash check), normalizes event candidates to UTC once, builds the timeline and spatial reconstruction, detects contradictions and exports CONTRADICTS relationships. Invalid items are excluded and reported; the run continues. Identical inputs produce the same run_id and result_sha256.",
+        "operationId": "run_reconstruction_cases__case_id__reconstruction_run_post",
+        "parameters": [
+          {
+            "description": "Case identifier.",
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "description": "Case identifier.",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReconstructionRunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReconstructionRunSummary"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Run not found for this case."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Request validation failed."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unexpected server error."
+          }
+        },
+        "summary": "Run an end-to-end reconstruction",
+        "tags": [
+          "Reconstruction"
+        ]
+      }
+    },
+    "/cases/{case_id}/reconstruction/runs/{run_id}": {
+      "get": {
+        "operationId": "get_run_cases__case_id__reconstruction_runs__run_id__get",
+        "parameters": [
+          {
+            "description": "Case identifier.",
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "description": "Case identifier.",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+              "title": "Case Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Reconstruction run identifier.",
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "description": "Reconstruction run identifier.",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReconstructionResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Run not found for this case."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Request validation failed."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unexpected server error."
+          }
+        },
+        "summary": "Full reconstruction result",
+        "tags": [
+          "Reconstruction"
+        ]
+      }
+    },
+    "/cases/{case_id}/reconstruction/runs/{run_id}/contradictions": {
+      "get": {
+        "operationId": "get_contradictions_cases__case_id__reconstruction_runs__run_id__contradictions_get",
+        "parameters": [
+          {
+            "description": "Case identifier.",
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "description": "Case identifier.",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+              "title": "Case Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Reconstruction run identifier.",
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "description": "Reconstruction run identifier.",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContradictionsView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Run not found for this case."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Request validation failed."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unexpected server error."
+          }
+        },
+        "summary": "Contradiction leads",
+        "tags": [
+          "Reconstruction"
+        ]
+      }
+    },
+    "/cases/{case_id}/reconstruction/runs/{run_id}/diagnostics": {
+      "get": {
+        "operationId": "get_diagnostics_cases__case_id__reconstruction_runs__run_id__diagnostics_get",
+        "parameters": [
+          {
+            "description": "Case identifier.",
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "description": "Case identifier.",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+              "title": "Case Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Reconstruction run identifier.",
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "description": "Reconstruction run identifier.",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiagnosticsView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Run not found for this case."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Request validation failed."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unexpected server error."
+          }
+        },
+        "summary": "Diagnostics, limitations, evidence gaps and video statuses",
+        "tags": [
+          "Reconstruction"
+        ]
+      }
+    },
+    "/cases/{case_id}/reconstruction/runs/{run_id}/relationships": {
+      "get": {
+        "operationId": "get_relationships_cases__case_id__reconstruction_runs__run_id__relationships_get",
+        "parameters": [
+          {
+            "description": "Case identifier.",
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "description": "Case identifier.",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+              "title": "Case Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Reconstruction run identifier.",
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "description": "Reconstruction run identifier.",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelationshipsView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Run not found for this case."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Request validation failed."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unexpected server error."
+          }
+        },
+        "summary": "Canonical relationships",
+        "tags": [
+          "Reconstruction"
+        ]
+      }
+    },
+    "/cases/{case_id}/reconstruction/runs/{run_id}/report": {
+      "get": {
+        "description": "Decision-support report for investigators, generated from the stored run: run metadata, evidence inventory with SHA-256 integrity status, timeline (raw and corrected UTC), movement and travel feasibility, contradiction leads (analytical leads, not facts), relationships (observed vs inferred), limitations and a chain-of-custody appendix. Every finding cites its supporting evidence. `format=json` (default) returns the structured report; `markdown` and `html` (print-ready; print to PDF from the browser) render the same content.",
+        "operationId": "get_report_cases__case_id__reconstruction_runs__run_id__report_get",
+        "parameters": [
+          {
+            "description": "Case identifier.",
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "description": "Case identifier.",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+              "title": "Case Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Reconstruction run identifier.",
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "description": "Reconstruction run identifier.",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "json (default), markdown or html.",
+            "in": "query",
+            "name": "format",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ReportFormat",
+              "default": "json",
+              "description": "json (default), markdown or html."
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForensicReport"
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/markdown": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "The report in the requested format."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Run not found for this case."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Request validation failed."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unexpected server error."
+          }
+        },
+        "summary": "Evidence-linked investigation report",
+        "tags": [
+          "Reconstruction"
+        ]
+      }
+    },
+    "/cases/{case_id}/reconstruction/runs/{run_id}/spatial": {
+      "get": {
+        "operationId": "get_spatial_cases__case_id__reconstruction_runs__run_id__spatial_get",
+        "parameters": [
+          {
+            "description": "Case identifier.",
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "description": "Case identifier.",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+              "title": "Case Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Reconstruction run identifier.",
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "description": "Reconstruction run identifier.",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpatialView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Run not found for this case."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Request validation failed."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unexpected server error."
+          }
+        },
+        "summary": "Spatial observations and movement segments",
+        "tags": [
+          "Reconstruction"
+        ]
+      }
+    },
+    "/cases/{case_id}/reconstruction/runs/{run_id}/timeline": {
+      "get": {
+        "operationId": "get_timeline_cases__case_id__reconstruction_runs__run_id__timeline_get",
+        "parameters": [
+          {
+            "description": "Case identifier.",
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "description": "Case identifier.",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+              "title": "Case Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Reconstruction run identifier.",
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "description": "Reconstruction run identifier.",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimelineView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Run not found for this case."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Request validation failed."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unexpected server error."
+          }
+        },
+        "summary": "Timeline events (raw and corrected UTC)",
+        "tags": [
+          "Reconstruction"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "description": "Returns the operational status of the YUKTI backend service.",
+        "operationId": "get_health_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health check endpoint",
+        "tags": [
+          "Health"
+        ]
+      }
+    }
+  }
+}

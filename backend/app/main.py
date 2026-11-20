@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.core.config import settings
-from app.api.routes import health, evidence
+from app.api.routes import health, evidence, reconstruction
 
 
 def create_application() -> FastAPI:
@@ -29,6 +29,7 @@ def create_application() -> FastAPI:
     # Include route modules
     application.include_router(health.router)
     application.include_router(evidence.router)
+    application.include_router(reconstruction.router)
 
     # Global exception handler
     @application.exception_handler(Exception)

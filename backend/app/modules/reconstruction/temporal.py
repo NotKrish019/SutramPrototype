@@ -295,7 +295,8 @@ def compute_uncertainty_window(
                 f"Invalid explicit uncertainty bounds: start ({start_utc.isoformat()}) "
                 f"must be strictly earlier than end ({end_utc.isoformat()})."
             )
-        if not (start_utc <= nominal_utc <= end_utc):
+        # DEC-005: half-open window, start <= nominal < end.
+        if not (start_utc <= nominal_utc < end_utc):
             raise ValueError(
                 f"Nominal UTC timestamp ({nominal_utc.isoformat()}) falls outside explicit "
                 f"uncertainty window [{start_utc.isoformat()}, {end_utc.isoformat()})."
