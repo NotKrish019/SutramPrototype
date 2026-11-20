@@ -3,7 +3,7 @@
 **Author:** Member 4 (Forensic Intelligence & System Integration)  
 **Date:** 2026-11-17  
 **Monorepo Target:** YUKTI Core Contracts (SUTRAM 2026)  
-**Status:** `PROPOSED` (Awaiting Review & Approval from Members 1, 2, and 3)
+**Status:** `PROPOSED`. Approval is NOT verified. An "approved" status was recorded on 2026-11-19 from a copied task brief; Phase 3D.2 withdrew it (see [`team-contract-approvals-2026-11-19.md`](team-contract-approvals-2026-11-19.md)). DEC-007 (raw timestamp preservation) has been added as a proposal. If approved, it would reverse the assumption that `Event.timestamp` arrives already normalized. DEC-005 proposes a strictly half-open window (`start <= nominal < end`).
 
 ---
 
@@ -204,8 +204,9 @@ Standardize the following four top-level keys within `Evidence.metadata`:
 | **DEC-004** | Relationship.weight Nullability | Member 4 | Member 2 (DB), Member 3 (UI) | `weight: Optional[float] = None` (nullable; never default null to 0.0) | `PROPOSED` |
 | **DEC-005** | Event Duration & Uncertainty | Member 4 | Member 1 (ML), Member 2 (DB) | Add `duration_seconds`, `uncertainty_window_start`, `uncertainty_window_end` | `PROPOSED` |
 | **DEC-006** | Evidence Metadata Schema | Member 4 | Member 2 (Ingestion), Member 4 | Standardize `source_timezone`, `clock_offset_seconds`, `recording_start_timestamp` | `PROPOSED` |
+| **DEC-007** | Raw Timestamp Preservation | Member 4 (from Phase 3E brief) | Member 1 (extraction), Member 2 (DB), Member 4 | Extraction keeps `raw_timestamp` unchanged; only the Member 4 temporal engine produces `timestamp_utc`, applying localization and offset exactly once | `PROPOSED` |
 
-*Note: All decisions remain strictly in `PROPOSED` status awaiting team review and unanimous sign-off.*
+*Note: All seven decisions (DEC-001 … DEC-007) remain `PROPOSED` until a verified team sign-off is recorded. The code fails closed until then.*
 
 ---
 
