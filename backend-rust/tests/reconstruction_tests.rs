@@ -246,6 +246,7 @@ fn test_dec004_and_dec006_contradiction_detection() {
             metadata: serde_json::json!({}),
             source_timezone: Some("UTC".to_string()),
             clock_offset_seconds: Some(0.0),
+            assumptions: Vec::new(),
         },
         RawTimelineEvent {
             event_id: "ev-mumbai".to_string(),
@@ -261,6 +262,7 @@ fn test_dec004_and_dec006_contradiction_detection() {
             metadata: serde_json::json!({}),
             source_timezone: Some("UTC".to_string()),
             clock_offset_seconds: Some(0.0),
+            assumptions: Vec::new(),
         },
     ];
 
@@ -345,6 +347,7 @@ fn test_timeline_concurrent_uncertain_marking() {
             metadata: serde_json::json!({}),
             source_timezone: None,
             clock_offset_seconds: None,
+            assumptions: Vec::new(),
         },
         RawTimelineEvent {
             event_id: "ev-overlap-2".to_string(),
@@ -360,6 +363,7 @@ fn test_timeline_concurrent_uncertain_marking() {
             metadata: serde_json::json!({}),
             source_timezone: None,
             clock_offset_seconds: None,
+            assumptions: Vec::new(),
         },
     ];
 
@@ -511,6 +515,7 @@ fn test_reconstruction_service_full_case() {
             metadata: serde_json::json!({}),
             source_timezone: Some("UTC".to_string()),
             clock_offset_seconds: Some(0.0),
+            assumptions: Vec::new(),
         },
         RawTimelineEvent {
             event_id: "evt-002".to_string(),
@@ -526,6 +531,7 @@ fn test_reconstruction_service_full_case() {
             metadata: serde_json::json!({}),
             source_timezone: Some("UTC".to_string()),
             clock_offset_seconds: Some(0.0),
+            assumptions: Vec::new(),
         },
     ];
 
@@ -710,6 +716,7 @@ fn test_unsupported_precision_or_invalid_timezone_excludes_single_event_without_
         metadata: serde_json::json!({}),
         source_timezone: Some("UTC".to_string()),
         clock_offset_seconds: Some(0.0),
+        assumptions: Vec::new(),
     };
 
     let bad_precision_event = RawTimelineEvent {
@@ -726,6 +733,7 @@ fn test_unsupported_precision_or_invalid_timezone_excludes_single_event_without_
         metadata: serde_json::json!({}),
         source_timezone: Some("UTC".to_string()),
         clock_offset_seconds: Some(0.0),
+        assumptions: Vec::new(),
     };
 
     let bad_timezone_event = RawTimelineEvent {
@@ -742,6 +750,7 @@ fn test_unsupported_precision_or_invalid_timezone_excludes_single_event_without_
         metadata: serde_json::json!({}),
         source_timezone: Some("Mars/Olympus_Mons".to_string()),
         clock_offset_seconds: Some(0.0),
+        assumptions: Vec::new(),
     };
 
     let events = vec![valid_event, bad_precision_event, bad_timezone_event];
@@ -780,6 +789,7 @@ fn test_contradiction_leads_byte_identical_across_repeated_runs() {
         metadata: serde_json::json!({}),
         source_timezone: None,
         clock_offset_seconds: None,
+        assumptions: Vec::new(),
     };
 
     let t2 = RawTimelineEvent {
@@ -796,6 +806,7 @@ fn test_contradiction_leads_byte_identical_across_repeated_runs() {
         metadata: serde_json::json!({}),
         source_timezone: None,
         clock_offset_seconds: None,
+        assumptions: Vec::new(),
     };
 
     let events = vec![t1, t2];

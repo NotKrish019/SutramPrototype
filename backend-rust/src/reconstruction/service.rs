@@ -3,6 +3,7 @@
 //! Coordinates temporal timeline normalization, spatial trajectory building,
 //! contradiction detection, and video evidence processing.
 
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 use std::time::Duration;
 
@@ -11,8 +12,8 @@ use super::adapters::{
 };
 use super::contradictions::detect_contradictions;
 use super::model::{
-    ContradictionAnalysisResult, ExtractedFrameArtifact, SpatialReconstructionResult,
-    TimelineReconstructionResult, VideoMetadata,
+    ContradictionAnalysisResult, ExportSafeguard, ExportSafeguardStatus, ExtractedFrameArtifact,
+    SpatialReconstructionResult, TimelineReconstructionResult, VideoMetadata,
 };
 use super::spatial::{reconstruct_spatial_trajectories, DEFAULT_REFERENCE_SPEED_THRESHOLD_KMH};
 use super::temporal::{
@@ -64,6 +65,100 @@ pub struct FullCaseReconstructionResult {
     pub timeline: TimelineReconstructionResult,
     pub spatial: SpatialReconstructionResult,
     pub contradictions: ContradictionAnalysisResult,
+    /// Judicial export gate: BLOCKED when any finding rests on an assumption or a contradiction
+    /// lead is unresolved. Results stored before this field existed read back as BLOCKED.
+    #[serde(default = "export_safeguard_not_evaluated")]
+    pub export_safeguard: ExportSafeguard,
+}
+
+fn export_safeguard_not_evaluated() -> ExportSafeguard {
+    ExportSafeguard {
+        status: ExportSafeguardStatus::Blocked,
+        reasons: vec!["Export safeguard was not evaluated for this stored result.".to_string()],
+    }
+}
+
+/// Evaluates the export gate from the timeline assumptions and contradiction leads.
+pub fn evaluate_export_safeguard(
+    timeline: &TimelineReconstructionResult,
+    contradictions: &ContradictionAnalysisResult,
+) -> ExportSafeguard {
+    let mut reasons = Vec::new();
+    let mut kinds: BTreeMap<String, usize> = BTreeMap::new();
+    let mut assumed_events = 0usize;
+    for entry in &timeline.entries {
+        if !entry.assumptions.is_empty() {
+            assumed_events += 1;
+        }
+        let mut seen = BTreeSet::new();
+        for a in &entry.assumptions {
+            if seen.insert(a.kind) {
+                let key = serde_json::to_value(a.kind)
+                    .ok()
+                    .and_then(|v| v.as_str().map(str::to_string))
+                    .unwrap_or_else(|| format!("{:?}", a.kind));
+                *kinds.entry(key).or_insert(0) += 1;
+            }
+        }
+    }
+    if assumed_events > 0 {
+        let detail: Vec<String> = kinds.iter().map(|(k, n)| format!("{k} ({n})")).collect();
+        reasons.push(format!(
+            "{assumed_events} of {} event(s) rest on values that were not observed: {}.",
+            timeline.entries.len(),
+            detail.join(", ")
+        ));
+    }
+    if !timeline.excluded_events.is_empty() {
+        reasons.push(format!(
+            "{} event candidate(s) were excluded from the timeline.",
+            timeline.excluded_events.len()
+        ));
+    }
+    if !contradictions.leads.is_empty() {
+        reasons.push(format!(
+            "{} unresolved contradiction lead(s) require investigator review.",
+            contradictions.leads.len()
+        ));
+    }
+    ExportSafeguard {
+        status: if reasons.is_empty() {
+            ExportSafeguardStatus::Clear
+        } else {
+            ExportSafeguardStatus::Blocked
+        },
+        reasons,
+    }
+}
+
+/// Adds a limitation to each lead whose events rest on assumptions, so a lead built on an
+/// inferred position or defaulted clock is never shown as if it were based on observations.
+fn annotate_leads_with_assumptions(
+    timeline: &TimelineReconstructionResult,
+    contradictions: &mut ContradictionAnalysisResult,
+) {
+    let by_id: BTreeMap<&str, _> = timeline
+        .entries
+        .iter()
+        .map(|e| (e.event_id.as_str(), &e.assumptions))
+        .collect();
+    for lead in &mut contradictions.leads {
+        for event_id in [lead.event_a_id.clone(), lead.event_b_id.clone()] {
+            if let Some(assumptions) = by_id.get(event_id.as_str()) {
+                if !assumptions.is_empty() {
+                    let parts: Vec<String> = assumptions
+                        .iter()
+                        .map(|a| format!("{} = {}", a.field, a.assumed_value))
+                        .collect();
+                    lead.limitations.push(format!(
+                        "Event {} rests on assumed values ({}); this lead is conditional on them.",
+                        event_id,
+                        parts.join("; ")
+                    ));
+                }
+            }
+        }
+    }
 }
 
 /// Forensic Reconstruction Service.
@@ -95,18 +190,21 @@ impl ForensicReconstructionService {
             options.case_id.clone(),
         )?;
 
-        let contradictions = detect_contradictions(
+        let mut contradictions = detect_contradictions(
             &spatial,
             &timeline.entries,
             options.speed_threshold_kmh,
             options.case_id.clone(),
         )?;
+        annotate_leads_with_assumptions(&timeline, &mut contradictions);
+        let export_safeguard = evaluate_export_safeguard(&timeline, &contradictions);
 
         Ok(FullCaseReconstructionResult {
             case_id: options.case_id.clone(),
             timeline,
             spatial,
             contradictions,
+            export_safeguard,
         })
     }
 

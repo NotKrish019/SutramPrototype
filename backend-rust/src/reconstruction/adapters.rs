@@ -1,6 +1,6 @@
 //! Adapters bridging extraction outputs to reconstruction inputs.
 
-use super::model::GeoPoint;
+use super::model::{AssumptionKind, GeoPoint, ReconstructionAssumption};
 use super::temporal::RawTimelineEvent;
 use crate::extraction::model::{ExtractedEventCandidate, UnifiedExtractionResult};
 
@@ -39,6 +39,7 @@ pub fn event_candidate_to_timeline_event_with_context(
     fallback_clock_offset: Option<f64>,
 ) -> RawTimelineEvent {
     let mut coords: Option<GeoPoint> = None;
+    let mut assumptions: Vec<ReconstructionAssumption> = Vec::new();
 
     // 1. Direct coordinates object { "lat": ..., "lon": ... }
     if let Some(coords_val) = candidate.metadata.get("coordinates") {
@@ -64,21 +65,42 @@ pub fn event_candidate_to_timeline_event_with_context(
             .or(candidate.location_name.as_deref())
         {
             coords = resolve_cell_tower_centroid(tower_val);
+            if let Some(point) = &coords {
+                assumptions.push(ReconstructionAssumption {
+                    kind: AssumptionKind::CoordinatesInferredFromTowerId,
+                    field: "coordinates".to_string(),
+                    assumed_value: format!("{},{}", point.lat, point.lon),
+                    basis: format!(
+                        "Representative centroid looked up from tower identifier '{}'; not an \
+                         observed position. The device may have been anywhere in the cell.",
+                        tower_val
+                    ),
+                });
+            }
         }
     }
 
-    let precision = candidate
-        .timestamp_precision
-        .as_deref()
-        .or_else(|| {
-            candidate
-                .metadata
-                .get("timestamp_precision")
-                .and_then(|v| v.as_str())
-        })
+    // Producer-supplied precision: the typed candidate field (Member 1), else metadata.
+    let supplied_precision = candidate.timestamp_precision.as_deref().or_else(|| {
+        candidate
+            .metadata
+            .get("timestamp_precision")
+            .and_then(|v| v.as_str())
+    });
+    let precision = supplied_precision
         .or(default_precision)
         .unwrap_or("EXACT_SECOND")
         .to_string();
+    if supplied_precision.is_none() {
+        assumptions.push(ReconstructionAssumption {
+            kind: AssumptionKind::PrecisionDefaulted,
+            field: "timestamp_precision".to_string(),
+            assumed_value: precision.clone(),
+            basis: "The extraction candidate supplies no timestamp_precision; a default was used, \
+                    so the uncertainty window may be too narrow."
+                .to_string(),
+        });
+    }
 
     let uncertainty_window_start = candidate
         .metadata
@@ -92,18 +114,46 @@ pub fn event_candidate_to_timeline_event_with_context(
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
 
-    let source_timezone = candidate
+    let event_timezone = candidate
         .metadata
         .get("source_timezone")
         .and_then(|v| v.as_str())
-        .map(|s| s.to_string())
+        .map(|s| s.to_string());
+    let source_timezone = event_timezone
+        .clone()
         .or_else(|| fallback_timezone.map(|s| s.to_string()));
+    if event_timezone.is_none() {
+        if let Some(tz) = &source_timezone {
+            assumptions.push(ReconstructionAssumption {
+                kind: AssumptionKind::TimezoneNotDeclaredOnEvent,
+                field: "source_timezone".to_string(),
+                assumed_value: tz.clone(),
+                basis: "Exhibit-level or configured value, not declared on the event. Evidence \
+                        upload records 'UTC' when no timezone is declared."
+                    .to_string(),
+            });
+        }
+    }
 
-    let clock_offset_seconds = candidate
+    let event_offset = candidate
         .metadata
         .get("clock_offset_seconds")
-        .and_then(|v| v.as_f64())
-        .or(fallback_clock_offset);
+        .and_then(|v| v.as_f64());
+    let clock_offset_seconds = event_offset.or(fallback_clock_offset);
+    if event_offset.is_none() {
+        if let Some(offset) = clock_offset_seconds {
+            assumptions.push(ReconstructionAssumption {
+                kind: AssumptionKind::ClockOffsetNotDeclaredOnEvent,
+                field: "clock_offset_seconds".to_string(),
+                assumed_value: offset.to_string(),
+                basis: "Exhibit-level or configured value, not declared on the event. Evidence \
+                        upload records 0.0 when no offset is declared, so the clock may be \
+                        uncalibrated."
+                    .to_string(),
+            });
+        }
+    }
+    assumptions.sort();
 
     let raw_description = candidate
         .description
@@ -124,6 +174,7 @@ pub fn event_candidate_to_timeline_event_with_context(
         metadata: candidate.metadata.clone(),
         source_timezone,
         clock_offset_seconds,
+        assumptions,
     }
 }
 

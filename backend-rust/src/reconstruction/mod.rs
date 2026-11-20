@@ -18,20 +18,21 @@ pub use contradictions::{
     format_spatial_lead_explanation,
 };
 pub use model::{
-    CanonicalTimePrecision, ContradictionAnalysisResult, ContradictionLead, ContradictionLeadType,
-    DerivedLeadInference, EntityTrajectory, ExcludedTimelineEvent, ExtractedFrameArtifact,
-    GeoPoint, MovementSegment, NormalizedTimeWindow, ObservedLeadBasis,
-    SpatialReconstructionResult, SpatialTemporalOverlap, SpeedThresholdEvaluation,
-    TemporalOrderingStatus, TimelineEntry, TimelineOverlapPair, TimelineReconstructionResult,
-    TransitTimeMetrics, VideoExtractionResult, VideoMetadata, VideoStreamMetadata,
-    EARTH_MEAN_RADIUS_KM,
+    AssumptionKind, CanonicalTimePrecision, ContradictionAnalysisResult, ContradictionLead,
+    ContradictionLeadType, DerivedLeadInference, EntityTrajectory, ExcludedTimelineEvent,
+    ExportSafeguard, ExportSafeguardStatus, ExtractedFrameArtifact, GeoPoint, MovementSegment,
+    NormalizedTimeWindow, ObservedLeadBasis, ReconstructionAssumption, SpatialReconstructionResult,
+    SpatialTemporalOverlap, SpeedThresholdEvaluation, TemporalOrderingStatus, TimelineEntry,
+    TimelineOverlapPair, TimelineReconstructionResult, TransitTimeMetrics, VideoExtractionResult,
+    VideoMetadata, VideoStreamMetadata, EARTH_MEAN_RADIUS_KM,
 };
 pub use report::{
     generate_case_report, CaseForensicReport, STATUS_SHIP_EXPORT_BLOCKED,
     STATUS_SHIP_EXPORT_CLEARED,
 };
 pub use service::{
-    ForensicReconstructionService, FullCaseReconstructionResult, ReconstructionOptions,
+    evaluate_export_safeguard, ForensicReconstructionService, FullCaseReconstructionResult,
+    ReconstructionOptions,
 };
 pub use spatial::{
     calculate_transit_metrics, create_movement_segment, haversine_distance_km,

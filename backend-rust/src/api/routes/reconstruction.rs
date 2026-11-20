@@ -15,8 +15,14 @@ use crate::{
     error::AppError,
     extraction::model::ExtractedEventCandidate,
     reconstruction::{
-        adapters::event_candidate_to_timeline_event_with_context, model::GeoPoint,
-        service::ReconstructionOptions, temporal::RawTimelineEvent, FullCaseReconstructionResult,
+        adapters::{
+            event_candidate_to_timeline_event_with_context, unified_extraction_to_timeline_events,
+        },
+        model::GeoPoint,
+        model::{AssumptionKind, ReconstructionAssumption},
+        service::ReconstructionOptions,
+        temporal::RawTimelineEvent,
+        FullCaseReconstructionResult,
     },
 };
 
@@ -292,6 +298,25 @@ async fn load_case_events(
                         metadata: e.payload,
                         source_timezone: Some(options.default_timezone.clone()),
                         clock_offset_seconds: Some(options.default_clock_offset_seconds),
+                        // Stored events carry no timezone/offset; the request defaults are used.
+                        assumptions: vec![
+                            ReconstructionAssumption {
+                                kind: AssumptionKind::TimezoneNotDeclaredOnEvent,
+                                field: "source_timezone".to_string(),
+                                assumed_value: options.default_timezone.clone(),
+                                basis: "Reconstruction request default applied to a stored event."
+                                    .to_string(),
+                            },
+                            ReconstructionAssumption {
+                                kind: AssumptionKind::ClockOffsetNotDeclaredOnEvent,
+                                field: "clock_offset_seconds".to_string(),
+                                assumed_value: options.default_clock_offset_seconds.to_string(),
+                                basis: "Reconstruction request default applied to a stored \
+                                        event's nominal timestamp; a non-zero value would be \
+                                        applied on top of any earlier correction."
+                                    .to_string(),
+                            },
+                        ],
                     }
                 })
                 .collect();
@@ -318,16 +343,13 @@ async fn load_case_events(
                                 .load_run_result(&case_id_str, &ev_name, &pointer.active_run_id)
                                 .await
                             {
-                                for candidate in result.event_candidates {
-                                    let timeline_event =
-                                        event_candidate_to_timeline_event_with_context(
-                                            &candidate,
-                                            Some("EXACT_SECOND"),
-                                            Some(&options.default_timezone),
-                                            Some(options.default_clock_offset_seconds),
-                                        );
-                                    all_events.push(timeline_event);
-                                }
+                                // Use the exhibit's declared timezone / clock offset recorded on
+                                // the extraction run. Request defaults would silently replace a
+                                // declared calibration (Phase 3E.1 fix).
+                                all_events.extend(unified_extraction_to_timeline_events(
+                                    &result,
+                                    Some("EXACT_SECOND"),
+                                ));
                             }
                         }
                     }

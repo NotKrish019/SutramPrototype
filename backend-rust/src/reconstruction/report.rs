@@ -10,6 +10,7 @@ use uuid::Uuid;
 
 use crate::ingestion::EvidenceManifest;
 use crate::persistence::model::CaseEntity;
+use crate::reconstruction::model::ExportSafeguardStatus;
 use crate::reconstruction::service::FullCaseReconstructionResult;
 
 /// Judicial export clearance status.
@@ -148,6 +149,15 @@ pub fn generate_case_report(
             format!(
                 "Judicial export is blocked because {} timeline event candidate(s) were excluded due to invalid timestamps or unknown timezones.",
                 reconstruction.timeline.excluded_events.len()
+            ),
+        )
+    } else if reconstruction.export_safeguard.status == ExportSafeguardStatus::Blocked {
+        // Findings rest on values that were not observed (see timeline entry assumptions).
+        (
+            STATUS_SHIP_EXPORT_BLOCKED.to_string(),
+            format!(
+                "Judicial export is blocked: {}",
+                reconstruction.export_safeguard.reasons.join(" ")
             ),
         )
     } else {

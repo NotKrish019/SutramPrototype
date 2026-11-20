@@ -89,11 +89,59 @@ impl GeoPoint {
     }
 }
 
+/// Kind of value the reconstruction used that was not supplied as an observed fact.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum AssumptionKind {
+    /// The producer gave no `timestamp_precision`; a default precision was used.
+    PrecisionDefaulted,
+    /// The event declared no timezone; an exhibit-level or configured value was used. Member 2
+    /// ingestion writes `UTC` when nothing is declared, so this is not proof of a declaration.
+    TimezoneNotDeclaredOnEvent,
+    /// The event declared no clock offset; an exhibit-level or configured value was used.
+    ClockOffsetNotDeclaredOnEvent,
+    /// Coordinates were looked up from a cell tower identifier, not observed.
+    CoordinatesInferredFromTowerId,
+}
+
+/// One labelled assumption behind a reconstructed event. Values that are not observed facts are
+/// always recorded here, so they are never presented as observed (AGENTS.md §4).
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct ReconstructionAssumption {
+    pub kind: AssumptionKind,
+    /// The field the assumed value fills (e.g. `timestamp_precision`).
+    pub field: String,
+    /// The value that was used.
+    pub assumed_value: String,
+    /// Where the value came from and why it is not an observed fact.
+    pub basis: String,
+}
+
+/// Judicial export status of a reconstruction.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum ExportSafeguardStatus {
+    /// No assumption and no unresolved contradiction lead.
+    Clear,
+    /// At least one finding rests on an assumption, or a contradiction lead is unresolved.
+    Blocked,
+}
+
+/// Export gate for a reconstruction, with the reasons it is blocked.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ExportSafeguard {
+    pub status: ExportSafeguardStatus,
+    pub reasons: Vec<String>,
+}
+
 /// Reconstructed entry in a timeline.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TimelineEntry {
     pub event_id: String,
     pub source_evidence_id: String,
+    /// The timestamp exactly as the source/producer supplied it (never overwritten).
+    #[serde(default)]
+    pub raw_timestamp: String,
     pub time_window: NormalizedTimeWindow,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub coordinates: Option<GeoPoint>,
@@ -103,6 +151,9 @@ pub struct TimelineEntry {
     pub metadata: serde_json::Value,
     pub ordering_status: TemporalOrderingStatus,
     pub concurrent_event_ids: Vec<String>,
+    /// Values this entry rests on that were not observed (empty when everything was supplied).
+    #[serde(default)]
+    pub assumptions: Vec<ReconstructionAssumption>,
 }
 
 /// Pairwise overlapping temporal intervals.

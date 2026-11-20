@@ -9,8 +9,8 @@ use chrono_tz::Tz;
 use std::str::FromStr;
 
 use super::model::{
-    CanonicalTimePrecision, NormalizedTimeWindow, TemporalOrderingStatus, TimelineEntry,
-    TimelineOverlapPair, TimelineReconstructionResult,
+    AssumptionKind, CanonicalTimePrecision, NormalizedTimeWindow, ReconstructionAssumption,
+    TemporalOrderingStatus, TimelineEntry, TimelineOverlapPair, TimelineReconstructionResult,
 };
 use crate::error::AppError;
 
@@ -305,6 +305,9 @@ pub struct RawTimelineEvent {
     pub source_timezone: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub clock_offset_seconds: Option<f64>,
+    /// Values already substituted before this stage (e.g. by the extraction adapter).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub assumptions: Vec<ReconstructionAssumption>,
 }
 
 /// Reconstructs a deterministic timeline from input events.
@@ -335,6 +338,27 @@ pub fn reconstruct_timeline(
                 continue;
             }
         };
+        let mut assumptions = ev.assumptions.clone();
+        if ev.source_timezone.is_none() {
+            assumptions.push(ReconstructionAssumption {
+                kind: AssumptionKind::TimezoneNotDeclaredOnEvent,
+                field: "source_timezone".to_string(),
+                assumed_value: default_timezone.to_string(),
+                basis: "Reconstruction default; the event declared no timezone.".to_string(),
+            });
+        }
+        if ev.clock_offset_seconds.is_none() {
+            assumptions.push(ReconstructionAssumption {
+                kind: AssumptionKind::ClockOffsetNotDeclaredOnEvent,
+                field: "clock_offset_seconds".to_string(),
+                assumed_value: default_clock_offset.to_string(),
+                basis: "Reconstruction default; the event declared no clock offset, so the \
+                        source clock is uncalibrated."
+                    .to_string(),
+            });
+        }
+        assumptions.sort();
+        assumptions.dedup();
 
         let has_explicit =
             ev.uncertainty_window_start.is_some() || ev.uncertainty_window_end.is_some();
@@ -384,6 +408,7 @@ pub fn reconstruct_timeline(
         entries.push(TimelineEntry {
             event_id: ev.event_id.clone(),
             source_evidence_id: ev.source_evidence_id.clone(),
+            raw_timestamp: ev.timestamp.clone(),
             time_window,
             coordinates: ev.coordinates,
             raw_description: ev.raw_description.clone(),
@@ -391,6 +416,7 @@ pub fn reconstruct_timeline(
             metadata: ev.metadata.clone(),
             ordering_status: TemporalOrderingStatus::StrictlyOrdered,
             concurrent_event_ids: Vec::new(),
+            assumptions,
         });
     }
 
