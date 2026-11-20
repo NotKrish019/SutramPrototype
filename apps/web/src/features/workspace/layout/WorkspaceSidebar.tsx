@@ -18,12 +18,12 @@ export interface WorkspaceSidebarProps {
 const itemClass = (active: boolean, collapsed: boolean): string =>
   `group relative flex h-9 items-center gap-3 text-sm transition-colors duration-fast focus:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-signal-accent ${
     collapsed ? 'justify-center px-0' : 'px-3'
-  } ${active ? 'bg-white/[0.05] text-fg' : 'text-fg-muted hover:bg-white/[0.03] hover:text-fg'}`;
+  } ${active ? 'bg-white/[0.06] text-fg-bright' : 'text-fg-muted hover:bg-white/[0.03] hover:text-fg'}`;
 
 const ActiveBar: React.FC<{ active: boolean }> = ({ active }) => (
   <span
     aria-hidden="true"
-    className={`absolute inset-y-1.5 left-0 w-0.5 bg-signal-accent transition-opacity duration-base ${active ? 'opacity-100' : 'opacity-0'}`}
+    className={`absolute inset-y-1.5 left-0 w-0.5 bg-signal-live transition-opacity duration-base ${active ? 'opacity-100' : 'opacity-0'}`}
   />
 );
 
@@ -86,43 +86,59 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
               <span className="text-fg-muted">{activeCaseId}</span>
               {activeCase && <span className="mt-1 block truncate normal-case tracking-normal text-fg-subtle">{activeCase.title}</span>}
             </SectionLabel>
-            <ul>
-              {CASE_NAV.map((item) => {
-                const active = route.kind === 'case' && route.caseId === activeCaseId && route.section === item.section;
-                const badge =
-                  item.section === 'contradictions' && activeCase && activeCase.has_detail && activeCase.review_count > 0
-                    ? activeCase.review_count
-                    : null;
-                return (
-                  <li key={item.section}>
-                    <Link
-                      to={caseHref(activeCaseId, item.section)}
-                      onClick={onNavigate}
-                      aria-current={active ? 'page' : undefined}
-                      title={collapsed ? item.label : undefined}
-                      aria-label={collapsed ? item.label : undefined}
-                      className={itemClass(active, collapsed)}
-                    >
-                      <ActiveBar active={active} />
-                      <item.icon aria-hidden="true" className={`h-4 w-4 shrink-0 ${active ? 'text-signal-accent' : ''}`} />
-                      {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
-                      {badge !== null && (
-                        <span
-                          className={
-                            collapsed
-                              ? 'absolute right-2 top-1.5 h-1.5 w-1.5 bg-signal-flag'
-                              : 'font-mono text-micro text-signal-flag'
-                          }
-                          aria-label={`${badge} items need review`}
+            {(['case', 'workflow', 'analysis'] as const).map((group) => (
+              <React.Fragment key={group}>
+                {group !== 'case' && (
+                  <SectionLabel collapsed={collapsed}>{group === 'workflow' ? 'Investigation workflow' : 'Analysis'}</SectionLabel>
+                )}
+                <ul>
+                  {CASE_NAV.filter((item) => item.group === group).map((item) => {
+                    const active = route.kind === 'case' && route.caseId === activeCaseId && route.section === item.section;
+                    const badge =
+                      item.section === 'contradictions' && activeCase && activeCase.has_detail && activeCase.review_count > 0
+                        ? activeCase.review_count
+                        : null;
+                    return (
+                      <li key={item.section}>
+                        <Link
+                          to={caseHref(activeCaseId, item.section)}
+                          onClick={onNavigate}
+                          aria-current={active ? 'page' : undefined}
+                          title={collapsed ? item.label : item.purpose}
+                          aria-label={collapsed ? item.label : undefined}
+                          className={itemClass(active, collapsed)}
                         >
-                          {collapsed ? '' : badge}
-                        </span>
-                      )}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
+                          <ActiveBar active={active} />
+                          {!collapsed && item.step !== undefined ? (
+                            <span
+                              aria-hidden="true"
+                              className={`w-4 shrink-0 font-mono text-[0.625rem] tabular-nums ${active ? 'text-signal-live' : 'text-fg-subtle'}`}
+                            >
+                              {String(item.step).padStart(2, '0')}
+                            </span>
+                          ) : (
+                            <item.icon aria-hidden="true" className={`h-4 w-4 shrink-0 ${active ? 'text-signal-live' : ''}`} />
+                          )}
+                          {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
+                          {badge !== null && (
+                            <span
+                              className={
+                                collapsed
+                                  ? 'absolute right-2 top-1.5 h-1.5 w-1.5 bg-signal-flag'
+                                  : 'min-w-[1.25rem] bg-signal-flag/15 px-1 text-center font-mono text-micro text-signal-flag'
+                              }
+                              aria-label={`${badge} items need review`}
+                            >
+                              {collapsed ? '' : badge}
+                            </span>
+                          )}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </React.Fragment>
+            ))}
           </>
         )}
       </div>

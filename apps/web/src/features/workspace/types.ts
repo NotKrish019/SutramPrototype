@@ -102,6 +102,20 @@ export interface WorkspaceEvent {
   involved_entity_ids: string[];
   source_evidence_id: string;
   provenance: ProvenanceClass;
+  /** Declared clock correction applied once by the temporal engine (live data only). */
+  clock_offset_seconds?: number;
+  /** Values the reconstruction used that were not observed (live data only). */
+  assumptions?: { kind: string; field: string; assumed_value: string; basis: string }[];
+  /** Present when the event was derived from an extracted video keyframe (live data only). */
+  frame?: {
+    pts_seconds: number;
+    frame_index?: number;
+    sha256: string;
+    artifact_reference?: string;
+    relative_path?: string;
+    source_video_sha256?: string;
+    anchor_basis?: string;
+  };
 }
 
 export interface WorkspaceRelationship {
@@ -163,4 +177,6 @@ export interface CaseDetail {
   relationships: WorkspaceRelationship[];
   review_items: ReviewItem[];
   places: SpatialPlace[];
+  /** Event candidates the reconstruction excluded, with the reason (live data only). */
+  excluded_events?: { event_id: string; source_evidence_id: string; reason: string }[];
 }

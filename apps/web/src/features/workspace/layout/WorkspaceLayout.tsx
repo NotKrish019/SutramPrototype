@@ -207,7 +207,7 @@ const Shell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar onOpenMenu={() => setDrawerOpen(true)} menuButtonRef={menuButtonRef} />
-        <main id="workspace-main" className="min-w-0 flex-1">
+        <main id="workspace-main" className="ws-canvas min-w-0 flex-1">
           {children}
         </main>
       </div>

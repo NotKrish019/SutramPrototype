@@ -60,3 +60,89 @@
     stroke-dashoffset: 0;
   }
 }
+
+/* ======================================================================================
+ * 2026 redesign — design system layer
+ * Motion tokens: --ws-fast 150ms (hover/focus) · --ws-base 260ms (panels) ·
+ *                --ws-slow 700ms (data transitions) · --ws-ease (decelerate, never bounce).
+ * Rule: motion explains a change of state or the flow of evidence; nothing loops forever
+ * except the evidence-flow particles, which stop under reduced motion.
+ * ====================================================================================== */
+:root {
+  --ws-fast: 150ms;
+  --ws-base: 260ms;
+  --ws-slow: 700ms;
+  --ws-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Wide Archivo for headings: an instrument face, not an editorial serif. */
+.font-serif {
+  font-stretch: 118%;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+/* Matte surface grain on the workspace canvas (very low contrast). */
+.ws-canvas {
+  background-color: #0a0a0b;
+  background-image:
+    radial-gradient(1200px 600px at 85% -10%, rgba(229, 36, 59, 0.06), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(200, 202, 208, 0.04), transparent 60%);
+}
+
+/* Staggered entrance: set --i on children (0, 1, 2 …). */
+.ws-rise {
+  animation: ws-rise 620ms var(--ws-ease) both;
+  animation-delay: calc(var(--i, 0) * 70ms);
+}
+@keyframes ws-rise {
+  from { opacity: 0; transform: translate3d(0, 10px, 0); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Evidence flow: dots travel along an SVG path (offset-path set inline). */
+.ws-flow-dot {
+  offset-rotate: 0deg;
+  animation: ws-flow 2.8s var(--ws-ease) infinite;
+  animation-delay: var(--d, 0s);
+  opacity: 0;
+}
+@keyframes ws-flow {
+  0% { offset-distance: 0%; opacity: 0; }
+  12% { opacity: 1; }
+  88% { opacity: 1; }
+  100% { offset-distance: 100%; opacity: 0; }
+}
+
+/* One slow, non-flashing attention ring for the single most important alert. */
+.ws-attention {
+  animation: ws-attention 2.4s ease-in-out 3;
+}
+@keyframes ws-attention {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(229, 36, 59, 0); }
+  50% { box-shadow: 0 0 0 6px rgba(229, 36, 59, 0.12); }
+}
+
+/* Timeline markers glide between raw and corrected time. */
+.ws-glide {
+  transition: transform var(--ws-slow) var(--ws-ease);
+}
+
+/* Disclosure panels (details/summary) open smoothly. */
+.ws-disclose[open] > :not(summary) {
+  animation: ws-rise 320ms var(--ws-ease) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ws-rise, .ws-attention, .ws-disclose[open] > :not(summary) { animation: none; }
+  .ws-flow-dot { animation: none; opacity: 0; }
+  .ws-glide { transition: none; }
+}
+
+/* SVG-safe staggered fade (no transform, so it never fights SVG transform attributes). */
+.ws-fade {
+  animation: ws-fade 520ms var(--ws-ease) both;
+  animation-delay: calc(var(--i, 0) * 60ms);
+}
+@keyframes ws-fade { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .ws-fade { animation: none; } }

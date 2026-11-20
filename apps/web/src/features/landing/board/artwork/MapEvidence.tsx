@@ -61,26 +61,26 @@ export const MapEvidence: React.FC<{ className?: string; label?: boolean }> = ({
         ))}
       </g>
       {/* route */}
-      <path d={ROUTE} fill="none" stroke="#E32636" strokeWidth="5" opacity="0.4" filter={`url(#g-${id})`} />
+      <path d={ROUTE} fill="none" stroke="#E5243B" strokeWidth="5" opacity="0.4" filter={`url(#g-${id})`} />
       <path d={ROUTE} fill="none" stroke="#ff4150" strokeWidth="1.8" strokeDasharray="5 4" strokeLinecap="round" />
       {[
         [58, 196],
         [96, 150],
         [168, 112],
       ].map(([x, y]) => (
-        <circle key={`${x}`} cx={x} cy={y} r="3.2" fill="#E32636" stroke="#ffd6da" strokeWidth="0.8" />
+        <circle key={`${x}`} cx={x} cy={y} r="3.2" fill="#E5243B" stroke="#ffd6da" strokeWidth="0.8" />
       ))}
       {/* destination pin */}
       <g transform="translate(236 70)">
         <ellipse cx="0" cy="1" rx="6" ry="2" fill="#000" opacity="0.6" />
-        <path d="M0 0 C -9 -12, -9 -22, 0 -24 C 9 -22, 9 -12, 0 0 Z" fill="#E32636" />
+        <path d="M0 0 C -9 -12, -9 -22, 0 -24 C 9 -22, 9 -12, 0 0 Z" fill="#E5243B" />
         <circle cx="0" cy="-16" r="3.2" fill="#2a0a0d" />
       </g>
       {label && (
         <g fontFamily="JetBrains Mono, monospace" fontSize="7.5" fill="#bdb6aa">
           <text x="244" y="58">WH-7 · GATE B</text>
           <text x="66" y="208">FUEL · 21:58</text>
-          <text x="10" y="16" fill="#857D72">LOC-07 · SYNTHETIC</text>
+          <text x="10" y="16" fill="#71717A">LOC-07 · SYNTHETIC</text>
         </g>
       )}
     </svg>

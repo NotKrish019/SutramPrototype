@@ -101,8 +101,8 @@ export const CctvStill: React.FC<CctvStillProps> = ({
       </g>
       {annotate && (
         <g>
-          <rect x="128" y="104" width="112" height="58" fill="none" stroke="#E32636" strokeWidth="1.2" strokeDasharray="4 3" />
-          <rect x="128" y="96" width="64" height="9" fill="#E32636" />
+          <rect x="128" y="104" width="112" height="58" fill="none" stroke="#E5243B" strokeWidth="1.2" strokeDasharray="4 3" />
+          <rect x="128" y="96" width="64" height="9" fill="#E5243B" />
           <text x="131" y="102.6" fontFamily="JetBrains Mono, monospace" fontSize="6" fill="#fff">
             VEH-1 · plate …47
           </text>
@@ -122,7 +122,7 @@ export const CctvStill: React.FC<CctvStillProps> = ({
         <text x="310" y="16" textAnchor="end">
           {timestamp}
         </text>
-        <circle cx="13" cy="205" r="3" fill="#E32636" className="rec-blink" />
+        <circle cx="13" cy="205" r="3" fill="#E5243B" className="rec-blink" />
         <text x="21" y="208" fontSize="7.5">
           REC
         </text>

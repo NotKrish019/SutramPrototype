@@ -379,7 +379,7 @@ export const HomePage: React.FC = () => {
           repository.defaultCaseId ? (
             <Link
               to={caseHref(repository.defaultCaseId)}
-              className="inline-flex h-9 items-center gap-2 border border-signal-accent bg-signal-accent px-3.5 font-mono text-[0.75rem] uppercase tracking-[0.04em] text-ink-950 hover:bg-[#E9D7B8] focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-accent focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950"
+              className="inline-flex h-9 items-center gap-2 border border-signal-accent bg-signal-accent px-3.5 font-mono text-[0.75rem] uppercase tracking-[0.04em] text-ink-950 hover:bg-[#E4E5E9] focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-accent focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950"
             >
               Open {repository.defaultCaseId} <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" />
             </Link>

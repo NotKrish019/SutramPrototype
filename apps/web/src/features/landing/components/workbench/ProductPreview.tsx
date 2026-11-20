@@ -53,7 +53,7 @@ export const ProductPreview: React.FC = () => {
   };
 
   return (
-    <section id={SECTION_IDS.platform} aria-labelledby="workbench-heading" className="relative overflow-hidden border-b border-ink-line bg-[radial-gradient(ellipse_at_50%_0%,#1a1612,#080807_60%)] py-section">
+    <section id={SECTION_IDS.platform} aria-labelledby="workbench-heading" className="relative overflow-hidden border-b border-ink-line bg-[radial-gradient(ellipse_at_50%_0%,#1a1612,#0A0A0B_60%)] py-section">
       <div aria-hidden="true" className="pattern-dots pointer-events-none absolute inset-x-0 top-0 h-[36rem] opacity-30 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
       <Container className="relative">
         <Reveal>

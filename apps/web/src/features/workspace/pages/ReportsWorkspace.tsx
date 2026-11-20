@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { FileDown, Printer } from 'lucide-react';
+import { FileDown, Lock, Printer } from 'lucide-react';
+import { useWorkspaceRepository } from '../data/WorkspaceDataContext';
 import { ProvenanceBadge } from '../../../components/ui/primitives';
 import { CaseStatusBadge, FilterChip, Panel, WsButton } from '../components/ui';
 import { formatDateTime, formatEventTime, formatUtc, REVIEW_CATEGORY_LABEL, shortHash } from '../format';
@@ -22,6 +23,14 @@ const ReportHeading: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
 /** Report preview assembled in the browser from the loaded case records. */
 export const ReportsWorkspace: React.FC<{ detail: CaseDetail }> = ({ detail }) => {
+  const synthetic = useWorkspaceRepository().source === 'synthetic';
+  const openReview = detail.review_items.filter((item) => item.status !== 'verified');
+  const conflicting = openReview.filter((item) => item.category === 'conflicting').length;
+  const exportReasons = [
+    ...(conflicting > 0 ? [`${conflicting} unresolved contradiction${conflicting === 1 ? '' : 's'}`] : []),
+    ...(openReview.length > 0 ? [`${openReview.length} open review item${openReview.length === 1 ? '' : 's'}`] : []),
+    'Chain of custody not finalised in this workspace',
+  ];
   const [included, setIncluded] = useState<Set<ReportSection>>(() => new Set(SECTIONS.map((s) => s.id)));
   const toggle = (id: ReportSection): void =>
     setIncluded((current) => {
@@ -52,10 +61,18 @@ export const ReportsWorkspace: React.FC<{ detail: CaseDetail }> = ({ detail }) =
             <WsButton icon={FileDown} disabled aria-describedby="report-export-note">
               Export PDF / JSON
             </WsButton>
-            <div className="flex items-center gap-1.5 mt-1">
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono uppercase bg-signal-flag/10 text-signal-flag border border-signal-flag/30">
-                SHIP_EXPORT_BLOCKED
-              </span>
+            <div className="mt-1 border border-signal-flag/50 bg-signal-flag/[0.06] p-3">
+              <p className="flex items-center gap-2 font-mono text-micro uppercase text-signal-flag">
+                <Lock aria-hidden="true" className="h-3.5 w-3.5" /> SHIP_EXPORT_BLOCKED
+              </p>
+              <ul className="mt-2 space-y-1 text-xs text-fg-muted">
+                {exportReasons.map((reason) => (
+                  <li key={reason} className="flex gap-2">
+                    <span aria-hidden="true" className="mt-1.5 h-1 w-1 shrink-0 bg-signal-flag" />
+                    {reason}
+                  </li>
+                ))}
+              </ul>
             </div>
             <p id="report-export-note" className="text-xs leading-relaxed text-fg-subtle">
               Judicial export status: <strong>SHIP_EXPORT_BLOCKED</strong>. Dossier export is blocked pending verification of unresolved contradiction leads and chain of custody finalization. The preview is assembled in the browser from the records shown in this workspace.
@@ -72,14 +89,21 @@ export const ReportsWorkspace: React.FC<{ detail: CaseDetail }> = ({ detail }) =
 
       <article aria-label="Report preview" className="min-w-0 border border-ink-line bg-ink-900 xl:col-span-8">
         <header className="border-b border-ink-line px-6 py-6 sm:px-8">
-          <p className="font-mono text-micro uppercase text-signal-accent">Draft report preview · synthetic demonstration data</p>
-          <h2 className="mt-3 font-display text-3xl font-bold uppercase leading-none text-fg">{c.title}</h2>
+          <p className="font-mono text-micro uppercase text-signal-accent">
+            Draft report preview · {synthetic ? 'synthetic demonstration data' : 'live reconstruction data'}
+          </p>
+          <h2 className="mt-3 font-serif text-3xl leading-none text-fg-bright">{c.title}</h2>
           <div className="mt-3 flex flex-wrap items-center gap-3 font-mono text-micro uppercase text-fg-subtle">
             <span>{c.case_id}</span>
             {c.fir_number && <span>{c.fir_number}</span>}
             <CaseStatusBadge status={c.status} />
             <span>Generated {formatDateTime(new Date().toISOString())} (browser)</span>
           </div>
+          <ul aria-label="How to read this report" className="mt-5 flex flex-wrap gap-x-5 gap-y-2 border-t border-ink-line pt-4 text-xs text-fg-muted">
+            <li className="flex items-center gap-2"><span aria-hidden="true" className="h-px w-5 bg-fg" /><span className="text-fg">Evidence</span> observed records, cited by exhibit</li>
+            <li className="flex items-center gap-2"><span aria-hidden="true" className="h-px w-5 border-t border-dashed border-paper" /><span className="text-fg">Inference</span> derived links, never proof</li>
+            <li className="flex items-center gap-2"><span aria-hidden="true" className="h-1.5 w-1.5 bg-signal-flag" /><span className="text-fg">Unresolved</span> open questions, stated not hidden</li>
+          </ul>
         </header>
         <div className="space-y-8 px-6 py-6 sm:px-8">
           {included.size === 0 && <p className="text-sm text-fg-subtle">Select at least one section.</p>}

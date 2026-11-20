@@ -60,6 +60,7 @@ export const CASE_SECTIONS = [
   'timeline',
   'spatial',
   'contradictions',
+  'video',
   'reports',
 ] as const;
 

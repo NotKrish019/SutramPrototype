@@ -148,9 +148,9 @@ export const PROVENANCE_STYLES: Record<
   ProvenanceClass,
   { text: string; border: string; stroke: string; dash?: string }
 > = {
-  observed: { text: 'text-signal-observed', border: 'border-signal-observed/40', stroke: '#F1E9DB' },
-  supplied: { text: 'text-signal-supplied', border: 'border-signal-supplied/40', stroke: '#8FA9C4', dash: '1 4' },
-  inferred: { text: 'text-signal-accent', border: 'border-signal-accent/50', stroke: '#D8C5A7', dash: '5 5' },
+  observed: { text: 'text-signal-observed', border: 'border-signal-observed/40', stroke: '#EDEDEF' },
+  supplied: { text: 'text-signal-supplied', border: 'border-signal-supplied/40', stroke: '#8C9EB3', dash: '1 4' },
+  inferred: { text: 'text-signal-accent', border: 'border-signal-accent/50', stroke: '#C8CAD0', dash: '5 5' },
 };
 
 export const ProvenanceBadge: React.FC<{ value: ProvenanceClass; withDescription?: boolean }> = ({
@@ -213,7 +213,7 @@ export const YuktiMark: React.FC<{ className?: string }> = ({ className = 'h-6 w
   <svg viewBox="0 0 24 24" className={className} aria-hidden="true" fill="none">
     <rect x="0.5" y="0.5" width="23" height="23" stroke="currentColor" strokeOpacity="0.35" />
     <path d="M5 7 C 12 7, 12 12, 12 12 S 12 17, 19 17" stroke="currentColor" strokeWidth="1.5" />
-    <rect x="3.5" y="5.5" width="3" height="3" fill="#E32636" />
+    <rect x="3.5" y="5.5" width="3" height="3" fill="#E5243B" />
     <rect x="10.5" y="10.5" width="3" height="3" fill="currentColor" />
     <rect x="17.5" y="15.5" width="3" height="3" fill="currentColor" />
   </svg>

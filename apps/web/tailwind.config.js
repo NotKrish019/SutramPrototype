@@ -7,48 +7,52 @@ export default {
   theme: {
     extend: {
       colors: {
-        // YUKTI identity — cinematic charcoal investigation board, warm ivory type,
-        // parchment evidence accents and a single forensic crimson.
+        // YUKTI brand system (2026 redesign): matte black foundation, white type, one forensic
+        // crimson for critical intelligence and active states, silver/graphite for structure.
+        // Token names are kept from v1 so every component re-themes from one place.
         ink: {
-          950: '#080807',
-          900: '#11100E',
-          850: '#15130F',
-          800: '#191714',
-          700: '#211D19',
-          line: '#26221D',
-          strong: '#3A342D',
+          950: '#0A0A0B',
+          900: '#111113',
+          850: '#151517',
+          800: '#19191C',
+          700: '#202024',
+          line: '#26262B',
+          strong: '#3A3A41',
         },
         fg: {
-          DEFAULT: '#F1E9DB',
-          bright: '#F7F4EE',
-          muted: '#A9A197',
-          subtle: '#857D72',
+          DEFAULT: '#EDEDEF',
+          bright: '#FFFFFF',
+          muted: '#A1A1AA',
+          subtle: '#71717A',
         },
         paper: {
-          DEFAULT: '#D8C5A7',
-          light: '#E9D7B8',
-          dark: '#B9A584',
+          DEFAULT: '#C8CAD0',
+          light: '#E4E5E9',
+          dark: '#9A9CA4',
         },
         crimson: {
-          DEFAULT: '#E32636',
-          deep: '#9F1C26',
-          muted: '#702128',
+          DEFAULT: '#E5243B',
+          deep: '#A3172B',
+          muted: '#5C1420',
         },
         steel: {
-          DEFAULT: '#8FA9C4',
+          DEFAULT: '#8C9EB3',
           dim: '#4F6378',
         },
         // Semantic evidence palette — colours carry meaning, never decoration.
         signal: {
-          accent: '#D8C5A7', // warm accent · inferred relationships (dashed)
-          observed: '#F1E9DB', // directly observed facts (solid)
-          supplied: '#8FA9C4', // information supplied by a party or record holder
-          flag: '#E32636', // contradictions / requires review
-          ok: '#6FBF8A', // verified / healthy (small semantic use only)
+          accent: '#C8CAD0', // silver · inferred relationships (dashed), focus, links
+          observed: '#EDEDEF', // directly observed facts (solid)
+          supplied: '#8C9EB3', // information supplied by a party or record holder
+          flag: '#E5243B', // contradictions / requires review
+          ok: '#4FB37D', // verified / healthy (small semantic use only)
+          warn: '#D9A441', // assumed / unverified values (never decoration)
+          live: '#E5243B', // active state indicator (crimson, used sparingly)
         },
       },
       fontFamily: {
-        serif: ['Fraunces', 'Georgia', 'Times New Roman', 'serif'],
+        // Headings use wide Archivo (see .font-serif in workspace.css for the width axis).
+        serif: ['Archivo', 'Inter', 'system-ui', 'sans-serif'],
         display: ['Archivo', 'Inter', 'system-ui', 'sans-serif'],
         sans: ['Inter', 'system-ui', 'Avenir', 'Helvetica', 'Arial', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
@@ -72,6 +76,10 @@ export default {
       },
       transitionTimingFunction: {
         out: 'cubic-bezier(0.22, 1, 0.36, 1)',
+      },
+      boxShadow: {
+        lift: '0 1px 0 rgba(255,255,255,0.04) inset, 0 12px 32px -12px rgba(0,0,0,0.7)',
+        flag: '0 0 0 1px rgba(229,36,59,0.55), 0 0 24px -6px rgba(229,36,59,0.45)',
       },
       transitionDuration: {
         fast: '150ms',

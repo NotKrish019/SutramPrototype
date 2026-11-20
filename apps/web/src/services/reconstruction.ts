@@ -56,6 +56,17 @@ export interface TimelineEntryDto {
   metadata: Record<string, unknown>;
   ordering_status: TemporalOrderingStatus;
   concurrent_event_ids: string[];
+  /** Producer timestamp exactly as supplied (backend-rust ≥ 98a8bd8). */
+  raw_timestamp?: string;
+  /** Values the reconstruction used that were not observed (backend-rust ≥ 98a8bd8). */
+  assumptions?: ReconstructionAssumptionDto[];
+}
+
+export interface ReconstructionAssumptionDto {
+  kind: string;
+  field: string;
+  assumed_value: string;
+  basis: string;
 }
 
 export interface TimelineOverlapPairDto {
@@ -73,6 +84,8 @@ export interface TimelineReconstructionResultDto {
   overlaps: TimelineOverlapPairDto[];
   strictly_ordered_count: usizeNumber;
   concurrent_uncertain_count: usizeNumber;
+  /** Candidates excluded with a reason (backend-rust ≥ 52953c3). */
+  excluded_events?: { event_id: string; source_evidence_id: string; reason: string }[];
 }
 
 type usizeNumber = number;
@@ -314,7 +327,9 @@ export function adaptTimelineEntriesToWorkspaceEvents(
         : 'OBSERVED_EVENT';
 
     const sourceRecordedTime =
-      typeof rawMeta.call_timestamp === 'string'
+      typeof entry.raw_timestamp === 'string' && entry.raw_timestamp
+        ? entry.raw_timestamp
+        : typeof rawMeta.call_timestamp === 'string'
         ? rawMeta.call_timestamp
         : typeof rawMeta.timestamp === 'string'
         ? rawMeta.timestamp
@@ -350,8 +365,28 @@ export function adaptTimelineEntriesToWorkspaceEvents(
       involved_entity_ids: entry.entity_ids,
       source_evidence_id: entry.source_evidence_id,
       provenance: 'observed',
+      clock_offset_seconds: entry.time_window.clock_offset_seconds,
+      assumptions: entry.assumptions ?? [],
+      frame: adaptFrameProvenance(rawMeta),
     };
   });
+}
+
+/** Frame provenance written by the backend video handoff into candidate metadata. */
+function adaptFrameProvenance(meta: Record<string, unknown>): WorkspaceEvent['frame'] {
+  const pts = meta.pts_seconds;
+  const sha = meta.sha256_hash;
+  if (typeof pts !== 'number' || typeof sha !== 'string') return undefined;
+  const str = (key: string) => (typeof meta[key] === 'string' ? (meta[key] as string) : undefined);
+  return {
+    pts_seconds: pts,
+    frame_index: typeof meta.frame_index === 'number' ? (meta.frame_index as number) : undefined,
+    sha256: sha,
+    artifact_reference: str('frame_artifact_reference'),
+    relative_path: str('relative_path'),
+    source_video_sha256: str('source_video_sha256'),
+    anchor_basis: str('utc_anchor_basis'),
+  };
 }
 
 /**

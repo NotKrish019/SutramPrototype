@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { renderAppAt, stubHealth } from '../../test/renderApp';
 import { matchWorkspaceRoute } from '../../router/router';
+import { getApiBaseUrl } from '../../services/config';
 import { syntheticRepository, type WorkspaceRepository } from './data/repository';
 import { WorkspaceApp } from './WorkspaceApp';
 
@@ -37,7 +38,7 @@ describe('workspace shell', () => {
   it('links every case section in the sidebar to a real route', async () => {
     await renderAppAt('/workspace');
     const nav = sidebar();
-    const expected = ['Case Overview', 'Evidence Repository', 'Evidence Correlation', 'Knowledge Graph', 'Event Reconstruction', 'Spatial Reconstruction', 'Contradiction Review', 'Reports'];
+    const expected = ['Investigation Overview', 'Evidence Intake', 'Temporal Reconstruction', 'Spatial Reconstruction', 'Contradiction Intelligence', 'Video Intelligence', 'Judicial Report', 'Knowledge Graph', 'Evidence Correlation'];
     for (const label of expected) {
       const link = within(nav).getByRole('link', { name: new RegExp(`^${label}`) });
       expect(matchWorkspaceRoute(new URL(link.getAttribute('href')!, 'http://x').pathname)?.kind).toBe('case');
@@ -68,7 +69,7 @@ describe('workspace shell', () => {
     const toggle = screen.getByRole('button', { name: 'Open navigation' });
     await click(toggle);
     const drawer = screen.getByRole('dialog', { name: 'Workspace navigation' });
-    expect(within(drawer).getByRole('link', { name: /^Evidence Repository/ })).toBeInTheDocument();
+    expect(within(drawer).getByRole('link', { name: /^Evidence Intake/ })).toBeInTheDocument();
     await act(async () => {
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     });
@@ -79,7 +80,7 @@ describe('workspace shell', () => {
   it('closes the drawer after choosing a destination', async () => {
     await renderAppAt('/workspace');
     await click(screen.getByRole('button', { name: 'Open navigation' }));
-    await click(within(screen.getByRole('dialog')).getByRole('link', { name: /^Reports/ }));
+    await click(within(screen.getByRole('dialog')).getByRole('link', { name: /^Judicial Report/ }));
     expect(window.location.pathname).toBe('/workspace/cases/CASE-026/reports');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
@@ -87,7 +88,7 @@ describe('workspace shell', () => {
   it('shows breadcrumbs and switches case with the case selector, keeping the section', async () => {
     await renderAppAt('/workspace/cases/CASE-026/timeline');
     const crumbs = screen.getByRole('navigation', { name: 'Breadcrumb' });
-    expect(crumbs).toHaveTextContent('WorkspaceCASE-026Event Reconstruction');
+    expect(crumbs).toHaveTextContent('WorkspaceCASE-026Temporal Reconstruction');
     await act(async () => {
       fireEvent.change(screen.getByRole('combobox', { name: /^Case/ }), { target: { value: 'CASE-024' } });
     });
@@ -463,7 +464,7 @@ describe('reports', () => {
 describe('settings and help', () => {
   it('shows the real runtime configuration', async () => {
     await renderAppAt('/workspace/settings');
-    expect(screen.getByText('http://localhost:8080')).toBeInTheDocument();
+    expect(screen.getByText(getApiBaseUrl())).toBeInTheDocument();
     expect(screen.getByText(/GET \/health every 15s/)).toBeInTheDocument();
     expect(screen.getByText('Synthetic fixture (no case API yet)')).toBeInTheDocument();
   });

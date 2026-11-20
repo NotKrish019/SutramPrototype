@@ -1,11 +1,11 @@
 import React, { useMemo, useState } from 'react';
-import { ArrowRight, Info, Scale } from 'lucide-react';
+import { ArrowRight, Fingerprint, Info, Scale } from 'lucide-react';
 import { ReviewBadge } from '../../../components/ui/primitives';
 import { Link } from '../../../router/Link';
 import { caseHref } from '../../../router/router';
 import { useCaseIndex, useQuerySelection } from '../caseIndex';
 import { EmptyState, FilterChip, Panel, ReviewCategoryBadge } from '../components/ui';
-import { REVIEW_CATEGORY_LABEL } from '../format';
+import { REVIEW_CATEGORY_LABEL, shortHash } from '../format';
 import type { CaseDetail, ReviewCategory, ReviewItem, ReviewRecord } from '../types';
 import { EvidencePreview } from '../components/EvidencePreview';
 import { useWorkspaceRepository } from '../data/WorkspaceDataContext';
@@ -42,16 +42,16 @@ const ClockComparison: React.FC<{ records: ReviewRecord[] }> = ({ records }) => 
   return (
     <div className="border-t border-ink-line bg-ink-950 px-5 py-4">
       <svg viewBox="0 0 600 70" className="block w-full" role="img" aria-label={`Source ${a.label} at ${a.value} and source ${b.label} at ${b.value}, ${Math.floor(delta / 60)} min ${delta % 60} s apart as recorded`}>
-        <line x1="40" y1="40" x2="560" y2="40" stroke="#3A342D" />
-        <rect x={x(lo)} y="36" width={x(hi) - x(lo)} height="8" fill="#E32636" fillOpacity="0.18" />
-        <path d={`M ${x(lo)} 24 V 30 H ${x(hi)} V 24`} fill="none" stroke="#E32636" pathLength={1} className="ws-draw" />
-        <text x={(x(lo) + x(hi)) / 2} y="18" textAnchor="middle" fontFamily="JetBrains Mono, monospace" fontSize="11" fill="#E32636">
+        <line x1="40" y1="40" x2="560" y2="40" stroke="#3A3A41" />
+        <rect x={x(lo)} y="36" width={x(hi) - x(lo)} height="8" fill="#E5243B" fillOpacity="0.18" />
+        <path d={`M ${x(lo)} 24 V 30 H ${x(hi)} V 24`} fill="none" stroke="#E5243B" pathLength={1} className="ws-draw" />
+        <text x={(x(lo) + x(hi)) / 2} y="18" textAnchor="middle" fontFamily="JetBrains Mono, monospace" fontSize="11" fill="#E5243B">
           Δ {Math.floor(delta / 60)} min {delta % 60} s
         </text>
         {[a, b].map((p) => (
           <g key={p.id}>
-            <circle cx={x(p.s)} cy="40" r="5" fill="#080807" stroke="#F1E9DB" strokeWidth="1.5" />
-            <text x={x(p.s)} y="62" textAnchor="middle" fontFamily="JetBrains Mono, monospace" fontSize="10" fill="#A9A197">
+            <circle cx={x(p.s)} cy="40" r="5" fill="#0A0A0B" stroke="#EDEDEF" strokeWidth="1.5" />
+            <text x={x(p.s)} y="62" textAnchor="middle" fontFamily="JetBrains Mono, monospace" fontSize="10" fill="#A1A1AA">
               {p.label} · {p.id}
             </text>
           </g>
@@ -73,8 +73,11 @@ const ReviewDetail: React.FC<{ item: ReviewItem; detail: CaseDetail }> = ({ item
           <ReviewCategoryBadge category={item.category} />
           <ReviewBadge value={item.status} />
         </div>
-        <h2 className="mt-3 font-serif text-[1.75rem] font-normal leading-tight text-fg-bright">{item.title}</h2>
-        <p className="mt-2 text-sm leading-relaxed text-fg-muted">{item.summary}</p>
+        <h2 className="mt-3 font-serif text-[1.75rem] leading-tight text-fg-bright">{item.title}</h2>
+        <div className={`mt-4 border-l-2 pl-3 ${conflict ? 'border-signal-flag/70' : 'border-ink-strong'}`}>
+          <p className="font-mono text-micro uppercase text-fg-subtle">Why this was detected</p>
+          <p className="mt-1 text-sm leading-relaxed text-fg-muted">{item.summary}</p>
+        </div>
       </div>
 
       <h3 className="border-b border-ink-line bg-ink-850 px-5 py-2 font-mono text-micro uppercase text-fg-subtle">
@@ -85,17 +88,30 @@ const ReviewDetail: React.FC<{ item: ReviewItem; detail: CaseDetail }> = ({ item
           {item.records.map((record, i) => {
             const evidence = index.evidence.get(record.evidence_id);
             return (
-              <div key={`${record.evidence_id}-${i}`} className={`bg-ink-950 p-5 ${conflict ? 'border-t-2 border-crimson/70' : ''}`}>
+              <div
+                key={`${record.evidence_id}-${i}`}
+                className={`bg-ink-950 p-5 ws-rise ${conflict ? 'border-t-2 border-crimson/80' : ''} ${i === 1 && item.records.length === 2 ? 'sm:text-right' : ''}`}
+                style={{ ['--i' as string]: i }}
+              >
                 <p className="font-mono text-micro uppercase text-fg-subtle">
                   Source {String.fromCharCode(65 + i)} · {record.evidence_id}
                 </p>
-                <p className="mt-3 font-display text-3xl font-semibold leading-none text-fg-bright">{record.value}</p>
+                <p className="mt-3 font-display text-[2.1rem] font-semibold leading-none tabular-nums text-fg-bright">{record.value}</p>
                 <p className="mt-2 text-sm text-fg-muted">{record.label}</p>
                 {evidence && (
-                  <Link to={caseHref(caseId, 'evidence', { evidence: record.evidence_id })} className="group mt-4 flex items-center gap-3">
+                  <Link
+                    to={caseHref(caseId, 'evidence', { evidence: record.evidence_id })}
+                    className={`group mt-4 flex items-center gap-3 ${i === 1 && item.records.length === 2 ? 'sm:flex-row-reverse' : ''}`}
+                  >
                     <EvidencePreview evidence={evidence} synthetic={synthetic} className="w-28 shrink-0 border border-ink-line transition-colors group-hover:border-ink-strong" />
-                    <span className="flex min-w-0 items-center gap-1 truncate font-mono text-micro text-fg-subtle group-hover:text-signal-accent">
-                      {evidence.original_filename} <ArrowRight aria-hidden="true" className="h-3 w-3 shrink-0" />
+                    <span className="min-w-0 space-y-1">
+                      <span className="flex items-center gap-1 truncate font-mono text-micro text-fg-muted group-hover:text-signal-accent">
+                        {evidence.original_filename} <ArrowRight aria-hidden="true" className="h-3 w-3 shrink-0" />
+                      </span>
+                      <span className="flex items-center gap-1 font-mono text-[0.65rem] tabular-nums text-fg-subtle" title={evidence.sha256_hash}>
+                        <Fingerprint aria-hidden="true" className="h-3 w-3 shrink-0 text-signal-ok" /> {shortHash(evidence.sha256_hash)}
+                      </span>
+                      <span className="block font-mono text-[0.65rem] uppercase text-fg-subtle">{evidence.source}</span>
                     </span>
                   </Link>
                 )}
@@ -104,7 +120,7 @@ const ReviewDetail: React.FC<{ item: ReviewItem; detail: CaseDetail }> = ({ item
           })}
         </div>
         {conflict && item.records.length === 2 && (
-          <span aria-hidden="true" className="absolute left-1/2 top-1/2 hidden h-9 w-9 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-crimson font-serif text-lg text-white shadow-[0_0_0_6px_#080807] sm:grid">
+          <span aria-hidden="true" className="absolute left-1/2 top-1/2 hidden h-12 w-12 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-crimson text-2xl font-semibold text-white shadow-[0_0_0_8px_#0A0A0B,0_0_32px_rgba(229,36,59,0.45)] sm:grid">
             ≠
           </span>
         )}
@@ -164,6 +180,7 @@ const ReviewDetail: React.FC<{ item: ReviewItem; detail: CaseDetail }> = ({ item
 };
 
 export const ContradictionReview: React.FC<{ detail: CaseDetail }> = ({ detail }) => {
+  const synthetic = useWorkspaceRepository().source === 'synthetic';
   const [selectedId, setSelectedId] = useQuerySelection('item');
   const [category, setCategory] = useState<ReviewCategory | 'all'>('all');
   const items = useMemo(
@@ -178,7 +195,9 @@ export const ContradictionReview: React.FC<{ detail: CaseDetail }> = ({ detail }
     <div className="space-y-4 p-4 sm:p-6 lg:p-8">
       <p className="flex items-center gap-2 font-mono text-micro uppercase text-fg-subtle">
         <Scale aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-signal-accent" />
-        Synthetic review items · contradiction engine not yet exposed through an API · nothing resolved automatically
+        {synthetic
+          ? 'Synthetic review items · contradiction engine not yet exposed through an API · nothing resolved automatically'
+          : 'Contradiction leads from the YUKTI reconstruction engine · investigative leads, not findings · nothing resolved automatically'}
       </p>
 
       <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter review items by category">
@@ -209,7 +228,10 @@ export const ContradictionReview: React.FC<{ detail: CaseDetail }> = ({ detail }
                         isSelected ? 'bg-white/[0.04]' : 'hover:bg-white/[0.02]'
                       }`}
                     >
-                      <span aria-hidden="true" className={`absolute inset-y-0 left-0 w-0.5 ${isSelected ? 'bg-signal-accent' : 'bg-transparent'}`} />
+                      <span
+                        aria-hidden="true"
+                        className={`absolute inset-y-0 left-0 w-0.5 ${isSelected ? 'bg-signal-live' : item.category === 'conflicting' ? 'bg-signal-flag/40' : 'bg-transparent'}`}
+                      />
                       <span className="flex flex-wrap items-center gap-2">
                         <ReviewCategoryBadge category={item.category} />
                         <span className="font-mono text-micro text-fg-subtle">{item.id}</span>

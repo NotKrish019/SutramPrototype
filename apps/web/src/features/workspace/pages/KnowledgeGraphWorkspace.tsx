@@ -25,21 +25,21 @@ const DEFAULT_VIEW = { x: 0, y: 0, w: CANVAS.w, h: CANVAS.h };
 type View = typeof DEFAULT_VIEW;
 
 const EDGE_STYLE: Record<GraphEdge['provenance'], { stroke: string; dash?: string; width: number; opacity: number }> = {
-  observed: { stroke: '#F1E9DB', width: 1.4, opacity: 0.75 },
-  supplied: { stroke: '#8FA9C4', dash: '2 5', width: 1.6, opacity: 0.95 },
-  inferred: { stroke: '#D8C5A7', dash: '7 6', width: 1.5, opacity: 0.95 },
-  structural: { stroke: '#857D72', width: 1, opacity: 0.45 },
+  observed: { stroke: '#EDEDEF', width: 1.4, opacity: 0.75 },
+  supplied: { stroke: '#8C9EB3', dash: '2 5', width: 1.6, opacity: 0.95 },
+  inferred: { stroke: '#C8CAD0', dash: '7 6', width: 1.5, opacity: 0.95 },
+  structural: { stroke: '#71717A', width: 1, opacity: 0.45 },
 };
 
 /** Restrained per-type tones from the YUKTI palette; crimson is reserved for contradictions. */
 export const NODE_TONE: Record<NodeCategory, string> = {
-  person: '#F1E9DB',
-  device: '#8FA9C4',
-  vehicle: '#D8C5A7',
+  person: '#EDEDEF',
+  device: '#8C9EB3',
+  vehicle: '#C8CAD0',
   location: '#C9A45A',
-  organization: '#B9A584',
-  unclassified: '#857D72',
-  event: '#A9A197',
+  organization: '#9A9CA4',
+  unclassified: '#71717A',
+  event: '#A1A1AA',
   evidence: '#6F8AA6',
 };
 
@@ -554,8 +554,8 @@ export const KnowledgeGraphWorkspace: React.FC<{ detail: CaseDetail }> = ({ deta
                   <g key={edge.id} opacity={lit || selected ? 1 : 0.12} style={{ transition: 'opacity 200ms' }}>
                     {contradiction ? (
                       <>
-                        <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="#E32636" strokeWidth={5 * Math.max(scale, 0.6)} strokeOpacity="0.18" />
-                        <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="#E32636" strokeWidth="1.6" strokeDasharray="10 4 2 4" />
+                        <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="#E5243B" strokeWidth={5 * Math.max(scale, 0.6)} strokeOpacity="0.18" />
+                        <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="#E5243B" strokeWidth="1.6" strokeDasharray="10 4 2 4" />
                       </>
                     ) : (
                       <line
@@ -563,7 +563,7 @@ export const KnowledgeGraphWorkspace: React.FC<{ detail: CaseDetail }> = ({ deta
                         y1={a.y}
                         x2={b.x}
                         y2={b.y}
-                        stroke={onPath ? '#D8C5A7' : style.stroke}
+                        stroke={onPath ? '#C8CAD0' : style.stroke}
                         strokeOpacity={onPath || selected ? 1 : style.opacity}
                         strokeWidth={onPath || selected ? style.width + 1.2 : style.width}
                         strokeDasharray={style.dash}
@@ -583,7 +583,7 @@ export const KnowledgeGraphWorkspace: React.FC<{ detail: CaseDetail }> = ({ deta
                       <title>{`${a.label} — ${edge.label} → ${b.label}`}</title>
                     </line>
                     {(contradiction || selected || (edge.provenance !== 'structural' && scale < 0.85)) && (
-                      <text x={mx} y={my - 6} textAnchor="middle" className="svg-label pointer-events-none" fontFamily={MONO} fontSize={10 * Math.max(scale, 0.7)} fill={contradiction ? '#E32636' : style.stroke}>
+                      <text x={mx} y={my - 6} textAnchor="middle" className="svg-label pointer-events-none" fontFamily={MONO} fontSize={10 * Math.max(scale, 0.7)} fill={contradiction ? '#E5243B' : style.stroke}>
                         {contradiction ? '≠ ' : ''}
                         {edge.label}
                       </text>
@@ -596,7 +596,7 @@ export const KnowledgeGraphWorkspace: React.FC<{ detail: CaseDetail }> = ({ deta
                 const selected = selectedNode?.id === node.id;
                 const lit = nodeLit(node.id);
                 const stroke = NODE_TONE[node.category];
-                const fill = selected ? '#2a2218' : '#11100E';
+                const fill = selected ? '#2a2218' : '#111113';
                 return (
                   <g
                     key={node.id}
@@ -616,20 +616,20 @@ export const KnowledgeGraphWorkspace: React.FC<{ detail: CaseDetail }> = ({ deta
                       }
                     }}
                   >
-                    <circle className="focus-ring" cx={node.x} cy={node.y} r="26" fill="none" stroke="#D8C5A7" strokeDasharray="3 3" opacity="0" />
+                    <circle className="focus-ring" cx={node.x} cy={node.y} r="26" fill="none" stroke="#C8CAD0" strokeDasharray="3 3" opacity="0" />
                     {selected && (
                       <>
                         <circle cx={node.x} cy={node.y} r="30" fill={stroke} fillOpacity="0.08" />
                         <circle cx={node.x} cy={node.y} r="24" fill="none" stroke={stroke} strokeOpacity="0.6" />
                       </>
                     )}
-                    {matchIds.has(node.id) && <circle cx={node.x} cy={node.y} r="22" fill="none" stroke="#D8C5A7" strokeWidth="1.5" />}
+                    {matchIds.has(node.id) && <circle cx={node.x} cy={node.y} r="22" fill="none" stroke="#C8CAD0" strokeWidth="1.5" />}
                     <rect x={node.x - 45} y={node.y - 22} width="90" height="64" fill="transparent" />
                     <NodeGlyph node={node} fill={fill} stroke={stroke} />
-                    <text x={node.x} y={node.y + 30} textAnchor="middle" className="svg-label" fontFamily={MONO} fontSize="11" fill="#F1E9DB">
+                    <text x={node.x} y={node.y + 30} textAnchor="middle" className="svg-label" fontFamily={MONO} fontSize="11" fill="#EDEDEF">
                       {node.label.length > 26 ? `${node.label.slice(0, 25)}…` : node.label}
                     </text>
-                    <text x={node.x} y={node.y + 43} textAnchor="middle" className="svg-label" fontFamily={MONO} fontSize="8.5" fill="#857D72">
+                    <text x={node.x} y={node.y + 43} textAnchor="middle" className="svg-label" fontFamily={MONO} fontSize="8.5" fill="#71717A">
                       {node.sublabel.toUpperCase()}
                     </text>
                   </g>
@@ -647,7 +647,7 @@ export const KnowledgeGraphWorkspace: React.FC<{ detail: CaseDetail }> = ({ deta
                 </li>
               ))}
               <li className="flex items-center gap-1.5 text-crimson">
-                <svg aria-hidden="true" width="20" height="6"><line x1="0" y1="3" x2="20" y2="3" stroke="#E32636" strokeWidth="1.6" strokeDasharray="10 4 2 4" /></svg>
+                <svg aria-hidden="true" width="20" height="6"><line x1="0" y1="3" x2="20" y2="3" stroke="#E5243B" strokeWidth="1.6" strokeDasharray="10 4 2 4" /></svg>
                 Contradicts (needs review)
               </li>
               <li className="normal-case tracking-normal text-fg-subtle">Weights shown only when provided</li>

@@ -50,7 +50,7 @@ const DesktopComposition: React.FC<{ drawn: boolean }> = ({ drawn }) => (
       <path d="M 364 228 Q 460 350 562 380" className="thread-shadow" />
       <path d="M 364 228 Q 460 350 562 380" pathLength={1} className="thread thread--draw" data-state="hot" />
       <BoardPin x={364} y={228} />
-      <text x="420" y="246" fontFamily="JetBrains Mono, monospace" fontSize="12" letterSpacing="0.08em" fill="#F1E9DB" className="svg-label" style={{ stroke: '#0b0a09' }}>
+      <text x="420" y="246" fontFamily="JetBrains Mono, monospace" fontSize="12" letterSpacing="0.08em" fill="#EDEDEF" className="svg-label" style={{ stroke: '#0b0a09' }}>
         {DX.recordA.value} · CAMERA CLOCK
       </text>
 
@@ -66,21 +66,21 @@ const DesktopComposition: React.FC<{ drawn: boolean }> = ({ drawn }) => (
         <path d="M 762 292 l 7 -2 M 762 292 l 4 -6 M 762 292 l 8 1" stroke="#c81f2e" strokeWidth="1" />
       </g>
       <BoardPin x={880} y={158} tone="steel" />
-      <text x="896" y="232" fontFamily="JetBrains Mono, monospace" fontSize="12" letterSpacing="0.08em" fill="#F1E9DB" className="svg-label" style={{ stroke: '#0b0a09' }}>
+      <text x="896" y="232" fontFamily="JetBrains Mono, monospace" fontSize="12" letterSpacing="0.08em" fill="#EDEDEF" className="svg-label" style={{ stroke: '#0b0a09' }}>
         {DX.recordB.value} · CONTROLLER CLOCK
       </text>
 
       {/* discrepancy flag at the break */}
       <g className="snap-flag">
-        <circle cx="770" cy="284" r="34" fill="#E32636" opacity="0.14" />
-        <circle cx="770" cy="284" r="20" fill="#E32636" />
+        <circle cx="770" cy="284" r="34" fill="#E5243B" opacity="0.14" />
+        <circle cx="770" cy="284" r="20" fill="#E5243B" />
         <text x="770" y="292" textAnchor="middle" fontFamily="Fraunces, Georgia, serif" fontSize="24" fill="#fff">
           ≠
         </text>
         <text x="808" y="330" fontFamily="JetBrains Mono, monospace" fontSize="13" letterSpacing="0.08em" fill="#ff6b76" className="svg-label" style={{ stroke: '#0b0a09' }}>
           {DX.variance.toUpperCase()}
         </text>
-        <text x="808" y="348" fontFamily="JetBrains Mono, monospace" fontSize="10" letterSpacing="0.1em" fill="#A9A197" className="svg-label" style={{ stroke: '#0b0a09' }}>
+        <text x="808" y="348" fontFamily="JetBrains Mono, monospace" fontSize="10" letterSpacing="0.1em" fill="#A1A1AA" className="svg-label" style={{ stroke: '#0b0a09' }}>
           REQUIRES INVESTIGATOR REVIEW
         </text>
       </g>
@@ -111,7 +111,7 @@ const CompactComposition: React.FC<{ drawn: boolean }> = ({ drawn }) => (
         <path d="M 140 62 L 140 100" pathLength={1} className="thread thread--draw" />
       </g>
       <g className="snap-flag">
-        <circle cx="140" cy="54" r="12" fill="#E32636" />
+        <circle cx="140" cy="54" r="12" fill="#E5243B" />
         <text x="140" y="59" textAnchor="middle" fontSize="15" fill="#fff">
           ≠
         </text>

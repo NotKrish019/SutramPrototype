@@ -62,24 +62,34 @@ export function adaptFullCaseReconstructionToCaseDetail(
   const liveReviews = adaptContradictionLeadsToReviewItems(res.contradictions.leads);
   const liveEvidence = evidenceList.map(adaptReceiptToWorkspaceEvidence);
 
-  const livePlaces = res.spatial.trajectories.flatMap((traj, tIdx) =>
-    traj.waypoints
-      .filter((w) => w.coordinates)
-      .map((w, wIdx) => ({
-        place_id: `PL-LOC-${tIdx}-${wIdx}`,
-        name:
-          w.raw_description ||
-          `Coordinate (${w.coordinates!.lat.toFixed(4)}, ${w.coordinates!.lon.toFixed(4)})`,
-        kind: 'off-plan' as const,
-        x: 400 + ((wIdx * 60) % 300),
-        y: 200 + ((wIdx * 40) % 200),
-        event_ids: [w.event_id],
-        evidence_ids: [w.source_evidence_id],
-        note: w.metadata.location_synthetic_centroid
-          ? 'SYNTHETIC CELL TOWER CENTROID — NOT OBSERVED GPS'
-          : 'Observed geographic coordinates from exhibit',
-      })),
+  // Live places are projected from their real WGS84 coordinates (equirectangular, aspect-correct)
+  // into the plot space. Positions are relative; there is no basemap.
+  const waypoints = res.spatial.trajectories.flatMap((traj, tIdx) =>
+    traj.waypoints.filter((w) => w.coordinates).map((w, wIdx) => ({ w, tIdx, wIdx })),
   );
+  const lats = waypoints.map(({ w }) => w.coordinates!.lat);
+  const lons = waypoints.map(({ w }) => w.coordinates!.lon);
+  const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+  const minLon = Math.min(...lons), maxLon = Math.max(...lons);
+  const midLat = ((minLat + maxLat) / 2) * (Math.PI / 180);
+  const spanX = Math.max((maxLon - minLon) * Math.cos(midLat), 1e-6);
+  const spanY = Math.max(maxLat - minLat, 1e-6);
+  const scale = Math.min(640 / spanX, 380 / spanY);
+  const project = (lat: number, lon: number) => ({
+    x: Math.round(400 + ((lon - (minLon + maxLon) / 2) * Math.cos(midLat)) * scale),
+    y: Math.round(260 - (lat - (minLat + maxLat) / 2) * scale),
+  });
+  const livePlaces = waypoints.map(({ w, tIdx, wIdx }) => ({
+    place_id: `PL-LOC-${tIdx}-${wIdx}`,
+    name: w.raw_description || `Coordinate (${w.coordinates!.lat.toFixed(4)}, ${w.coordinates!.lon.toFixed(4)})`,
+    kind: 'off-plan' as const,
+    ...(waypoints.length === 1 ? { x: 400, y: 260 } : project(w.coordinates!.lat, w.coordinates!.lon)),
+    event_ids: [w.event_id],
+    evidence_ids: [w.source_evidence_id],
+    note: w.metadata.location_synthetic_centroid
+      ? 'INFERRED CELL TOWER CENTROID — NOT OBSERVED GPS'
+      : `Observed coordinates ${w.coordinates!.lat.toFixed(5)}, ${w.coordinates!.lon.toFixed(5)} (WGS84)`,
+  }));
 
   return {
     case: {
@@ -101,6 +111,7 @@ export function adaptFullCaseReconstructionToCaseDetail(
     relationships: [],
     review_items: liveReviews,
     places: livePlaces,
+    excluded_events: res.timeline.excluded_events ?? [],
   };
 }
 

@@ -99,7 +99,7 @@ export const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
             </line>
             {showEdgeLabels && (
               <g>
-                <rect x={mx - rel.label.length * 2.9 - 5} y={my - 8} width={rel.label.length * 5.8 + 10} height="15" fill="#11100E" />
+                <rect x={mx - rel.label.length * 2.9 - 5} y={my - 8} width={rel.label.length * 5.8 + 10} height="15" fill="#111113" />
                 <text x={mx} y={my + 3} textAnchor="middle" fontFamily={MONO} fontSize="9" fill={style.stroke} fillOpacity="0.9">
                   {rel.label}
                 </text>
@@ -112,16 +112,16 @@ export const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
       {DEMO_CASE.entities.map((entity) => {
         const selected = entity.id === selectedEntityId;
         const lit = isLit(entity.id);
-        const stroke = selected ? '#D8C5A7' : '#F1E9DB';
-        const fill = selected ? '#2a2218' : '#080807';
+        const stroke = selected ? '#C8CAD0' : '#EDEDEF';
+        const fill = selected ? '#2a2218' : '#0A0A0B';
         const content = (
           <>
-            {selected && <circle cx={entity.x} cy={entity.y} r="22" fill="none" stroke="#D8C5A7" strokeOpacity="0.35" />}
+            {selected && <circle cx={entity.x} cy={entity.y} r="22" fill="none" stroke="#C8CAD0" strokeOpacity="0.35" />}
             <NodeShape kind={entity.kind} x={entity.x} y={entity.y} fill={fill} stroke={stroke} />
-            <text className="svg-label" x={entity.x} y={entity.y + 30} textAnchor="middle" fontFamily={MONO} fontSize="10.5" fill="#F1E9DB">
+            <text className="svg-label" x={entity.x} y={entity.y + 30} textAnchor="middle" fontFamily={MONO} fontSize="10.5" fill="#EDEDEF">
               {entity.label}
             </text>
-            <text className="svg-label" x={entity.x} y={entity.y + 43} textAnchor="middle" fontFamily={MONO} fontSize="8.5" fill="#857D72">
+            <text className="svg-label" x={entity.x} y={entity.y + 43} textAnchor="middle" fontFamily={MONO} fontSize="8.5" fill="#71717A">
               {KIND_LABEL[entity.kind].toUpperCase()}
             </text>
           </>

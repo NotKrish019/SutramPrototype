@@ -98,7 +98,7 @@ const HeroCopy: React.FC = () => (
             <feDisplacementMap in="SourceGraphic" scale="6" />
           </filter>
         </defs>
-        <path d="M6 13 C 120 6, 300 6, 414 11" pathLength={1} stroke="#E32636" strokeWidth="7" strokeLinecap="round" fill="none" filter="url(#hero-brush)" className="brush-stroke" />
+        <path d="M6 13 C 120 6, 300 6, 414 11" pathLength={1} stroke="#E5243B" strokeWidth="7" strokeLinecap="round" fill="none" filter="url(#hero-brush)" className="brush-stroke" />
       </svg>
       <span className="mt-8 block font-serif text-[clamp(1.4rem,2.1vw,2.1rem)] font-light leading-[1.18] text-fg-bright">
         Every fragment tells a story.{' '}

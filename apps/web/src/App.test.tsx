@@ -59,7 +59,7 @@ describe('App routing', () => {
     await renderAt('/workspace/cases/CASE-026/timeline');
     expect(screen.getByRole('heading', { level: 1, name: 'Warehouse Access Investigation' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /timeline/i, current: 'page' })).toBeInTheDocument();
-    expect(document.title).toBe('Event Reconstruction · CASE-026 · YUKTI');
+    expect(document.title).toBe('Temporal Reconstruction · CASE-026 · YUKTI');
   });
 
   it('shows a workspace-level not-found view for unknown workspace paths', async () => {

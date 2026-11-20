@@ -164,16 +164,16 @@ export const WireframeModel: React.FC<WireframeModelProps> = ({
             <feGaussianBlur stdDeviation="5" />
           </filter>
           <radialGradient id={`pool-${id}`} cx="0.5" cy="0.55" r="0.55">
-            <stop offset="0" stopColor="#8FA9C4" stopOpacity="0.1" />
-            <stop offset="1" stopColor="#8FA9C4" stopOpacity="0" />
+            <stop offset="0" stopColor="#8C9EB3" stopOpacity="0.1" />
+            <stop offset="1" stopColor="#8C9EB3" stopOpacity="0" />
           </radialGradient>
         </defs>
         <rect width={width} height={height} fill={`url(#pool-${id})`} />
-        <path d={scene.floor} stroke="#8FA9C4" strokeOpacity="0.09" strokeWidth="1" fill="none" />
+        <path d={scene.floor} stroke="#8C9EB3" strokeOpacity="0.09" strokeWidth="1" fill="none" />
         {/* far → near so nearer structure overdraws */}
         {[2, 1, 0].map((band) => (
           <g key={band} fill="none" strokeLinecap="round">
-            <path d={scene.studs[band]} stroke="#8FA9C4" strokeOpacity={[0.55, 0.36, 0.18][band]} strokeWidth="0.9" />
+            <path d={scene.studs[band]} stroke="#8C9EB3" strokeOpacity={[0.55, 0.36, 0.18][band]} strokeWidth="0.9" />
             <path d={scene.walls[band]} stroke="#dbe5ef" strokeOpacity={[0.92, 0.6, 0.3][band]} strokeWidth={[1.6, 1.25, 1][band]} />
           </g>
         ))}

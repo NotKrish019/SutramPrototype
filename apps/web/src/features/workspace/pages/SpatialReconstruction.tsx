@@ -29,8 +29,8 @@ const KIND_LABEL: Record<PlaceKind, string> = {
 };
 
 const PlaceGlyph: React.FC<{ place: SpatialPlace; selected: boolean }> = ({ place, selected }) => {
-  const stroke = selected ? '#D8C5A7' : '#F1E9DB';
-  const fill = selected ? '#2a2218' : '#11100E';
+  const stroke = selected ? '#C8CAD0' : '#EDEDEF';
+  const fill = selected ? '#2a2218' : '#111113';
   const { x, y } = place;
   switch (place.kind) {
     case 'gate':
@@ -54,49 +54,72 @@ export interface SitePlanProps {
   placeId: string | null;
   onSelect: (placeId: string | null) => void;
   className?: string;
+  /** Live data: places are projected from real coordinates, so no site schematic is drawn. */
+  geographic?: boolean;
 }
 
 /** Schematic site plan (not geographic). Shared by the workspace and the public site. */
-export const SitePlan: React.FC<SitePlanProps> = ({ places, sequence, placeId, onSelect, className = 'min-w-[36rem]' }) => {
+export const SitePlan: React.FC<SitePlanProps> = ({ places, sequence, placeId, onSelect, className = 'min-w-[36rem]', geographic = false }) => {
   const ap = places.find((p) => p.kind === 'access-point');
   const camera = places.find((p) => p.kind === 'camera');
   const gate = places.find((p) => p.kind === 'gate');
   const offPlan = places.find((p) => p.kind === 'off-plan');
   return (
-    <svg viewBox="0 0 800 520" className={`block h-auto w-full ${className}`} role="group" aria-label="Schematic site plan of Warehouse 7 with evidence-linked places">
+    <svg
+      viewBox="0 0 800 520"
+      className={`block h-auto w-full ${className}`}
+      role="group"
+      aria-label={geographic ? 'Evidence locations projected from WGS84 coordinates' : 'Schematic site plan of Warehouse 7 with evidence-linked places'}
+    >
       <defs>
         <pattern id="bldg-hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-          <line x1="0" y1="0" x2="0" y2="8" stroke="#F1E9DB" strokeOpacity="0.06" strokeWidth="3" />
+          <line x1="0" y1="0" x2="0" y2="8" stroke="#EDEDEF" strokeOpacity="0.06" strokeWidth="3" />
         </pattern>
         <radialGradient id="ap-coverage">
-          <stop offset="0%" stopColor="#D8C5A7" stopOpacity="0.14" />
-          <stop offset="100%" stopColor="#D8C5A7" stopOpacity="0.02" />
+          <stop offset="0%" stopColor="#C8CAD0" stopOpacity="0.14" />
+          <stop offset="100%" stopColor="#C8CAD0" stopOpacity="0.02" />
         </radialGradient>
       </defs>
+      {geographic ? (
+        <g aria-hidden="true">
+          {Array.from({ length: 9 }, (_, i) => (
+            <line key={`v${i}`} x1={80 + i * 80} x2={80 + i * 80} y1="40" y2="480" stroke="#26262B" strokeDasharray="1 6" />
+          ))}
+          {Array.from({ length: 6 }, (_, i) => (
+            <line key={`h${i}`} x1="60" x2="740" y1={60 + i * 80} y2={60 + i * 80} stroke="#26262B" strokeDasharray="1 6" />
+          ))}
+          <path d="M 752 70 L 760 52 L 768 70" fill="none" stroke="#A1A1AA" />
+          <text x="760" y="88" textAnchor="middle" fontFamily={MONO} fontSize="10" fill="#A1A1AA">N</text>
+          <text x="60" y="505" fontFamily={MONO} fontSize="10" fill="#71717A">WGS84 · RELATIVE POSITIONS · NO BASEMAP</text>
+        </g>
+      ) : (
+      <>
       {/* road + boundary */}
-      <rect x="40" y="20" width="80" height="480" fill="#15130F" />
-      <text x="80" y="260" textAnchor="middle" fontFamily={MONO} fontSize="10" fill="#857D72" transform="rotate(-90 80 260)">SERVICE ROAD</text>
-      <rect x="160" y="60" width="600" height="400" fill="none" stroke="#3A342D" strokeDasharray="6 5" />
-      <text x="752" y="450" textAnchor="end" fontFamily={MONO} fontSize="10" fill="#857D72">SITE BOUNDARY</text>
-      <rect x="340" y="140" width="300" height="220" fill="url(#bldg-hatch)" stroke="#A9A197" strokeOpacity="0.6" />
-      <text x="490" y="380" textAnchor="middle" fontFamily={MONO} fontSize="11" fill="#A9A197">WAREHOUSE 7</text>
-      {gate && <line x1="120" x2={gate.x - 7} y1={gate.y} y2={gate.y} stroke="#3A342D" strokeDasharray="2 4" />}
+      <rect x="40" y="20" width="80" height="480" fill="#151517" />
+      <text x="80" y="260" textAnchor="middle" fontFamily={MONO} fontSize="10" fill="#71717A" transform="rotate(-90 80 260)">SERVICE ROAD</text>
+      <rect x="160" y="60" width="600" height="400" fill="none" stroke="#3A3A41" strokeDasharray="6 5" />
+      <text x="752" y="450" textAnchor="end" fontFamily={MONO} fontSize="10" fill="#71717A">SITE BOUNDARY</text>
+      <rect x="340" y="140" width="300" height="220" fill="url(#bldg-hatch)" stroke="#A1A1AA" strokeOpacity="0.6" />
+      <text x="490" y="380" textAnchor="middle" fontFamily={MONO} fontSize="11" fill="#A1A1AA">WAREHOUSE 7</text>
+      {gate && <line x1="120" x2={gate.x - 7} y1={gate.y} y2={gate.y} stroke="#3A3A41" strokeDasharray="2 4" />}
+      </>
+      )}
 
       {ap?.uncertainty_radius && (
         <g>
-          <circle cx={ap.x} cy={ap.y} r={ap.uncertainty_radius} fill="url(#ap-coverage)" stroke="#D8C5A7" strokeOpacity="0.5" strokeDasharray="4 4" />
-          <text x={ap.x} y={ap.y - ap.uncertainty_radius - 8} textAnchor="middle" fontFamily={MONO} fontSize="10" fill="#D8C5A7" className="svg-label">
+          <circle cx={ap.x} cy={ap.y} r={ap.uncertainty_radius} fill="url(#ap-coverage)" stroke="#C8CAD0" strokeOpacity="0.5" strokeDasharray="4 4" />
+          <text x={ap.x} y={ap.y - ap.uncertainty_radius - 8} textAnchor="middle" fontFamily={MONO} fontSize="10" fill="#C8CAD0" className="svg-label">
             AP-WH7 COVERAGE · DEVICE SOMEWHERE WITHIN
           </text>
         </g>
       )}
       {camera && gate && (
-        <path d={`M${camera.x} ${camera.y} L ${gate.x + 70} ${gate.y - 30} L ${gate.x + 20} ${gate.y + 50} Z`} fill="#8FA9C4" fillOpacity="0.07" stroke="#8FA9C4" strokeOpacity="0.4" strokeDasharray="3 3" />
+        <path d={`M${camera.x} ${camera.y} L ${gate.x + 70} ${gate.y - 30} L ${gate.x + 20} ${gate.y + 50} Z`} fill="#8C9EB3" fillOpacity="0.07" stroke="#8C9EB3" strokeOpacity="0.4" strokeDasharray="3 3" />
       )}
       {offPlan && (
         <g>
-          <line x1="640" y1="140" x2={offPlan.x - 14} y2={offPlan.y + 14} stroke="#857D72" strokeDasharray="2 5" />
-          <text x={offPlan.x - 22} y={offPlan.y + 4} textAnchor="end" fontFamily={MONO} fontSize="10" fill="#857D72">OFF-PLAN · NOT TO SCALE</text>
+          <line x1="640" y1="140" x2={offPlan.x - 14} y2={offPlan.y + 14} stroke="#71717A" strokeDasharray="2 5" />
+          <text x={offPlan.x - 22} y={offPlan.y + 4} textAnchor="end" fontFamily={MONO} fontSize="10" fill="#71717A">OFF-PLAN · NOT TO SCALE</text>
         </g>
       )}
 
@@ -121,16 +144,16 @@ export const SitePlan: React.FC<SitePlanProps> = ({ places, sequence, placeId, o
               }}
               className="cursor-pointer focus:outline-none [&:focus-visible_.ring]:opacity-100"
             >
-              <circle className="ring" cx={place.x} cy={place.y} r="30" fill="none" stroke="#D8C5A7" strokeDasharray="3 3" opacity="0" />
+              <circle className="ring" cx={place.x} cy={place.y} r="30" fill="none" stroke="#C8CAD0" strokeDasharray="3 3" opacity="0" />
               <rect x={place.x - 34} y={place.y - 30} width="68" height="74" fill="transparent" />
               <PlaceGlyph place={place} selected={isSelected} />
-              <text x={place.x + (place.kind === 'gate' ? 14 : 0)} y={place.y + (place.kind === 'gate' ? 4 : 26)} textAnchor={place.kind === 'gate' ? 'start' : 'middle'} fontFamily={MONO} fontSize="11" fill="#F1E9DB" className="svg-label">
+              <text x={place.x + (place.kind === 'gate' ? 14 : 0)} y={place.y + (place.kind === 'gate' ? 4 : 26)} textAnchor={place.kind === 'gate' ? 'start' : 'middle'} fontFamily={MONO} fontSize="11" fill="#EDEDEF" className="svg-label">
                 {place.name}
               </text>
               {seq.map((n, i) => (
                 <g key={n}>
-                  <rect x={place.x + 12 + i * 18} y={place.y - 30} width="16" height="16" fill="#080807" stroke={isSelected ? '#D8C5A7' : '#A9A197'} />
-                  <text x={place.x + 20 + i * 18} y={place.y - 18} textAnchor="middle" fontFamily={MONO} fontSize="10" fill="#F1E9DB">{n}</text>
+                  <rect x={place.x + 12 + i * 18} y={place.y - 30} width="16" height="16" fill="#0A0A0B" stroke={isSelected ? '#C8CAD0' : '#A1A1AA'} />
+                  <text x={place.x + 20 + i * 18} y={place.y - 18} textAnchor="middle" fontFamily={MONO} fontSize="10" fill="#EDEDEF">{n}</text>
                 </g>
               ))}
             </g>
@@ -148,6 +171,8 @@ export const SpatialReconstruction: React.FC<{ detail: CaseDetail }> = ({ detail
   const modelAvailable = synthetic && caseId === MODEL_CASE_ID;
   const [mode, setMode] = useState<'plan' | 'model'>('plan');
   const places = detail.places;
+  // Live places are all projected coordinates; the fixture uses the Warehouse 7 schematic.
+  const geographic = places.length > 0 && places.every((p) => p.kind === 'off-plan');
   const selected = places.find((p) => p.place_id === placeId) ?? null;
 
   // Sequence numbers follow normalised time across all located events.
@@ -173,8 +198,14 @@ export const SpatialReconstruction: React.FC<{ detail: CaseDetail }> = ({ detail
     <div className="grid grid-cols-1 gap-4 p-4 sm:p-6 lg:p-8 xl:grid-cols-12">
       <div className="min-w-0 space-y-4 xl:col-span-8">
         <Panel
-          title="Site plan · Warehouse 7"
-          meta={mode === 'plan' ? 'schematic · not to scale · not geographic' : 'synthetic 3D model · sensors only · no route'}
+          title={geographic ? 'Evidence locations' : 'Site plan · Warehouse 7'}
+          meta={
+            geographic
+              ? 'projected from WGS84 coordinates · relative positions · no basemap'
+              : mode === 'plan'
+                ? 'schematic · not to scale · not geographic'
+                : 'synthetic 3D model · sensors only · no route'
+          }
           actions={
             modelAvailable ? (
               <div role="group" aria-label="Spatial view" className="flex border border-ink-line">
@@ -201,7 +232,7 @@ export const SpatialReconstruction: React.FC<{ detail: CaseDetail }> = ({ detail
         >
           {mode === 'plan' || !modelAvailable ? (
             <div className="overflow-x-auto bg-ink-950">
-              <SitePlan places={places} sequence={sequence} placeId={placeId} onSelect={setPlaceId} />
+              <SitePlan places={places} sequence={sequence} placeId={placeId} onSelect={setPlaceId} geographic={geographic} />
             </div>
           ) : (
             <div className="aspect-[16/10] bg-[radial-gradient(circle_at_50%_45%,#18202a,#07090b_75%)]">

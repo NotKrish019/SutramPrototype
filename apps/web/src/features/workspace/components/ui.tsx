@@ -43,7 +43,7 @@ export const Panel: React.FC<{
   const generatedId = useId();
   const headingId = title ? labelledBy ?? generatedId : undefined;
   return (
-  <Tag className={`min-w-0 border border-ink-line bg-ink-900 ${className}`} aria-labelledby={headingId}>
+  <Tag className={`min-w-0 border border-ink-line bg-ink-900/80 shadow-lift ${className}`} aria-labelledby={headingId}>
     {(title || meta || actions) && (
       <div className="flex min-h-[2.75rem] items-center justify-between gap-3 border-b border-ink-line px-4 py-2">
         <div className="flex min-w-0 items-center gap-2">
@@ -172,7 +172,7 @@ type ButtonVariant = 'default' | 'primary' | 'ghost';
 
 const BUTTON_VARIANT: Record<ButtonVariant, string> = {
   default: 'border border-ink-strong text-fg hover:border-fg-muted hover:bg-white/[0.03]',
-  primary: 'border border-signal-accent bg-signal-accent text-ink-950 hover:bg-[#E9D7B8]',
+  primary: 'border border-signal-accent bg-signal-accent text-ink-950 hover:bg-[#E4E5E9]',
   ghost: 'border border-transparent text-fg-muted hover:text-fg hover:bg-white/[0.04]',
 };
 

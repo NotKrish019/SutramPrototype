@@ -145,7 +145,7 @@ export const ThreadCanvas: React.FC<{
             letterSpacing="0.08em"
             className={`svg-label transition-opacity duration-base ${labelClassName}`}
             style={{ stroke: '#0b0a09', strokeWidth: 5 }}
-            fill={live.state === 'hot' ? '#ff6b76' : '#857D72'}
+            fill={live.state === 'hot' ? '#ff6b76' : '#71717A'}
             opacity={!drawn ? 0 : live.state === 'dim' ? 0.2 : 1}
           >
             {live.label.toUpperCase()}

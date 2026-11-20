@@ -38,7 +38,7 @@ export const ReconstructionSection: React.FC = () => {
     <section
       id={SECTION_IDS.reconstruction}
       aria-labelledby="reconstruction-heading"
-      className="relative overflow-hidden border-b border-ink-line bg-[radial-gradient(ellipse_at_30%_40%,#121820,#080807_70%)] py-section"
+      className="relative overflow-hidden border-b border-ink-line bg-[radial-gradient(ellipse_at_30%_40%,#121820,#0A0A0B_70%)] py-section"
     >
       <div aria-hidden="true" className="pattern-grid pointer-events-none absolute inset-0 opacity-40 [mask-image:radial-gradient(ellipse_at_35%_50%,black,transparent_70%)]" />
       <div className="relative mx-auto max-w-wide px-gutter">
