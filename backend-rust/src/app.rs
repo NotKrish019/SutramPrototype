@@ -18,8 +18,8 @@ use crate::{
         graph::{find_entity_path, get_case_graph_summary, get_entity_neighbors},
         health::{health_check, readiness_check},
         reconstruction::{
-            get_case_contradictions, get_case_reconstruction, get_case_spatial, get_case_timeline,
-            trigger_case_reconstruction,
+            get_case_contradictions, get_case_reconstruction, get_case_report, get_case_spatial,
+            get_case_timeline, trigger_case_reconstruction,
         },
     },
     config::AppConfig,
@@ -251,6 +251,10 @@ pub fn create_router_with_state(state: AppState) -> Router {
         .route(
             "/api/v1/cases/:case_id/contradictions",
             get(get_case_contradictions),
+        )
+        .route(
+            "/api/v1/cases/:case_id/report",
+            get(get_case_report).post(get_case_report),
         )
         .layer(TraceLayer::new_for_http())
         .with_state(state)

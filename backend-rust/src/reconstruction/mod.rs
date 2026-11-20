@@ -3,6 +3,7 @@
 pub mod adapters;
 pub mod contradictions;
 pub mod model;
+pub mod report;
 pub mod service;
 pub mod spatial;
 pub mod temporal;
@@ -18,11 +19,16 @@ pub use contradictions::{
 };
 pub use model::{
     CanonicalTimePrecision, ContradictionAnalysisResult, ContradictionLead, ContradictionLeadType,
-    DerivedLeadInference, EntityTrajectory, ExtractedFrameArtifact, GeoPoint, MovementSegment,
-    NormalizedTimeWindow, ObservedLeadBasis, SpatialReconstructionResult, SpatialTemporalOverlap,
-    SpeedThresholdEvaluation, TemporalOrderingStatus, TimelineEntry, TimelineOverlapPair,
-    TimelineReconstructionResult, TransitTimeMetrics, VideoExtractionResult, VideoMetadata,
-    VideoStreamMetadata, EARTH_MEAN_RADIUS_KM,
+    DerivedLeadInference, EntityTrajectory, ExcludedTimelineEvent, ExtractedFrameArtifact,
+    GeoPoint, MovementSegment, NormalizedTimeWindow, ObservedLeadBasis,
+    SpatialReconstructionResult, SpatialTemporalOverlap, SpeedThresholdEvaluation,
+    TemporalOrderingStatus, TimelineEntry, TimelineOverlapPair, TimelineReconstructionResult,
+    TransitTimeMetrics, VideoExtractionResult, VideoMetadata, VideoStreamMetadata,
+    EARTH_MEAN_RADIUS_KM,
+};
+pub use report::{
+    generate_case_report, CaseForensicReport, STATUS_SHIP_EXPORT_BLOCKED,
+    STATUS_SHIP_EXPORT_CLEARED,
 };
 pub use service::{
     ForensicReconstructionService, FullCaseReconstructionResult, ReconstructionOptions,

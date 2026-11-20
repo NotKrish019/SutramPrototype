@@ -461,6 +461,8 @@ fn test_reconstruction_adapters_cell_tower_centroid_resolution() {
         source_record_id: "rec-001".to_string(),
         event_type: "TELEPHONY_CALL".to_string(),
         raw_timestamp: "2026-11-18T10:00:00Z".to_string(),
+        timestamp_precision: Some("EXACT_SECOND".to_string()),
+        description: Some("Telephony call via TOWER-DELHI-SOUTH-04B".to_string()),
         duration_seconds: Some(60.0),
         location_name: Some("TOWER-DELHI-SOUTH-04B".to_string()),
         involved_entity_raw_ids: vec!["+919811002233".to_string()],
@@ -670,6 +672,213 @@ async fn test_reconstruction_axum_endpoints() {
         .method("GET")
         .body(Body::empty())
         .unwrap();
-    let resp_ct = app.oneshot(req_ct).await.unwrap();
+    let resp_ct = app.clone().oneshot(req_ct).await.unwrap();
     assert_eq!(resp_ct.status(), StatusCode::OK);
+
+    // 5. Query case forensic report
+    let req_rep = Request::builder()
+        .uri(format!("/api/v1/cases/{}/report", case_id))
+        .method("GET")
+        .body(Body::empty())
+        .unwrap();
+    let resp_rep = app.oneshot(req_rep).await.unwrap();
+    assert_eq!(resp_rep.status(), StatusCode::OK);
+
+    let rep_bytes = resp_rep.into_body().collect().await.unwrap().to_bytes();
+    let rep: serde_json::Value = serde_json::from_slice(&rep_bytes).unwrap();
+    assert_eq!(rep["case_id"], case_id.to_string());
+    assert_eq!(rep["judicial_export_status"], "SHIP_EXPORT_BLOCKED");
+    assert!(rep["markdown_dossier"]
+        .as_str()
+        .unwrap()
+        .contains("SHIP_EXPORT_BLOCKED"));
+}
+
+#[test]
+fn test_unsupported_precision_or_invalid_timezone_excludes_single_event_without_failing_case() {
+    let valid_event = RawTimelineEvent {
+        event_id: "evt-valid-001".to_string(),
+        source_evidence_id: "evi-001".to_string(),
+        timestamp: "2026-11-18T10:00:00Z".to_string(),
+        timestamp_precision: "EXACT_SECOND".to_string(),
+        duration_seconds: None,
+        uncertainty_window_start: None,
+        uncertainty_window_end: None,
+        coordinates: None,
+        raw_description: Some("Valid event".to_string()),
+        entity_ids: vec!["entity-1".to_string()],
+        metadata: serde_json::json!({}),
+        source_timezone: Some("UTC".to_string()),
+        clock_offset_seconds: Some(0.0),
+    };
+
+    let bad_precision_event = RawTimelineEvent {
+        event_id: "evt-bad-precision".to_string(),
+        source_evidence_id: "evi-001".to_string(),
+        timestamp: "2026-11-18T10:05:00Z".to_string(),
+        timestamp_precision: "INVALID_UNKNOWN_PRECISION".to_string(),
+        duration_seconds: None,
+        uncertainty_window_start: None,
+        uncertainty_window_end: None,
+        coordinates: None,
+        raw_description: Some("Bad precision event".to_string()),
+        entity_ids: vec!["entity-1".to_string()],
+        metadata: serde_json::json!({}),
+        source_timezone: Some("UTC".to_string()),
+        clock_offset_seconds: Some(0.0),
+    };
+
+    let bad_timezone_event = RawTimelineEvent {
+        event_id: "evt-bad-tz".to_string(),
+        source_evidence_id: "evi-001".to_string(),
+        timestamp: "2026-11-18T10:10:00".to_string(),
+        timestamp_precision: "EXACT_SECOND".to_string(),
+        duration_seconds: None,
+        uncertainty_window_start: None,
+        uncertainty_window_end: None,
+        coordinates: None,
+        raw_description: Some("Bad timezone event".to_string()),
+        entity_ids: vec!["entity-1".to_string()],
+        metadata: serde_json::json!({}),
+        source_timezone: Some("Mars/Olympus_Mons".to_string()),
+        clock_offset_seconds: Some(0.0),
+    };
+
+    let events = vec![valid_event, bad_precision_event, bad_timezone_event];
+    let result = reconstruct_timeline(&events, "UTC", 0.0, 30.0, Some("case-001".to_string()))
+        .expect("Timeline reconstruction should not fail the whole case");
+
+    // The single valid event is reconstructed cleanly
+    assert_eq!(result.total_events, 1);
+    assert_eq!(result.entries[0].event_id, "evt-valid-001");
+
+    // The 2 invalid events are recorded in excluded_events
+    assert_eq!(result.excluded_events.len(), 2);
+    assert_eq!(result.excluded_events[0].event_id, "evt-bad-precision");
+    assert!(result.excluded_events[0]
+        .reason
+        .contains("Unsupported timestamp precision"));
+    assert_eq!(result.excluded_events[1].event_id, "evt-bad-tz");
+    assert!(result.excluded_events[1]
+        .reason
+        .contains("Invalid timestamp or timezone"));
+}
+
+#[test]
+fn test_contradiction_leads_byte_identical_across_repeated_runs() {
+    let t1 = RawTimelineEvent {
+        event_id: "ev-1".to_string(),
+        source_evidence_id: "evi-1".to_string(),
+        timestamp: "2026-11-18T12:00:00Z".to_string(),
+        timestamp_precision: "EXACT_SECOND".to_string(),
+        duration_seconds: None,
+        uncertainty_window_start: None,
+        uncertainty_window_end: None,
+        coordinates: GeoPoint::new(28.5244, 77.2066).ok(),
+        raw_description: None,
+        entity_ids: vec!["suspect-1".to_string()],
+        metadata: serde_json::json!({}),
+        source_timezone: None,
+        clock_offset_seconds: None,
+    };
+
+    let t2 = RawTimelineEvent {
+        event_id: "ev-2".to_string(),
+        source_evidence_id: "evi-1".to_string(),
+        timestamp: "2026-11-18T12:01:00Z".to_string(),
+        timestamp_precision: "EXACT_SECOND".to_string(),
+        duration_seconds: None,
+        uncertainty_window_start: None,
+        uncertainty_window_end: None,
+        coordinates: GeoPoint::new(19.0760, 72.8777).ok(),
+        raw_description: None,
+        entity_ids: vec!["suspect-1".to_string()],
+        metadata: serde_json::json!({}),
+        source_timezone: None,
+        clock_offset_seconds: None,
+    };
+
+    let events = vec![t1, t2];
+    let service =
+        sutram_backend_rust::reconstruction::service::ForensicReconstructionService::new();
+    let opts = sutram_backend_rust::reconstruction::service::ReconstructionOptions::default();
+
+    let run_1 = service.reconstruct_case(&events, &opts).unwrap();
+    let bytes_1 = serde_json::to_vec(&run_1).unwrap();
+
+    // Sleep briefly to confirm wall-clock time does not alter serialized output
+    std::thread::sleep(std::time::Duration::from_millis(50));
+
+    let run_2 = service.reconstruct_case(&events, &opts).unwrap();
+    let bytes_2 = serde_json::to_vec(&run_2).unwrap();
+
+    assert_eq!(
+        bytes_1, bytes_2,
+        "Repeated runs must produce byte-identical serialized output"
+    );
+    assert_eq!(
+        run_1.contradictions.leads[0].lead_id,
+        run_2.contradictions.leads[0].lead_id
+    );
+    assert_eq!(
+        run_1.contradictions.leads[0].generated_at,
+        run_2.contradictions.leads[0].generated_at
+    );
+}
+
+#[test]
+fn test_video_frame_consumer_creates_valid_candidates() {
+    let frames = vec![
+        sutram_backend_rust::reconstruction::ExtractedFrameArtifact {
+            frame_index: 1,
+            pts_seconds: 0.0,
+            sha256_hash: "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+                .to_string(),
+            relative_path: "derived/frames/frame_0001.jpg".to_string(),
+            estimated_utc: Some(
+                DateTime::parse_from_rfc3339("2026-11-18T12:00:00Z")
+                    .unwrap()
+                    .with_timezone(&Utc),
+            ),
+        },
+        sutram_backend_rust::reconstruction::ExtractedFrameArtifact {
+            frame_index: 2,
+            pts_seconds: 5.5,
+            sha256_hash: "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+                .to_string(),
+            relative_path: "derived/frames/frame_0002.jpg".to_string(),
+            estimated_utc: None,
+        },
+    ];
+
+    let candidates = sutram_backend_rust::extraction::consume_video_frames(
+        "ev-cctv-001",
+        &frames,
+        Some("2026-11-18T12:00:00Z"),
+    );
+
+    assert_eq!(candidates.len(), 2);
+    assert_eq!(candidates[0].candidate_id, "evt-frame-ev-cctv-001-1");
+    assert_eq!(
+        candidates[0].timestamp_precision,
+        Some("EXACT_SECOND".to_string())
+    );
+    assert!(candidates[0]
+        .description
+        .as_ref()
+        .unwrap()
+        .contains("Video keyframe 1"));
+    assert_eq!(candidates[0].raw_timestamp, "2026-11-18T12:00:00+00:00");
+
+    assert_eq!(candidates[1].candidate_id, "evt-frame-ev-cctv-001-2");
+    assert_eq!(
+        candidates[1].timestamp_precision,
+        Some("EXACT_SECOND".to_string())
+    );
+    assert!(candidates[1]
+        .description
+        .as_ref()
+        .unwrap()
+        .contains("Video keyframe 2"));
+    assert_eq!(candidates[1].raw_timestamp, "2026-11-18T12:00:05.500+00:00");
 }

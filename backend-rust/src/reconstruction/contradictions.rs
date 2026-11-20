@@ -12,7 +12,7 @@
 //! 4. Neutral, objective language without assertion of guilt, intent, or conclusive identity.
 //! 5. Statistical weights are omitted (`weight = None`) for factual contradictions (DEC-004).
 
-use chrono::{Duration, Utc};
+use chrono::Duration;
 use uuid::Uuid;
 
 use super::model::{
@@ -186,8 +186,23 @@ pub fn detect_contradictions(
                     segment.intervening_unlocated_event_ids.len(),
                 );
 
+                let lead_generated_at = dest_ev
+                    .map(|e| e.time_window.window_end_utc)
+                    .or_else(|| origin_ev.map(|e| e.time_window.window_end_utc))
+                    .unwrap_or_else(|| chrono::DateTime::from_timestamp(0, 0).unwrap());
+
+                let lead_id = Uuid::new_v5(
+                    &Uuid::NAMESPACE_OID,
+                    format!(
+                        "spatial:{}:{}:{}",
+                        segment.entity_id, segment.origin_event_id, segment.destination_event_id
+                    )
+                    .as_bytes(),
+                )
+                .to_string();
+
                 leads.push(ContradictionLead {
-                    lead_id: Uuid::new_v4().to_string(),
+                    lead_id,
                     lead_type: ContradictionLeadType::SpatialTransitImpossible,
                     entity_id: segment.entity_id.clone(),
                     event_a_id: segment.origin_event_id.clone(),
@@ -214,7 +229,7 @@ pub fn detect_contradictions(
                     },
                     neutral_explanation: explanation,
                     limitations,
-                    generated_at: Utc::now(),
+                    generated_at: lead_generated_at,
                 });
             }
         }
@@ -272,8 +287,20 @@ pub fn detect_contradictions(
 
                 let limitations = build_standard_limitations(&entity_id, 0);
 
+                let lead_generated_at = ev_b
+                    .time_window
+                    .window_end_utc
+                    .max(ev_a.time_window.window_end_utc);
+
+                let lead_id = Uuid::new_v5(
+                    &Uuid::NAMESPACE_OID,
+                    format!("temporal:{}:{}:{}", entity_id, ev_a.event_id, ev_b.event_id)
+                        .as_bytes(),
+                )
+                .to_string();
+
                 leads.push(ContradictionLead {
-                    lead_id: Uuid::new_v4().to_string(),
+                    lead_id,
                     lead_type: ContradictionLeadType::TemporalActivityInfeasible,
                     entity_id,
                     event_a_id: ev_a.event_id.clone(),
@@ -302,7 +329,7 @@ pub fn detect_contradictions(
                     },
                     neutral_explanation: explanation,
                     limitations,
-                    generated_at: Utc::now(),
+                    generated_at: lead_generated_at,
                 });
             }
         }

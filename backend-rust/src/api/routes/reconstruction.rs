@@ -16,7 +16,7 @@ use crate::{
     extraction::model::ExtractedEventCandidate,
     reconstruction::{
         adapters::event_candidate_to_timeline_event_with_context, model::GeoPoint,
-        service::ReconstructionOptions, temporal::RawTimelineEvent,
+        service::ReconstructionOptions, temporal::RawTimelineEvent, FullCaseReconstructionResult,
     },
 };
 
@@ -86,7 +86,10 @@ pub async fn trigger_case_reconstruction(
         .reconstruction_service
         .reconstruct_case(&events, &options)?;
 
-    // 3. Persist atomically to PostgreSQL and enqueue graph outbox projection if database is active
+    // 3. Persist to filesystem derived store (ensuring offline and restart survival)
+    save_reconstruction_to_fs(&state, case_id, &reconstruction).await;
+
+    // 4. Persist atomically to PostgreSQL and enqueue graph outbox projection if database is active
     let run_id = Uuid::new_v4();
     if let Some(ref repo) = state.reconstruction_repo {
         let params_json = serde_json::to_value(&options).unwrap_or_default();
@@ -128,7 +131,12 @@ pub async fn get_case_reconstruction(
         }
     }
 
-    // 2. If not stored, compute dynamically from existing events
+    // 2. Try filesystem derived store
+    if let Some(latest) = load_latest_reconstruction_from_fs(&state, case_id).await {
+        return Ok((StatusCode::OK, Json(latest)));
+    }
+
+    // 3. If not stored, compute dynamically from existing events
     let options = ReconstructionOptions {
         case_id: Some(case_id.to_string()),
         ..Default::default()
@@ -154,6 +162,10 @@ pub async fn get_case_timeline(
         if let Ok(Some(latest)) = repo.get_latest_reconstruction(case_id).await {
             return Ok((StatusCode::OK, Json(latest.timeline)));
         }
+    }
+
+    if let Some(latest) = load_latest_reconstruction_from_fs(&state, case_id).await {
+        return Ok((StatusCode::OK, Json(latest.timeline)));
     }
 
     let options = ReconstructionOptions {
@@ -183,6 +195,10 @@ pub async fn get_case_spatial(
         }
     }
 
+    if let Some(latest) = load_latest_reconstruction_from_fs(&state, case_id).await {
+        return Ok((StatusCode::OK, Json(latest.spatial)));
+    }
+
     let options = ReconstructionOptions {
         case_id: Some(case_id.to_string()),
         ..Default::default()
@@ -208,6 +224,10 @@ pub async fn get_case_contradictions(
         if let Ok(Some(latest)) = repo.get_latest_reconstruction(case_id).await {
             return Ok((StatusCode::OK, Json(latest.contradictions)));
         }
+    }
+
+    if let Some(latest) = load_latest_reconstruction_from_fs(&state, case_id).await {
+        return Ok((StatusCode::OK, Json(latest.contradictions)));
     }
 
     let options = ReconstructionOptions {
@@ -320,4 +340,103 @@ async fn load_case_events(
     }
 
     Ok(Vec::new())
+}
+
+/// Helper to persist the latest reconstruction run to filesystem derived storage for offline/restart continuity.
+async fn save_reconstruction_to_fs(
+    state: &AppState,
+    case_id: Uuid,
+    reconstruction: &FullCaseReconstructionResult,
+) {
+    let recon_dir = state
+        .ingestion_service
+        .storage()
+        .derived_dir()
+        .join(case_id.to_string())
+        .join("reconstruction");
+    if tokio::fs::create_dir_all(&recon_dir).await.is_ok() {
+        let file_path = recon_dir.join("latest.json");
+        if let Ok(json_str) = serde_json::to_string_pretty(reconstruction) {
+            let _ = tokio::fs::write(&file_path, json_str).await;
+        }
+    }
+}
+
+/// Helper to load the latest reconstruction run from filesystem derived storage if available.
+async fn load_latest_reconstruction_from_fs(
+    state: &AppState,
+    case_id: Uuid,
+) -> Option<FullCaseReconstructionResult> {
+    let file_path = state
+        .ingestion_service
+        .storage()
+        .derived_dir()
+        .join(case_id.to_string())
+        .join("reconstruction")
+        .join("latest.json");
+    if file_path.exists() {
+        if let Ok(bytes) = tokio::fs::read(&file_path).await {
+            return serde_json::from_slice(&bytes).ok();
+        }
+    }
+    None
+}
+
+/// Generates and returns a judicial forensic report for a case (Member 4).
+pub async fn get_case_report(
+    State(state): State<AppState>,
+    Path(case_id_str): Path<String>,
+) -> Result<impl IntoResponse, AppError> {
+    let case_id = Uuid::parse_str(&case_id_str).map_err(|_| {
+        AppError::BadRequest(format!("Invalid case UUID format: '{}'", case_id_str))
+    })?;
+
+    // 1. Load case metadata if available
+    let case_entity = if let Some(ref repo) = state.case_repo {
+        repo.get_case(case_id).await.unwrap_or(None)
+    } else {
+        None
+    };
+
+    // 2. Load evidence manifests
+    let exhibits = state
+        .ingestion_service
+        .storage()
+        .list_manifests_for_case(&case_id.to_string())
+        .await
+        .unwrap_or_default();
+
+    // 3. Load or compute reconstruction
+    let options = ReconstructionOptions {
+        case_id: Some(case_id.to_string()),
+        ..Default::default()
+    };
+    let reconstruction = if let Some(ref repo) = state.reconstruction_repo {
+        if let Ok(Some(latest)) = repo.get_latest_reconstruction(case_id).await {
+            latest
+        } else if let Some(latest) = load_latest_reconstruction_from_fs(&state, case_id).await {
+            latest
+        } else {
+            let events = load_case_events(&state, case_id, &options).await?;
+            state
+                .reconstruction_service
+                .reconstruct_case(&events, &options)?
+        }
+    } else if let Some(latest) = load_latest_reconstruction_from_fs(&state, case_id).await {
+        latest
+    } else {
+        let events = load_case_events(&state, case_id, &options).await?;
+        state
+            .reconstruction_service
+            .reconstruct_case(&events, &options)?
+    };
+
+    let report = crate::reconstruction::report::generate_case_report(
+        &case_id.to_string(),
+        case_entity.as_ref(),
+        &exhibits,
+        &reconstruction,
+    );
+
+    Ok((StatusCode::OK, Json(report)))
 }

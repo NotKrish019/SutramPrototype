@@ -68,9 +68,14 @@ pub fn event_candidate_to_timeline_event_with_context(
     }
 
     let precision = candidate
-        .metadata
-        .get("timestamp_precision")
-        .and_then(|v| v.as_str())
+        .timestamp_precision
+        .as_deref()
+        .or_else(|| {
+            candidate
+                .metadata
+                .get("timestamp_precision")
+                .and_then(|v| v.as_str())
+        })
         .or(default_precision)
         .unwrap_or("EXACT_SECOND")
         .to_string();
@@ -100,6 +105,11 @@ pub fn event_candidate_to_timeline_event_with_context(
         .and_then(|v| v.as_f64())
         .or(fallback_clock_offset);
 
+    let raw_description = candidate
+        .description
+        .clone()
+        .or_else(|| candidate.location_name.clone());
+
     RawTimelineEvent {
         event_id: candidate.candidate_id.clone(),
         source_evidence_id: candidate.source_evidence_id.clone(),
@@ -109,7 +119,7 @@ pub fn event_candidate_to_timeline_event_with_context(
         uncertainty_window_start,
         uncertainty_window_end,
         coordinates: coords,
-        raw_description: candidate.location_name.clone(),
+        raw_description,
         entity_ids: candidate.involved_entity_raw_ids.clone(),
         metadata: candidate.metadata.clone(),
         source_timezone,
@@ -166,6 +176,8 @@ mod tests {
             source_record_id: "rec-001".to_string(),
             event_type: "TELEPHONY_CALL".to_string(),
             raw_timestamp: "2026-11-18T10:00:00Z".to_string(),
+            timestamp_precision: Some("EXACT_SECOND".to_string()),
+            description: Some("Telephony call via Saket Tower".to_string()),
             duration_seconds: Some(120.0),
             location_name: Some("Saket Tower".to_string()),
             involved_entity_raw_ids: vec!["+919811002233".to_string()],
@@ -198,6 +210,8 @@ mod tests {
             source_record_id: "rec-002".to_string(),
             event_type: "CHAT_MESSAGE".to_string(),
             raw_timestamp: "2026-11-18T12:00:00".to_string(),
+            timestamp_precision: None,
+            description: None,
             duration_seconds: None,
             location_name: None,
             involved_entity_raw_ids: vec!["user1".to_string()],

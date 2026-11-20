@@ -115,6 +115,14 @@ pub struct TimelineOverlapPair {
     pub overlap_span_seconds: f64,
 }
 
+/// A timeline candidate that was excluded from the reconstructed timeline due to invalid precision, malformed timestamp, or unknown timezone.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ExcludedTimelineEvent {
+    pub event_id: String,
+    pub source_evidence_id: String,
+    pub reason: String,
+}
+
 /// Comprehensive timeline reconstruction result.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TimelineReconstructionResult {
@@ -125,6 +133,8 @@ pub struct TimelineReconstructionResult {
     pub overlaps: Vec<TimelineOverlapPair>,
     pub strictly_ordered_count: usize,
     pub concurrent_uncertain_count: usize,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub excluded_events: Vec<ExcludedTimelineEvent>,
 }
 
 /// Evaluation category for transit speed against reference threshold.

@@ -316,15 +316,29 @@ pub fn reconstruct_timeline(
     case_id: Option<String>,
 ) -> Result<TimelineReconstructionResult, AppError> {
     let mut entries: Vec<TimelineEntry> = Vec::with_capacity(events.len());
+    let mut excluded_events: Vec<super::model::ExcludedTimelineEvent> = Vec::new();
 
     for ev in events {
         let tz = ev.source_timezone.as_deref().unwrap_or(default_timezone);
         let offset = ev.clock_offset_seconds.unwrap_or(default_clock_offset);
-        let precision = normalize_time_precision(&ev.timestamp_precision)?;
+        let precision = match normalize_time_precision(&ev.timestamp_precision) {
+            Ok(p) => p,
+            Err(e) => {
+                excluded_events.push(super::model::ExcludedTimelineEvent {
+                    event_id: ev.event_id.clone(),
+                    source_evidence_id: ev.source_evidence_id.clone(),
+                    reason: format!(
+                        "Unsupported timestamp precision '{}': {}",
+                        ev.timestamp_precision, e
+                    ),
+                });
+                continue;
+            }
+        };
 
         let has_explicit =
             ev.uncertainty_window_start.is_some() || ev.uncertainty_window_end.is_some();
-        let (nominal_utc, start_utc, end_utc) = compute_uncertainty_window(
+        let (nominal_utc, start_utc, end_utc) = match compute_uncertainty_window(
             &ev.timestamp,
             precision,
             tz,
@@ -332,7 +346,17 @@ pub fn reconstruct_timeline(
             estimated_half_width_seconds,
             ev.uncertainty_window_start.as_deref(),
             ev.uncertainty_window_end.as_deref(),
-        )?;
+        ) {
+            Ok(window) => window,
+            Err(e) => {
+                excluded_events.push(super::model::ExcludedTimelineEvent {
+                    event_id: ev.event_id.clone(),
+                    source_evidence_id: ev.source_evidence_id.clone(),
+                    reason: format!("Invalid timestamp or timezone: {}", e),
+                });
+                continue;
+            }
+        };
 
         let span_seconds = (end_utc - start_utc).num_milliseconds() as f64 / 1000.0;
         let is_estimated_assumption =
@@ -433,5 +457,6 @@ pub fn reconstruct_timeline(
         overlaps,
         strictly_ordered_count: strictly_ordered_cnt,
         concurrent_uncertain_count: concurrent_cnt,
+        excluded_events,
     })
 }
