@@ -50,7 +50,10 @@ All new fields are additive JSON. Existing clients keep working.
 
 ## Still open
 
-- No frame-consumer interface exists in the Rust backend.
+- Frame consumer: `extraction::consume_video_frames` (23a915d) turns keyframes into candidates.
+  It is tested (`reconstruction_tests.rs`) but not yet called from the upload or reconstruction
+  HTTP flow. Frames without a UTC anchor get a `PTS:…` timestamp, which the timeline excludes
+  per event rather than guessing a time.
 - Contract decisions DEC-001 … DEC-007 have no recorded team approval. The team's Phase 2C docs
   reuse the DEC numbers with different meanings.
 - Contradiction leads carry a wall-clock `generated_at`, so repeated runs differ in that field.
