@@ -235,17 +235,9 @@ async fn repeated_reconstruction_is_deterministic() {
         ..Default::default()
     });
     upload(&app, &[]).await;
-    let strip = |mut v: serde_json::Value| {
-        // `generated_at` on leads is a wall-clock stamp by design; everything else must match.
-        if let Some(leads) = v["contradictions"]["leads"].as_array_mut() {
-            for lead in leads {
-                lead.as_object_mut().unwrap().remove("generated_at");
-            }
-        }
-        v
-    };
-    let a = strip(reconstruct(&app).await);
-    let b = strip(reconstruct(&app).await);
+    // Leads are deterministic since 52953c3 (no wall-clock stamps): compare everything.
+    let a = reconstruct(&app).await;
+    let b = reconstruct(&app).await;
     assert_eq!(a["timeline"], b["timeline"]);
     assert_eq!(a["spatial"], b["spatial"]);
     assert_eq!(a["contradictions"], b["contradictions"]);

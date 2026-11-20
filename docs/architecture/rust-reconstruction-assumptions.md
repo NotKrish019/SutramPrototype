@@ -56,7 +56,6 @@ All new fields are additive JSON. Existing clients keep working.
   per event rather than guessing a time.
 - Contract decisions DEC-001 … DEC-007 have no recorded team approval. The team's Phase 2C docs
   reuse the DEC numbers with different meanings.
-- Contradiction leads carry a wall-clock `generated_at`, so repeated runs differ in that field.
 
 ## Tests
 
