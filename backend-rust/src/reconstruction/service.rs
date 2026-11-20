@@ -20,6 +20,7 @@ use super::temporal::{
     reconstruct_timeline, RawTimelineEvent, DEFAULT_ESTIMATED_HALF_WIDTH_SECONDS,
 };
 use super::video::{extract_keyframes, probe_video_metadata};
+use super::video_handoff::{VideoHandoffRecord, VideoHandoffStatus};
 use crate::error::AppError;
 
 /// Configuration options for forensic reconstruction.
@@ -69,6 +70,49 @@ pub struct FullCaseReconstructionResult {
     /// lead is unresolved. Results stored before this field existed read back as BLOCKED.
     #[serde(default = "export_safeguard_not_evaluated")]
     pub export_safeguard: ExportSafeguard,
+    /// One record per video exhibit: frames extracted, anchored and handed to the consumer.
+    #[serde(default)]
+    pub video_handoff: Vec<VideoHandoffRecord>,
+    /// Canonical reconstruction run ID, preserved for relational linkage and provenance.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reconstruction_run_id: Option<String>,
+    /// Backwards-compatible alias for reconstruction run ID.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub run_id: Option<String>,
+    /// Evidence gaps identifying missing corroboration, unlocated events, uncalibrated clocks, etc.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub evidence_gaps: Vec<crate::reconstruction::gaps::EvidenceGap>,
+}
+
+impl FullCaseReconstructionResult {
+    /// Attaches computed evidence gaps to the reconstruction result.
+    pub fn with_evidence_gaps(mut self, gaps: Vec<crate::reconstruction::gaps::EvidenceGap>) -> Self {
+        self.evidence_gaps = gaps;
+        self
+    }
+    /// Attaches video handoff records and adds export-gate reasons for any video exhibit whose
+    /// frames could not be extracted or handed off.
+    pub fn attach_video_handoff(&mut self, records: Vec<VideoHandoffRecord>) {
+        let failed: Vec<String> = records
+            .iter()
+            .filter(|r| {
+                matches!(
+                    r.status,
+                    VideoHandoffStatus::RejectedIntegrityMismatch
+                        | VideoHandoffStatus::ExtractionFailed
+                )
+            })
+            .map(|r| r.evidence_id.clone())
+            .collect();
+        if !failed.is_empty() {
+            self.export_safeguard.status = ExportSafeguardStatus::Blocked;
+            self.export_safeguard.reasons.push(format!(
+                "Video frames could not be extracted or verified for exhibit(s): {}.",
+                failed.join(", ")
+            ));
+        }
+        self.video_handoff = records;
+    }
 }
 
 fn export_safeguard_not_evaluated() -> ExportSafeguard {
@@ -199,13 +243,27 @@ impl ForensicReconstructionService {
         annotate_leads_with_assumptions(&timeline, &mut contradictions);
         let export_safeguard = evaluate_export_safeguard(&timeline, &contradictions);
 
-        Ok(FullCaseReconstructionResult {
+        let mut result = FullCaseReconstructionResult {
             case_id: options.case_id.clone(),
             timeline,
             spatial,
             contradictions,
             export_safeguard,
-        })
+            video_handoff: Vec::new(),
+            reconstruction_run_id: None,
+            run_id: None,
+            evidence_gaps: Vec::new(),
+        };
+
+        let gap_report = crate::reconstruction::gaps::analyze_evidence_gaps(
+            options.case_id.as_deref().unwrap_or(""),
+            &result,
+            &[],
+            None,
+        );
+        result.evidence_gaps = gap_report.gaps;
+
+        Ok(result)
     }
 
     /// Reconstructs case sequence directly from extraction event candidates.

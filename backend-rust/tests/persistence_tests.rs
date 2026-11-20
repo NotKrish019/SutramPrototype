@@ -74,3 +74,60 @@ fn test_checked_integer_conversion_overflow_safety() {
     let overflow_size: u64 = (i64::MAX as u64) + 1;
     assert!(i64::try_from(overflow_size).is_err());
 }
+
+#[test]
+fn test_reconstruction_result_run_id_serde_roundtrip() {
+    use sutram_backend_rust::reconstruction::service::{
+        ForensicReconstructionService, ReconstructionOptions,
+    };
+    use sutram_backend_rust::reconstruction::FullCaseReconstructionResult;
+
+    let test_run_id = Uuid::new_v4().to_string();
+    let service = ForensicReconstructionService::new();
+    let opts = ReconstructionOptions {
+        case_id: Some("00000000-0000-0000-0000-000000000001".to_string()),
+        ..Default::default()
+    };
+
+    let mut result = service.reconstruct_case(&[], &opts).unwrap();
+    result.reconstruction_run_id = Some(test_run_id.clone());
+    result.run_id = Some(test_run_id.clone());
+
+    let serialized = serde_json::to_value(&result).unwrap();
+    assert_eq!(serialized["reconstruction_run_id"], test_run_id);
+    assert_eq!(serialized["run_id"], test_run_id);
+
+    let deserialized: FullCaseReconstructionResult =
+        serde_json::from_value(serialized).unwrap();
+    assert_eq!(
+        deserialized.reconstruction_run_id.as_deref(),
+        Some(test_run_id.as_str())
+    );
+    assert_eq!(
+        deserialized.run_id.as_deref(),
+        Some(test_run_id.as_str())
+    );
+}
+
+#[test]
+fn test_raw_evidence_integrity_verification() {
+    use sutram_backend_rust::ingestion::hashing::IncrementalHasher;
+
+    let raw_bytes_1 = b"FORENSIC_RAW_EVIDENCE_PAYLOAD_ORIGINAL";
+    let raw_bytes_tampered = b"FORENSIC_RAW_EVIDENCE_PAYLOAD_TAMPERED";
+
+    let mut hasher_1 = IncrementalHasher::new();
+    hasher_1.update(raw_bytes_1);
+    let digest_1 = hasher_1.finalize_hex();
+
+    let mut hasher_repeat = IncrementalHasher::new();
+    hasher_repeat.update(raw_bytes_1);
+    let digest_repeat = hasher_repeat.finalize_hex();
+
+    let mut hasher_tampered = IncrementalHasher::new();
+    hasher_tampered.update(raw_bytes_tampered);
+    let digest_tampered = hasher_tampered.finalize_hex();
+
+    assert_eq!(digest_1, digest_repeat, "Identical raw bytes must produce identical SHA-256");
+    assert_ne!(digest_1, digest_tampered, "Any byte change in raw evidence must produce distinct SHA-256");
+}

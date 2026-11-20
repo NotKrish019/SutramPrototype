@@ -160,6 +160,14 @@ pub fn event_candidate_to_timeline_event_with_context(
         .clone()
         .or_else(|| candidate.location_name.clone());
 
+    let mut metadata = candidate.metadata.clone();
+    if let serde_json::Value::Object(ref mut map) = metadata {
+        if !candidate.source_record_id.trim().is_empty() {
+            map.entry("source_record_id".to_string())
+                .or_insert_with(|| serde_json::Value::String(candidate.source_record_id.clone()));
+        }
+    }
+
     RawTimelineEvent {
         event_id: candidate.candidate_id.clone(),
         source_evidence_id: candidate.source_evidence_id.clone(),
@@ -171,7 +179,7 @@ pub fn event_candidate_to_timeline_event_with_context(
         coordinates: coords,
         raw_description,
         entity_ids: candidate.involved_entity_raw_ids.clone(),
-        metadata: candidate.metadata.clone(),
+        metadata,
         source_timezone,
         clock_offset_seconds,
         assumptions,
@@ -200,17 +208,28 @@ pub fn unified_extraction_to_timeline_events(
         .extraction_metadata
         .get("clock_offset_seconds")
         .and_then(|v| v.as_f64());
+    let extraction_run_id = result
+        .extraction_metadata
+        .get("extraction_run_id")
+        .and_then(|v| v.as_str());
 
     result
         .event_candidates
         .iter()
         .map(|candidate| {
-            event_candidate_to_timeline_event_with_context(
+            let mut event = event_candidate_to_timeline_event_with_context(
                 candidate,
                 default_precision,
                 fallback_tz,
                 fallback_offset,
-            )
+            );
+            if let Some(run_id) = extraction_run_id {
+                if let serde_json::Value::Object(ref mut map) = event.metadata {
+                    map.entry("extraction_run_id".to_string())
+                        .or_insert_with(|| serde_json::Value::String(run_id.to_string()));
+                }
+            }
+            event
         })
         .collect()
 }

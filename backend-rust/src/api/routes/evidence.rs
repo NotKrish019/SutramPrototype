@@ -352,7 +352,7 @@ pub async fn upload_evidence(
     }
 
     // Synchronize exhibit to PostgreSQL if database is active
-    sync_evidence_to_db(&state, &receipt, &manifest.relative_raw_path).await;
+    sync_evidence_to_db(&state, &receipt, &manifest.relative_raw_path).await?;
 
     // Cache in service index
     let _ = service.get_evidence(&evidence_id).await; // Populates cache
@@ -369,7 +369,7 @@ pub async fn upload_evidence(
             .extraction_service
             .execute_extraction_from_receipt(&receipt, None)
             .await?;
-        sync_run_to_db(&state, &run_manifest).await;
+        sync_run_to_db(&state, &run_manifest).await?;
         let summary = crate::extraction::model::ExtractionRunSummary::from(&run_manifest);
         let resp = crate::extraction::model::EvidenceUploadAndExtractResponse {
             receipt,
@@ -417,7 +417,7 @@ pub async fn trigger_extraction(
         .extraction_service
         .execute_extraction_from_receipt(&manifest.receipt, None)
         .await?;
-    sync_run_to_db(&state, &run_manifest).await;
+    sync_run_to_db(&state, &run_manifest).await?;
 
     Ok((StatusCode::OK, Json(run_manifest)))
 }
@@ -470,7 +470,7 @@ pub async fn reprocess_evidence(
         .extraction_service
         .execute_extraction_from_receipt(&manifest.receipt, Some(payload))
         .await?;
-    sync_run_to_db(&state, &run_manifest).await;
+    sync_run_to_db(&state, &run_manifest).await?;
 
     Ok((StatusCode::OK, Json(run_manifest)))
 }
@@ -592,186 +592,195 @@ pub async fn list_case_evidence(
     Ok((StatusCode::OK, Json(receipts)))
 }
 
-/// Asynchronously synchronizes newly ingested evidence exhibit into PostgreSQL.
+/// Synchronizes newly ingested evidence exhibit into PostgreSQL, returning explicit error on failure.
 async fn sync_evidence_to_db(
     state: &AppState,
     receipt: &crate::ingestion::EvidenceUploadReceipt,
     _relative_path: &str,
-) {
+) -> Result<(), AppError> {
     if let (Some(evidence_repo), Some(case_repo), Some(custody_repo)) = (
         state.evidence_repo.as_ref(),
         state.case_repo.as_ref(),
         state.custody_repo.as_ref(),
     ) {
-        if let (Ok(case_uuid), Ok(evidence_uuid)) = (
-            Uuid::parse_str(&receipt.case_id),
-            Uuid::parse_str(&receipt.evidence_id),
-        ) {
-            let _ = case_repo
-                .ensure_case_exists(case_uuid, &format!("Case {}", case_uuid))
-                .await;
+        let case_uuid = Uuid::parse_str(&receipt.case_id).map_err(|e| {
+            AppError::BadRequest(format!("Invalid case UUID '{}' in receipt: {}", receipt.case_id, e))
+        })?;
+        let evidence_uuid = Uuid::parse_str(&receipt.evidence_id).map_err(|e| {
+            AppError::BadRequest(format!("Invalid evidence UUID '{}' in receipt: {}", receipt.evidence_id, e))
+        })?;
 
-            let now = chrono::Utc::now();
-            let entity = crate::persistence::EvidenceEntity {
-                evidence_id: evidence_uuid,
-                case_id: case_uuid,
-                original_filename: receipt.original_filename.clone(),
-                source_type: receipt.source_type.clone(),
-                mime_type: receipt.mime_type.clone(),
-                file_size_bytes: i64::try_from(receipt.file_size_bytes).unwrap_or(i64::MAX),
-                sha256_hash: receipt.sha256_hash.clone(),
-                storage_uri: receipt.storage_uri.clone(),
-                source_timezone: receipt
-                    .metadata
-                    .get("source_timezone")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("UTC")
-                    .to_string(),
-                clock_offset_seconds: receipt
-                    .metadata
-                    .get("clock_offset_seconds")
-                    .and_then(|v| v.as_f64())
-                    .unwrap_or(0.0),
-                ingestion_status: "INGESTED".to_string(),
-                metadata: receipt.metadata.clone(),
-                created_at: now,
-                updated_at: now,
-            };
+        case_repo
+            .ensure_case_exists(case_uuid, &format!("Case {}", case_uuid))
+            .await?;
 
-            let _ = evidence_repo.register_evidence(&entity).await;
+        let now = chrono::Utc::now();
+        let entity = crate::persistence::EvidenceEntity {
+            evidence_id: evidence_uuid,
+            case_id: case_uuid,
+            original_filename: receipt.original_filename.clone(),
+            source_type: receipt.source_type.clone(),
+            mime_type: receipt.mime_type.clone(),
+            file_size_bytes: i64::try_from(receipt.file_size_bytes).unwrap_or(i64::MAX),
+            sha256_hash: receipt.sha256_hash.clone(),
+            storage_uri: receipt.storage_uri.clone(),
+            source_timezone: receipt
+                .metadata
+                .get("source_timezone")
+                .and_then(|v| v.as_str())
+                .unwrap_or("UTC")
+                .to_string(),
+            clock_offset_seconds: receipt
+                .metadata
+                .get("clock_offset_seconds")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0),
+            ingestion_status: "INGESTED".to_string(),
+            metadata: receipt.metadata.clone(),
+            created_at: now,
+            updated_at: now,
+        };
 
-            let _ = custody_repo
-                .append_event(
-                    evidence_uuid,
-                    case_uuid,
-                    "EVIDENCE_STORED",
-                    "SYSTEM_INGESTION",
-                    Some(&receipt.sha256_hash),
-                    serde_json::json!({
-                        "original_filename": receipt.original_filename,
-                        "file_size_bytes": receipt.file_size_bytes,
-                        "mime_type": receipt.mime_type,
-                    }),
-                )
-                .await;
+        evidence_repo.register_evidence(&entity).await?;
 
-            // Enqueue graph projection outbox event
-            if let Some(db) = &state.database {
-                if let Ok(mut tx) = db.pool().begin().await {
-                    let payload = serde_json::json!({
-                        "sha256_hash": receipt.sha256_hash,
-                        "source_type": receipt.source_type,
-                        "mime_type": receipt.mime_type,
-                        "file_size_bytes": receipt.file_size_bytes,
-                        "storage_uri": receipt.storage_uri,
-                        "created_at": receipt.created_at,
-                    });
-                    let _ = crate::graph::GraphOutboxRepository::enqueue_transactional(
-                        &mut tx,
-                        case_uuid,
-                        "EVIDENCE",
-                        evidence_uuid,
-                        1,
-                        "EVIDENCE_INGESTED",
-                        &payload,
-                    )
-                    .await;
-                    let _ = tx.commit().await;
-                }
-            }
+        custody_repo
+            .append_event(
+                evidence_uuid,
+                case_uuid,
+                "EVIDENCE_STORED",
+                "SYSTEM_INGESTION",
+                Some(&receipt.sha256_hash),
+                serde_json::json!({
+                    "original_filename": receipt.original_filename,
+                    "file_size_bytes": receipt.file_size_bytes,
+                    "mime_type": receipt.mime_type,
+                }),
+            )
+            .await?;
+
+        // Enqueue graph projection outbox event
+        if let Some(db) = &state.database {
+            let mut tx = db.pool().begin().await.map_err(|e| {
+                AppError::Internal(anyhow::anyhow!("Failed to begin outbox transaction: {}", e))
+            })?;
+            let payload = serde_json::json!({
+                "sha256_hash": receipt.sha256_hash,
+                "source_type": receipt.source_type,
+                "mime_type": receipt.mime_type,
+                "file_size_bytes": receipt.file_size_bytes,
+                "storage_uri": receipt.storage_uri,
+                "created_at": receipt.created_at,
+            });
+            crate::graph::GraphOutboxRepository::enqueue_transactional(
+                &mut tx,
+                case_uuid,
+                "EVIDENCE",
+                evidence_uuid,
+                1,
+                "EVIDENCE_INGESTED",
+                &payload,
+            )
+            .await?;
+            tx.commit().await.map_err(|e| {
+                AppError::Internal(anyhow::anyhow!("Failed to commit outbox transaction: {}", e))
+            })?;
         }
     }
+    Ok(())
 }
 
-/// Asynchronously synchronizes completed extraction run and child entities into PostgreSQL.
+/// Synchronizes completed extraction run and child entities into PostgreSQL, returning explicit error on failure.
 async fn sync_run_to_db(
     state: &AppState,
     run_manifest: &crate::extraction::model::ExtractionRunManifest,
-) {
+) -> Result<(), AppError> {
     if let (Some(extraction_repo), Some(custody_repo)) =
         (state.extraction_repo.as_ref(), state.custody_repo.as_ref())
     {
-        if let (Ok(case_uuid), Ok(evidence_uuid), Ok(run_uuid)) = (
-            Uuid::parse_str(&run_manifest.case_id),
-            Uuid::parse_str(&run_manifest.evidence_id),
-            Uuid::parse_str(&run_manifest.extraction_run_id),
-        ) {
-            let started_at = chrono::DateTime::parse_from_rfc3339(&run_manifest.started_at)
-                .map(|dt| dt.with_timezone(&chrono::Utc))
-                .unwrap_or_else(|_| chrono::Utc::now());
+        let case_uuid = Uuid::parse_str(&run_manifest.case_id).map_err(|e| {
+            AppError::BadRequest(format!("Invalid case UUID '{}' in run manifest: {}", run_manifest.case_id, e))
+        })?;
+        let evidence_uuid = Uuid::parse_str(&run_manifest.evidence_id).map_err(|e| {
+            AppError::BadRequest(format!("Invalid evidence UUID '{}' in run manifest: {}", run_manifest.evidence_id, e))
+        })?;
+        let run_uuid = Uuid::parse_str(&run_manifest.extraction_run_id).map_err(|e| {
+            AppError::BadRequest(format!("Invalid extraction_run_id '{}' in run manifest: {}", run_manifest.extraction_run_id, e))
+        })?;
 
-            let run_entity = crate::persistence::ExtractionRunEntity {
-                extraction_run_id: run_uuid,
-                evidence_id: evidence_uuid,
-                case_id: case_uuid,
-                source_sha256: run_manifest.source_sha256.clone(),
-                extractor_name: run_manifest.extractor_name.clone(),
-                extractor_version: run_manifest.extractor_version.clone(),
-                configuration_hash: run_manifest.configuration_hash.clone(),
-                configuration: serde_json::to_value(&run_manifest.configuration)
-                    .unwrap_or_default(),
-                status: run_manifest.status.to_string(),
-                is_active: false,
-                result_sha256: run_manifest.result_sha256.clone(),
-                error_message: run_manifest.error_message.clone(),
-                records_processed: i32::try_from(run_manifest.records_processed)
-                    .unwrap_or(i32::MAX),
-                valid_records_count: i32::try_from(run_manifest.valid_records_count)
-                    .unwrap_or(i32::MAX),
-                rejected_records_count: i32::try_from(run_manifest.rejected_records_count)
-                    .unwrap_or(i32::MAX),
-                validation_issue_count: i32::try_from(run_manifest.validation_issue_count)
-                    .unwrap_or(i32::MAX),
-                duration_ms: run_manifest.duration_ms,
-                started_at,
-                completed_at: run_manifest.completed_at.as_deref().and_then(|s| {
-                    chrono::DateTime::parse_from_rfc3339(s)
-                        .map(|dt| dt.with_timezone(&chrono::Utc))
-                        .ok()
-                }),
-                result_snapshot: None,
-                created_at: chrono::Utc::now(),
-            };
+        let started_at = chrono::DateTime::parse_from_rfc3339(&run_manifest.started_at)
+            .map(|dt| dt.with_timezone(&chrono::Utc))
+            .unwrap_or_else(|_| chrono::Utc::now());
 
-            let _ = extraction_repo.create_run(&run_entity).await;
+        let run_entity = crate::persistence::ExtractionRunEntity {
+            extraction_run_id: run_uuid,
+            evidence_id: evidence_uuid,
+            case_id: case_uuid,
+            source_sha256: run_manifest.source_sha256.clone(),
+            extractor_name: run_manifest.extractor_name.clone(),
+            extractor_version: run_manifest.extractor_version.clone(),
+            configuration_hash: run_manifest.configuration_hash.clone(),
+            configuration: serde_json::to_value(&run_manifest.configuration)
+                .unwrap_or_default(),
+            status: run_manifest.status.to_string(),
+            is_active: false,
+            result_sha256: run_manifest.result_sha256.clone(),
+            error_message: run_manifest.error_message.clone(),
+            records_processed: i32::try_from(run_manifest.records_processed)
+                .unwrap_or(i32::MAX),
+            valid_records_count: i32::try_from(run_manifest.valid_records_count)
+                .unwrap_or(i32::MAX),
+            rejected_records_count: i32::try_from(run_manifest.rejected_records_count)
+                .unwrap_or(i32::MAX),
+            validation_issue_count: i32::try_from(run_manifest.validation_issue_count)
+                .unwrap_or(i32::MAX),
+            duration_ms: run_manifest.duration_ms,
+            started_at,
+            completed_at: run_manifest.completed_at.as_deref().and_then(|s| {
+                chrono::DateTime::parse_from_rfc3339(s)
+                    .map(|dt| dt.with_timezone(&chrono::Utc))
+                    .ok()
+            }),
+            result_snapshot: None,
+            created_at: chrono::Utc::now(),
+        };
 
-            let is_success = run_manifest.status
-                == crate::extraction::model::ExtractionRunStatus::Success
-                || run_manifest.status
-                    == crate::extraction::model::ExtractionRunStatus::PartialSuccess;
+        extraction_repo.create_run(&run_entity).await?;
 
-            if is_success {
-                if let Ok(result) = state
-                    .extraction_service
-                    .storage()
-                    .load_run_result(
-                        &run_manifest.case_id,
-                        &run_manifest.evidence_id,
-                        &run_manifest.extraction_run_id,
-                    )
-                    .await
-                {
-                    let _ = extraction_repo
-                        .complete_run_transactional(run_manifest, &result, true)
-                        .await;
-                }
-            }
+        let is_success = run_manifest.status
+            == crate::extraction::model::ExtractionRunStatus::Success
+            || run_manifest.status
+                == crate::extraction::model::ExtractionRunStatus::PartialSuccess;
 
-            let _ = custody_repo
-                .append_event(
-                    evidence_uuid,
-                    case_uuid,
-                    "EXTRACTION_COMPLETED",
-                    "SYSTEM_PIPELINE",
-                    run_manifest.result_sha256.as_deref(),
-                    serde_json::json!({
-                        "run_id": run_manifest.extraction_run_id,
-                        "status": run_manifest.status,
-                        "records_processed": run_manifest.records_processed,
-                        "valid_records_count": run_manifest.valid_records_count,
-                    }),
+        if is_success {
+            let result = state
+                .extraction_service
+                .storage()
+                .load_run_result(
+                    &run_manifest.case_id,
+                    &run_manifest.evidence_id,
+                    &run_manifest.extraction_run_id,
                 )
-                .await;
+                .await?;
+            extraction_repo
+                .complete_run_transactional(run_manifest, &result, true)
+                .await?;
         }
+
+        custody_repo
+            .append_event(
+                evidence_uuid,
+                case_uuid,
+                "EXTRACTION_COMPLETED",
+                "SYSTEM_PIPELINE",
+                run_manifest.result_sha256.as_deref(),
+                serde_json::json!({
+                    "run_id": run_manifest.extraction_run_id,
+                    "status": run_manifest.status,
+                    "records_processed": run_manifest.records_processed,
+                    "valid_records_count": run_manifest.valid_records_count,
+                }),
+            )
+            .await?;
     }
+    Ok(())
 }

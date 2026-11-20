@@ -260,7 +260,7 @@ pub struct SpatialReconstructionResult {
 }
 
 /// Classification of detected contradiction lead.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ContradictionLeadType {
     SpatialTransitImpossible,

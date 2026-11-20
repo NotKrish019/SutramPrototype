@@ -61,6 +61,31 @@ pub struct ReportContradictionItem {
     pub generated_at: String,
 }
 
+/// One reconstructed timeline event with its provenance (Phase 3E.3).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct ReportTimelineItem {
+    pub event_id: String,
+    pub source_evidence_id: String,
+    /// The producer's timestamp, verbatim.
+    pub raw_timestamp: String,
+    pub nominal_utc: String,
+    pub window_start_utc: String,
+    pub window_end_utc: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    /// Number of values this event rests on that were not observed.
+    pub assumptions_count: usize,
+    /// Video provenance, present for frame-derived events.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub frame_sha256: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub frame_pts_seconds: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub frame_artifact_reference: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source_video_sha256: Option<String>,
+}
+
 /// Complete judicial forensic case report.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CaseForensicReport {
@@ -77,6 +102,18 @@ pub struct CaseForensicReport {
     pub summary: CaseReportSummary,
     pub evidence_inventory: Vec<ReportEvidenceItem>,
     pub contradiction_leads: Vec<ReportContradictionItem>,
+    /// Reconstructed events with provenance, in timeline order.
+    #[serde(default)]
+    pub timeline_events: Vec<ReportTimelineItem>,
+    /// Candidates excluded from the timeline, with reasons.
+    #[serde(default)]
+    pub excluded_events: Vec<crate::reconstruction::model::ExcludedTimelineEvent>,
+    /// Video frame handoff outcome per video exhibit.
+    #[serde(default)]
+    pub video_handoff: Vec<crate::reconstruction::video_handoff::VideoHandoffRecord>,
+    /// Evidence gaps identifying missing corroboration, unlocated events, uncalibrated clocks, etc.
+    #[serde(default)]
+    pub evidence_gaps: Vec<crate::reconstruction::gaps::EvidenceGap>,
     pub forensic_disclaimer: String,
     pub markdown_dossier: String,
 }
@@ -277,7 +314,123 @@ pub fn generate_case_report(
         }
     }
 
-    md.push_str("## 4. Forensic Disclaimer\n\n");
+    // Timeline with provenance (including video frame provenance).
+    let timeline_events: Vec<ReportTimelineItem> = reconstruction
+        .timeline
+        .entries
+        .iter()
+        .map(|e| {
+            let meta = &e.metadata;
+            let s = |k: &str| meta.get(k).and_then(|v| v.as_str()).map(str::to_string);
+            ReportTimelineItem {
+                event_id: e.event_id.clone(),
+                source_evidence_id: e.source_evidence_id.clone(),
+                raw_timestamp: e.raw_timestamp.clone(),
+                nominal_utc: e.time_window.nominal_utc.to_rfc3339(),
+                window_start_utc: e.time_window.window_start_utc.to_rfc3339(),
+                window_end_utc: e.time_window.window_end_utc.to_rfc3339(),
+                description: e.raw_description.clone(),
+                assumptions_count: e.assumptions.len(),
+                frame_sha256: s("sha256_hash"),
+                frame_pts_seconds: meta.get("pts_seconds").and_then(|v| v.as_f64()),
+                frame_artifact_reference: s("frame_artifact_reference"),
+                source_video_sha256: s("source_video_sha256"),
+            }
+        })
+        .collect();
+
+    md.push_str("## 4. Reconstructed Timeline & Provenance\n\n");
+    if timeline_events.is_empty() {
+        md.push_str("_No events were reconstructed._\n\n");
+    } else {
+        md.push_str(
+            "| Event | Exhibit | Raw timestamp | Nominal UTC | Assumptions | Frame artifact (SHA-256, PTS) |\n",
+        );
+        md.push_str("| :--- | :--- | :--- | :--- | :--- | :--- |\n");
+        for t in &timeline_events {
+            let frame = match (
+                &t.frame_artifact_reference,
+                &t.frame_sha256,
+                t.frame_pts_seconds,
+            ) {
+                (Some(r), Some(h), Some(p)) => format!("`{}` (`{}`, {:.3}s)", r, h, p),
+                _ => "—".to_string(),
+            };
+            md.push_str(&format!(
+                "| `{}` | `{}` | `{}` | `{}` | {} | {} |\n",
+                t.event_id,
+                t.source_evidence_id,
+                t.raw_timestamp,
+                t.nominal_utc,
+                t.assumptions_count,
+                frame
+            ));
+        }
+        md.push('\n');
+    }
+    let excluded_events = reconstruction.timeline.excluded_events.clone();
+    if !excluded_events.is_empty() {
+        md.push_str("### Excluded event candidates\n\n");
+        for x in &excluded_events {
+            md.push_str(&format!(
+                "- `{}` (exhibit `{}`): {}\n",
+                x.event_id, x.source_evidence_id, x.reason
+            ));
+        }
+        md.push('\n');
+    }
+    let video_handoff = reconstruction.video_handoff.clone();
+    if !video_handoff.is_empty() {
+        md.push_str("### Video frame handoff\n\n");
+        for v in &video_handoff {
+            md.push_str(&format!(
+                "- Exhibit `{}` (source SHA-256 `{}`): `{:?}`, {} frame(s) extracted, {} handed off{}{}\n",
+                v.evidence_id,
+                v.source_video_sha256,
+                v.status,
+                v.frames_extracted,
+                v.candidates_handed_off,
+                v.frames_reference
+                    .as_ref()
+                    .map(|r| format!(", frames `{}`", r))
+                    .unwrap_or_default(),
+                v.anchor_basis
+                    .as_ref()
+                    .map(|b| format!("; anchor: {}", b))
+                    .unwrap_or_default(),
+            ));
+            for d in &v.diagnostics {
+                md.push_str(&format!("  - {}\n", d));
+            }
+        }
+        md.push('\n');
+    }
+
+    let evidence_gaps = if !reconstruction.evidence_gaps.is_empty() {
+        reconstruction.evidence_gaps.clone()
+    } else {
+        crate::reconstruction::gaps::analyze_evidence_gaps(case_id, reconstruction, exhibits, None).gaps
+    };
+
+    if !evidence_gaps.is_empty() {
+        md.push_str("## 5. Evidence Gap Intelligence\n\n");
+        md.push_str("Deterministic audit of missing corroboration, unlocated events, uncalibrated device clocks, and provenance gaps:\n\n");
+        for gap in &evidence_gaps {
+            md.push_str(&format!(
+                "- **[{}]** `{}` on `{}:{}`: {}\n  - _Impact:_ {}\n  - _Suggested Corroboration:_ {}\n",
+                gap.severity.as_str(),
+                gap.gap_type.as_str(),
+                gap.subject_type,
+                gap.subject_id,
+                gap.explanation,
+                gap.impact_on_reconstruction,
+                gap.suggested_corroborating_evidence
+            ));
+        }
+        md.push('\n');
+    }
+
+    md.push_str("## 6. Forensic Disclaimer\n\n");
     md.push_str(&format!("_{}_\n", FORENSIC_REPORT_DISCLAIMER));
 
     CaseForensicReport {
@@ -292,6 +445,10 @@ pub fn generate_case_report(
         summary,
         evidence_inventory,
         contradiction_leads,
+        timeline_events,
+        excluded_events,
+        video_handoff,
+        evidence_gaps,
         forensic_disclaimer: FORENSIC_REPORT_DISCLAIMER.to_string(),
         markdown_dossier: md,
     }

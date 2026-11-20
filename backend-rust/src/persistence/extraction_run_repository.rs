@@ -290,6 +290,7 @@ impl ExtractionRunRepository {
             let entities_json =
                 serde_json::to_value(&ev.involved_entity_raw_ids).unwrap_or_default();
 
+            let mut coords_inferred = false;
             let (lat, lon) = if let Some(coords) = ev.metadata.get("coordinates") {
                 (
                     coords.get("lat").and_then(|v| v.as_f64()),
@@ -307,6 +308,7 @@ impl ExtractionRunRepository {
                 .or(ev.location_name.as_deref())
             {
                 if let Some(geo) = crate::reconstruction::resolve_cell_tower_centroid(tower) {
+                    coords_inferred = true;
                     (Some(geo.lat), Some(geo.lon))
                 } else {
                     (None, None)
@@ -326,6 +328,19 @@ impl ExtractionRunRepository {
             if let Some(ref loc) = ev.location_name {
                 payload_map.insert("location_name".to_string(), serde_json::json!(loc));
             }
+            if coords_inferred {
+                payload_map.insert("coordinates_inferred".to_string(), serde_json::json!(true));
+                payload_map.insert(
+                    "coordinates_inference_basis".to_string(),
+                    serde_json::json!("Representative centroid looked up from cell tower identifier"),
+                );
+            }
+            let is_observed = !coords_inferred
+                && ev
+                    .metadata
+                    .get("is_observed")
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(true);
             let payload_json = serde_json::Value::Object(payload_map);
 
             sqlx::query(
@@ -354,7 +369,7 @@ impl ExtractionRunRepository {
             .bind(lon)
             .bind(&entities_json)
             .bind(&payload_json)
-            .bind(true)
+            .bind(is_observed)
             .execute(&mut *tx)
             .await
             .map_err(|e| AppError::Internal(anyhow::anyhow!("Failed to insert event: {}", e)))?;

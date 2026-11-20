@@ -29,8 +29,9 @@
 
 use std::path::{Path, PathBuf};
 use sutram_backend_rust::{
-    deduplicate_identifiers, extract_evidence, extract_identifiers_from_text, luhn_checksum_valid,
-    normalize_phone_number, parse_cdr_csv, parse_chat_json, EvidenceExtractionRequest,
+    deduplicate_identifiers, extract_evidence, extract_identifiers_from_text,
+    is_valid_indian_mobile_series, luhn_checksum_valid, normalize_phone_number, parse_cdr_csv,
+    parse_cdr_csv_with_profile, parse_chat_json, CdrProfile, EvidenceExtractionRequest,
     EvidenceExtractionService, ExtractedIdentifier, ExtractionStatus, StorageManager,
     FORENSIC_DISCLAIMER,
 };
@@ -737,4 +738,428 @@ fn test_manifest_builder_integration() {
     assert_eq!(req.source_timezone.as_deref(), Some("Asia/Kolkata"));
     assert_eq!(req.clock_offset_seconds, Some(1.5));
     assert_eq!(req.default_country_prefix.as_deref(), Some("91"));
+}
+
+// =========================================================================
+// PHASE 6: Bounded India-Focused Evidence Normalization Tests
+// =========================================================================
+
+// 26. Valid Indian numbers in standard formats (+91, 91, 091, 0, plain 10-digit)
+#[test]
+fn test_phase6_indian_phone_standard_formats() {
+    // 1. Explicit +91
+    let r1 = normalize_phone_number("+919811002233", None);
+    assert!(r1.is_normalized);
+    assert_eq!(r1.normalized_e164.as_deref(), Some("+919811002233"));
+    assert_eq!(r1.country_prefix_applied.as_deref(), Some("91"));
+
+    // 2. 91 country code without + (12 digits)
+    let r2 = normalize_phone_number("919811002233", None);
+    assert!(r2.is_normalized);
+    assert_eq!(r2.normalized_e164.as_deref(), Some("+919811002233"));
+    assert_eq!(r2.resolution_status, "INDIAN_COUNTRY_CODE_PREFIX");
+
+    // 3. 091 prefix (13 digits: domestic trunk 0 + 91 + 10 digits)
+    let r3 = normalize_phone_number("0919811002233", None);
+    assert!(r3.is_normalized);
+    assert_eq!(r3.normalized_e164.as_deref(), Some("+919811002233"));
+    assert_eq!(r3.resolution_status, "INDIAN_TRUNK_091_PREFIX");
+
+    // 4. Domestic 0 trunk prefix with configured default prefix 91 (11 digits)
+    let r4 = normalize_phone_number("09811002233", Some("91"));
+    assert!(r4.is_normalized);
+    assert_eq!(r4.normalized_e164.as_deref(), Some("+919811002233"));
+    assert_eq!(r4.resolution_status, "CONFIGURED_DEFAULT_COUNTRY_PREFIX");
+
+    // 5. Plain 10-digit mobile with configured default prefix 91
+    let r5 = normalize_phone_number("9811002233", Some("91"));
+    assert!(r5.is_normalized);
+    assert_eq!(r5.normalized_e164.as_deref(), Some("+919811002233"));
+
+    // 6. Test all valid Indian mobile series: 6, 7, 8, 9
+    assert!(is_valid_indian_mobile_series("6301234567"));
+    assert!(is_valid_indian_mobile_series("7890123456"));
+    assert!(is_valid_indian_mobile_series("8765432109"));
+    assert!(is_valid_indian_mobile_series("9876543210"));
+
+    let r_6 = normalize_phone_number("+916301234567", None);
+    assert!(r_6.is_normalized);
+    assert_eq!(r_6.normalized_e164.as_deref(), Some("+916301234567"));
+
+    let r_7 = normalize_phone_number("+917890123456", None);
+    assert!(r_7.is_normalized);
+    assert_eq!(r_7.normalized_e164.as_deref(), Some("+917890123456"));
+
+    let r_8 = normalize_phone_number("+918765432109", None);
+    assert!(r_8.is_normalized);
+    assert_eq!(r_8.normalized_e164.as_deref(), Some("+918765432109"));
+}
+
+// 27. Numbers with formatting artifacts (spaces, hyphens, parentheses, dots)
+#[test]
+fn test_phase6_formatting_artifacts() {
+    let raw_cases = vec![
+        "+91 98110 02233",
+        "+91 (0) 98110-02233",
+        "+91-98110-02233",
+        "+91.98110.02233",
+        "(091) 98110 02233",
+        "91-98110-02233",
+        "+91 (98110) 02233",
+        "+91/98110/02233",
+    ];
+
+    for raw in raw_cases {
+        let res = normalize_phone_number(raw, None);
+        assert!(
+            res.is_normalized,
+            "Failed to normalize formatted number: '{}', reason: {}",
+            raw, res.reason
+        );
+        assert_eq!(
+            res.normalized_e164.as_deref(),
+            Some("+919811002233"),
+            "Mismatch for raw '{}'",
+            raw
+        );
+        assert_eq!(res.raw_input, raw, "Raw input must be preserved verbatim");
+    }
+
+    // Formatting with default prefix 91
+    let domestic_cases = vec![
+        "098110-02233",
+        "0 98110 02233",
+        "98110-02233",
+        "(98110) 02233",
+        "98110.02233",
+    ];
+    for raw in domestic_cases {
+        let res = normalize_phone_number(raw, Some("91"));
+        assert!(
+            res.is_normalized,
+            "Failed to normalize domestic number: '{}'",
+            raw
+        );
+        assert_eq!(res.normalized_e164.as_deref(), Some("+919811002233"));
+        assert_eq!(res.raw_input, raw);
+    }
+}
+
+// 28. Invalid numbers (wrong length, invalid series starting with 0-5)
+#[test]
+fn test_phase6_invalid_indian_numbers() {
+    // Landline numbers or invalid mobile series starting with 0-5
+    assert!(!is_valid_indian_mobile_series("5555555555"));
+    assert!(!is_valid_indian_mobile_series("1234567890"));
+    assert!(!is_valid_indian_mobile_series("0112345678")); // Delhi landline
+    assert!(!is_valid_indian_mobile_series("2334455667")); // PSTN
+
+    // Explicit +91 with invalid series
+    let r1 = normalize_phone_number("+91 5555555555", None);
+    assert!(!r1.is_normalized);
+    assert_eq!(r1.normalized_e164, None);
+    assert_eq!(r1.resolution_status, "INVALID_INDIAN_MOBILE_SERIES");
+
+    // Domestic 10-digit with invalid series under 91 prefix
+    let r2 = normalize_phone_number("1234567890", Some("91"));
+    assert!(!r2.is_normalized);
+    assert_eq!(r2.normalized_e164, None);
+    assert_eq!(r2.resolution_status, "INVALID_INDIAN_MOBILE_SERIES");
+
+    // 091 prefix with invalid series
+    let r3 = normalize_phone_number("091 5555555555", None);
+    assert!(!r3.is_normalized);
+    assert_eq!(r3.normalized_e164, None);
+    assert_eq!(r3.resolution_status, "INVALID_INDIAN_MOBILE_SERIES");
+
+    // 91 prefix without + with invalid series
+    let r4 = normalize_phone_number("915555555555", None);
+    assert!(!r4.is_normalized);
+    assert_eq!(r4.normalized_e164, None);
+    assert_eq!(r4.resolution_status, "INVALID_INDIAN_MOBILE_SERIES");
+
+    // Wrong lengths for Indian numbers
+    let r5 = normalize_phone_number("+91 98110", None); // Too short
+    assert!(!r5.is_normalized);
+    assert_eq!(r5.resolution_status, "INVALID_INDIAN_PHONE_LENGTH");
+
+    let r6 = normalize_phone_number("+91 98110022334455", None); // Too long
+    assert!(!r6.is_normalized);
+    assert_eq!(r6.resolution_status, "EXCESSIVE_DIGITS");
+}
+
+// 29. Ambiguous cases that should not be merged
+#[test]
+fn test_phase6_ambiguous_cases_not_merged() {
+    // 10-digit without default prefix -> ambiguous country code
+    let r1 = normalize_phone_number("9811002233", None);
+    assert!(!r1.is_normalized);
+    assert_eq!(r1.resolution_status, "AMBIGUOUS_COUNTRY_CODE");
+    assert_eq!(r1.normalized_e164, None);
+
+    let r2 = normalize_phone_number("9822003344", None);
+    assert!(!r2.is_normalized);
+    assert_eq!(r2.resolution_status, "AMBIGUOUS_COUNTRY_CODE");
+
+    // Verify deduplicate_identifiers keeps ambiguous unnormalized numbers strictly isolated
+    let idents = vec![
+        ExtractedIdentifier {
+            identifier_type: "PHONE_NUMBER".to_string(),
+            raw_value: "9811002233".to_string(),
+            normalized_value: None,
+            source_evidence_id: "ev-01".to_string(),
+            source_record_id: "rec-01".to_string(),
+            location_reference: None,
+            is_ambiguous: true,
+            ambiguity_reason: Some("Ambiguous country code".to_string()),
+            context_snippet: None,
+            is_checksum_valid: None,
+            extraction_confidence: None,
+            extraction_method: "test".to_string(),
+        },
+        ExtractedIdentifier {
+            identifier_type: "PHONE_NUMBER".to_string(),
+            raw_value: "9822003344".to_string(),
+            normalized_value: None,
+            source_evidence_id: "ev-02".to_string(),
+            source_record_id: "rec-02".to_string(),
+            location_reference: None,
+            is_ambiguous: true,
+            ambiguity_reason: Some("Ambiguous country code".to_string()),
+            context_snippet: None,
+            is_checksum_valid: None,
+            extraction_confidence: None,
+            extraction_method: "test".to_string(),
+        },
+    ];
+
+    // Deduplicate without default country prefix
+    let resolved = deduplicate_identifiers(&idents, None);
+    assert_eq!(
+        resolved.len(),
+        2,
+        "Ambiguous unnormalized numbers must remain in distinct entity groups without merging"
+    );
+}
+
+// 30. International numbers ensuring no regression
+#[test]
+fn test_phase6_international_numbers_no_regression() {
+    // US number with explicit +
+    let r1 = normalize_phone_number("+1 555 123 4567", None);
+    assert!(r1.is_normalized);
+    assert_eq!(r1.normalized_e164.as_deref(), Some("+15551234567"));
+
+    // UK number with explicit +
+    let r2 = normalize_phone_number("+44 7911 123456", None);
+    assert!(r2.is_normalized);
+    assert_eq!(r2.normalized_e164.as_deref(), Some("+447911123456"));
+
+    // International trunk 00 to UK
+    let r3 = normalize_phone_number("00447911123456", None);
+    assert!(r3.is_normalized);
+    assert_eq!(r3.normalized_e164.as_deref(), Some("+447911123456"));
+
+    // Domestic US number with configured prefix 1
+    let r4 = normalize_phone_number("5551234567", Some("1"));
+    assert!(r4.is_normalized);
+    assert_eq!(r4.normalized_e164.as_deref(), Some("+15551234567"));
+}
+
+// 31. CDR parsing with Indian telecom profiles (Airtel, Jio, Vi, BSNL)
+#[test]
+fn test_phase6_cdr_indian_telecom_profiles() {
+    // Airtel format: Calling_Number, Called_Number, Call_Date_Time, Call_Duration, First_CGI, Call_Type
+    let airtel_csv = "Calling_Number,Called_Number,Call_Date_Time,Call_Duration,First_CGI,Call_Type\n\
+                      9811002233,9899887766,2026-11-10 20:15:30,120,404-45-12345-6789,OUTGOING\n\
+                      +919876543210,09811002233,2026-11-10 21:00:00,45,404-45-12345-6790,INCOMING";
+
+    let res_airtel = parse_cdr_csv_with_profile(airtel_csv, "ev-airtel", None, CdrProfile::Airtel);
+    assert_eq!(res_airtel.valid_records.len(), 2);
+    assert_eq!(res_airtel.rejected_records.len(), 0);
+    assert_eq!(res_airtel.valid_records[0].caller_phone_raw, "9811002233");
+    assert_eq!(res_airtel.valid_records[0].receiver_phone_raw, "9899887766");
+    assert_eq!(res_airtel.valid_records[0].duration_seconds, 120.0);
+    assert_eq!(
+        res_airtel.valid_records[0].cell_tower_id.as_deref(),
+        Some("404-45-12345-6789")
+    );
+
+    // Auto-detection of Jio format: calling_party_number, called_party_number, start_timestamp, call_duration_seconds, first_cell_id
+    let jio_csv = "calling_party_number,called_party_number,start_timestamp,call_duration_seconds,first_cell_id\n\
+                   +919811002233,919899887766,2026-11-10T20:15:30+05:30,90,JIO-DEL-045";
+
+    let res_jio = parse_cdr_csv(jio_csv, "ev-jio", None);
+    assert_eq!(res_jio.valid_records.len(), 1);
+    assert_eq!(res_jio.rejected_records.len(), 0);
+    assert_eq!(
+        res_jio.valid_records[0].call_timestamp_raw,
+        "2026-11-10T20:15:30+05:30"
+    );
+
+    // Split Date + Time columns format (common in Vi / BSNL)
+    let bsnl_csv = "calling_no,called_no,call_date,call_time,call_duration,first_cgi\n\
+                    09811002233,9899887766,10/11/2026,20:15:30,60,BSNL-TOWER-12";
+
+    let res_bsnl = parse_cdr_csv(bsnl_csv, "ev-bsnl", None);
+    assert_eq!(res_bsnl.valid_records.len(), 1);
+    assert_eq!(res_bsnl.rejected_records.len(), 0);
+    assert_eq!(
+        res_bsnl.valid_records[0].call_timestamp_raw,
+        "10/11/2026 20:15:30"
+    );
+
+    // Hardware identifiers (IMEI / IMSI) in Indian CDR
+    let imei_cdr = "calling_number,called_number,call_date_time,duration_seconds,imei,imsi\n\
+                    9811002233,9899887766,2026-11-10 20:15:30,30,352099001761481,404450123456789";
+
+    let res_imei = parse_cdr_csv(imei_cdr, "ev-imei", None);
+    assert_eq!(res_imei.valid_records.len(), 1);
+    let imeis: Vec<_> = res_imei
+        .identifiers
+        .iter()
+        .filter(|i| i.identifier_type == "IMEI")
+        .collect();
+    assert_eq!(imeis.len(), 1);
+    assert_eq!(imeis[0].raw_value, "352099001761481");
+    assert_eq!(imeis[0].is_checksum_valid, Some(true));
+}
+
+// 32. Unsupported CDR format rejection
+#[test]
+fn test_phase6_unsupported_cdr_schema_rejection() {
+    // Header without required telephony columns
+    let invalid_csv = "random_col_1,random_col_2,amount,status\n\
+                       val1,val2,100,SUCCESS";
+
+    // AutoDetect rejects missing mandatory headers
+    let res = parse_cdr_csv(invalid_csv, "ev-unsupported", None);
+    assert_eq!(res.valid_records.len(), 0);
+    assert_eq!(res.rejected_records.len(), 1);
+    assert_eq!(
+        res.rejected_records[0].issue_type,
+        "MISSING_REQUIRED_HEADERS"
+    );
+    assert!(res.rejected_records[0]
+        .message
+        .contains("Format unsupported under Standard or IndianTelecom profiles"));
+
+    // Explicit carrier profile rejects incompatible headers
+    let res_explicit = parse_cdr_csv_with_profile(
+        invalid_csv,
+        "ev-unsupported-airtel",
+        None,
+        CdrProfile::Airtel,
+    );
+    assert_eq!(res_explicit.valid_records.len(), 0);
+    assert_eq!(res_explicit.rejected_records.len(), 1);
+    assert_eq!(
+        res_explicit.rejected_records[0].issue_type,
+        "UNSUPPORTED_CDR_SCHEMA"
+    );
+    assert!(res_explicit.rejected_records[0]
+        .message
+        .contains("Missing required telephony columns"));
+}
+
+// 33. IST timestamp handling and conversion
+#[test]
+fn test_phase6_ist_timezone_handling_and_conversion() {
+    use sutram_backend_rust::reconstruction::temporal::{
+        parse_and_normalize_timestamp, validate_timezone,
+    };
+
+    // Test IST alias support
+    assert!(validate_timezone("IST").is_ok());
+    assert!(validate_timezone("Asia/Kolkata").is_ok());
+    assert!(validate_timezone("Asia/Calcutta").is_ok());
+    assert!(validate_timezone("+05:30").is_ok());
+
+    // 20:15:30 IST is 14:45:30 UTC
+    let ts_ist = "2026-11-10 20:15:30";
+    let utc_dt = parse_and_normalize_timestamp(ts_ist, "Asia/Kolkata", 0.0).unwrap();
+    assert_eq!(utc_dt.to_rfc3339(), "2026-11-10T14:45:30+00:00");
+
+    let utc_dt_alias = parse_and_normalize_timestamp(ts_ist, "IST", 0.0).unwrap();
+    assert_eq!(utc_dt_alias.to_rfc3339(), "2026-11-10T14:45:30+00:00");
+
+    // Indian format DD/MM/YYYY HH:MM:SS
+    let ts_ddmmyyyy = "10/11/2026 20:15:30";
+    let utc_dt_dd = parse_and_normalize_timestamp(ts_ddmmyyyy, "Asia/Kolkata", 0.0).unwrap();
+    assert_eq!(utc_dt_dd.to_rfc3339(), "2026-11-10T14:45:30+00:00");
+
+    // Verify naive timestamp with UTC is NOT assumed to be IST
+    let utc_dt_utc = parse_and_normalize_timestamp(ts_ist, "UTC", 0.0).unwrap();
+    assert_eq!(utc_dt_utc.to_rfc3339(), "2026-11-10T20:15:30+00:00");
+}
+
+// 34. Chat phone extraction with original value preservation
+#[test]
+fn test_phase6_chat_phone_extraction_and_original_preservation() {
+    let chat_json = r#"{
+        "chat_id": "test-chat-delhi",
+        "chat_title": "Operation Alpha",
+        "messages": [
+            {
+                "message_id": "msg-001",
+                "sender_id": "9811002233",
+                "sender_name": "Rajesh Kumar",
+                "recipients": ["+91 9899887766"],
+                "timestamp": "2026-11-10T20:15:30+05:30",
+                "content": "Call informant at 09876543210 or 6301234567 immediately."
+            }
+        ]
+    }"#;
+
+    let res = parse_chat_json(chat_json, "ev-chat-delhi", Some("91"));
+    assert_eq!(res.valid_messages.len(), 1);
+    assert_eq!(res.rejected_messages.len(), 0);
+
+    let msg = &res.valid_messages[0];
+    // Preserves original message data verbatim
+    assert_eq!(msg.sender_raw_id, "9811002233");
+    assert_eq!(msg.recipients_raw, vec!["+91 9899887766"]);
+    assert_eq!(msg.timestamp_raw, "2026-11-10T20:15:30+05:30");
+    assert_eq!(
+        msg.content_raw,
+        "Call informant at 09876543210 or 6301234567 immediately."
+    );
+
+    // Verify sender normalized properly to +919811002233
+    let sender_idents: Vec<_> = res
+        .identifiers
+        .iter()
+        .filter(|i| i.raw_value == "9811002233")
+        .collect();
+    assert_eq!(sender_idents.len(), 1);
+    assert_eq!(
+        sender_idents[0].normalized_value.as_deref(),
+        Some("+919811002233")
+    );
+
+    // Verify recipient normalized properly
+    let rec_idents: Vec<_> = res
+        .identifiers
+        .iter()
+        .filter(|i| i.raw_value == "+91 9899887766")
+        .collect();
+    assert_eq!(rec_idents.len(), 1);
+    assert_eq!(
+        rec_idents[0].normalized_value.as_deref(),
+        Some("+919899887766")
+    );
+
+    // Verify text embedded phone numbers extracted with Indian normalization
+    let extracted_phones: Vec<_> = res
+        .identifiers
+        .iter()
+        .filter(|i| i.extraction_method == "regex_phone")
+        .collect();
+    assert_eq!(extracted_phones.len(), 2);
+    let norm_vals: Vec<_> = extracted_phones
+        .iter()
+        .filter_map(|i| i.normalized_value.as_deref())
+        .collect();
+    assert!(norm_vals.contains(&"+919876543210"));
+    assert!(norm_vals.contains(&"+916301234567"));
 }

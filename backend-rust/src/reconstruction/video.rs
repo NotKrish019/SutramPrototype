@@ -224,6 +224,15 @@ pub async fn probe_video_metadata(
 }
 
 /// Deterministic keyframe extraction with resource ceilings and SHA-256 verification (DEC-005).
+///
+/// - `output_dir` must be absent or empty. Derived artifacts are never overwritten or mixed with
+///   earlier output, and FFmpeg runs with `-n` (never overwrite).
+/// - `pts_seconds` is the presentation timestamp FFmpeg reports for each emitted frame (showinfo
+///   `pts_time`). If the reported PTS cannot be matched one-to-one with the written frames, the
+///   extraction fails instead of guessing.
+/// - `relative_path` is the frame file name relative to `output_dir` (never a host path).
+/// - `estimated_utc` is left unset. UTC anchoring needs evidence calibration and is done by the
+///   caller (see `video_handoff`).
 pub async fn extract_keyframes(
     video_path: &Path,
     output_dir: &Path,
@@ -236,9 +245,29 @@ pub async fn extract_keyframes(
             video_path.display()
         )));
     }
+    if max_frames == 0 {
+        return Err(AppError::BadRequest(
+            "max_frames must be at least 1.".to_string(),
+        ));
+    }
 
     let pre_hash = compute_file_sha256(video_path)?;
 
+    if output_dir.exists() {
+        let mut existing = fs::read_dir(output_dir).await.map_err(|e| {
+            AppError::Internal(anyhow::anyhow!(
+                "Failed to inspect frame output directory: {}",
+                e
+            ))
+        })?;
+        if let Ok(Some(_)) = existing.next_entry().await {
+            return Err(AppError::BadRequest(format!(
+                "Frame output directory '{}' is not empty; derived frame artifacts are never \
+                 overwritten or merged with earlier output.",
+                output_dir.display()
+            )));
+        }
+    }
     fs::create_dir_all(output_dir).await.map_err(|e| {
         AppError::Internal(anyhow::anyhow!(
             "Failed to create frame output directory: {}",
@@ -250,19 +279,18 @@ pub async fn extract_keyframes(
     let frame_pattern_str = frame_pattern.to_string_lossy();
 
     let mut cmd = Command::new("ffmpeg");
-    cmd.args(["-v", "quiet", "-i"])
+    cmd.args(["-nostdin", "-hide_banner", "-loglevel", "info", "-n", "-i"])
         .arg(video_path)
         .args([
             "-vf",
-            "select='eq(pict_type,I)'",
-            "-vsync",
+            "select='eq(pict_type,I)',showinfo",
+            "-fps_mode",
             "vfr",
-            "-frame_pts",
-            "1",
-            "-vframes",
+            "-frames:v",
         ])
         .arg(max_frames.to_string())
         .arg(&*frame_pattern_str)
+        .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
 
@@ -285,16 +313,17 @@ pub async fn extract_keyframes(
         }
     };
 
+    let stderr = String::from_utf8_lossy(&output.stderr);
     if !output.status.success() {
-        let err_msg = String::from_utf8_lossy(&output.stderr);
+        let tail: Vec<&str> = stderr.lines().rev().take(5).collect();
         return Err(AppError::BadRequest(format!(
             "FFmpeg frame extraction failed: {}",
-            err_msg.trim()
+            tail.into_iter().rev().collect::<Vec<_>>().join(" | ")
         )));
     }
+    let pts_values = parse_showinfo_pts_times(&stderr);
 
     // Read generated frames and compute cryptographic hashes
-    let mut frame_artifacts = Vec::new();
     let mut dir_entries = fs::read_dir(output_dir).await.map_err(|e| {
         AppError::Internal(anyhow::anyhow!(
             "Failed to read frame output directory: {}",
@@ -314,18 +343,35 @@ pub async fn extract_keyframes(
             frame_files.push(path);
         }
     }
-
     frame_files.sort();
 
-    for (idx, frame_path) in frame_files.iter().enumerate() {
+    if frame_files.is_empty() {
+        return Err(AppError::BadRequest(
+            "FFmpeg produced no keyframes for this video.".to_string(),
+        ));
+    }
+    if pts_values.len() != frame_files.len() {
+        return Err(AppError::Internal(anyhow::anyhow!(
+            "FFmpeg reported {} frame PTS values for {} written frames; refusing to guess \
+             frame timestamps.",
+            pts_values.len(),
+            frame_files.len()
+        )));
+    }
+
+    let mut frame_artifacts = Vec::with_capacity(frame_files.len());
+    for (idx, (frame_path, pts)) in frame_files.iter().zip(pts_values).enumerate() {
         let frame_hash = compute_file_sha256(frame_path)?;
-        let rel_path = frame_path.to_string_lossy().to_string();
+        let file_name = frame_path
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_default();
 
         frame_artifacts.push(ExtractedFrameArtifact {
             frame_index: idx + 1,
-            pts_seconds: idx as f64,
+            pts_seconds: pts,
             sha256_hash: frame_hash,
-            relative_path: rel_path,
+            relative_path: file_name,
             estimated_utc: None,
         });
     }
@@ -339,4 +385,17 @@ pub async fn extract_keyframes(
     }
 
     Ok(frame_artifacts)
+}
+
+/// Extracts `pts_time` values, in output order, from FFmpeg `showinfo` filter log lines.
+pub fn parse_showinfo_pts_times(stderr: &str) -> Vec<f64> {
+    stderr
+        .lines()
+        .filter(|line| line.contains("Parsed_showinfo") && line.contains(" n:"))
+        .filter_map(|line| {
+            let rest = &line[line.find("pts_time:")? + "pts_time:".len()..];
+            let token = rest.split_whitespace().next()?;
+            token.parse::<f64>().ok().filter(|v| v.is_finite())
+        })
+        .collect()
 }

@@ -17,7 +17,7 @@ use crate::error::AppError;
 /// Configurable default half-width for CanonicalTimePrecision::Estimated.
 pub const DEFAULT_ESTIMATED_HALF_WIDTH_SECONDS: f64 = 900.0;
 
-/// Resolves an IANA timezone identifier into a `chrono_tz::Tz`.
+/// Resolves an IANA timezone identifier into a `chrono_tz::Tz`, supporting standard Indian Standard Time (IST) aliases.
 pub fn validate_timezone(source_timezone: &str) -> Result<Tz, AppError> {
     let trimmed = source_timezone.trim();
     if trimmed.is_empty() {
@@ -28,6 +28,16 @@ pub fn validate_timezone(source_timezone: &str) -> Result<Tz, AppError> {
 
     if trimmed.eq_ignore_ascii_case("utc") {
         return Ok(chrono_tz::UTC);
+    }
+
+    // Supported Indian Standard Time (IST) aliases and offsets
+    if trimmed.eq_ignore_ascii_case("ist")
+        || trimmed.eq_ignore_ascii_case("asia/kolkata")
+        || trimmed.eq_ignore_ascii_case("asia/calcutta")
+        || trimmed == "+05:30"
+        || trimmed == "+0530"
+    {
+        return Ok(chrono_tz::Asia::Kolkata);
     }
 
     Tz::from_str(trimmed).map_err(|_| {
@@ -84,6 +94,10 @@ pub fn parse_and_normalize_timestamp(
         dt.with_timezone(&Utc)
     } else if let Ok(dt) = DateTime::parse_from_str(cleaned, "%Y-%m-%d %H:%M:%S%z") {
         dt.with_timezone(&Utc)
+    } else if let Ok(dt) = DateTime::parse_from_str(cleaned, "%Y-%m-%dT%H:%M:%S%z") {
+        dt.with_timezone(&Utc)
+    } else if let Ok(dt) = DateTime::parse_from_str(cleaned, "%d/%m/%Y %H:%M:%S%z") {
+        dt.with_timezone(&Utc)
     } else {
         // Try parsing as naive datetime with time component
         let naive = if let Ok(ndt) = NaiveDateTime::parse_from_str(cleaned, "%Y-%m-%dT%H:%M:%S%.f")
@@ -94,6 +108,16 @@ pub fn parse_and_normalize_timestamp(
         } else if let Ok(ndt) = NaiveDateTime::parse_from_str(cleaned, "%Y-%m-%d %H:%M:%S%.f") {
             ndt
         } else if let Ok(ndt) = NaiveDateTime::parse_from_str(cleaned, "%Y-%m-%d %H:%M:%S") {
+            ndt
+        } else if let Ok(ndt) = NaiveDateTime::parse_from_str(cleaned, "%d/%m/%Y %H:%M:%S%.f") {
+            ndt
+        } else if let Ok(ndt) = NaiveDateTime::parse_from_str(cleaned, "%d/%m/%Y %H:%M:%S") {
+            ndt
+        } else if let Ok(ndt) = NaiveDateTime::parse_from_str(cleaned, "%d-%m-%Y %H:%M:%S%.f") {
+            ndt
+        } else if let Ok(ndt) = NaiveDateTime::parse_from_str(cleaned, "%d-%m-%Y %H:%M:%S") {
+            ndt
+        } else if let Ok(ndt) = NaiveDateTime::parse_from_str(cleaned, "%Y/%m/%d %H:%M:%S") {
             ndt
         } else {
             return Err(AppError::BadRequest(format!(

@@ -21,13 +21,14 @@ pub use app::{
 pub use config::AppConfig;
 pub use correlation::{
     deduplicate_identifiers, generate_cdr_relationship_candidate,
-    generate_chat_relationship_candidates, normalize_phone_number, PhoneNormalizationResult,
+    generate_chat_relationship_candidates, is_valid_indian_mobile_series, normalize_phone_number,
+    PhoneNormalizationResult,
 };
 pub use error::AppError;
 pub use extraction::{
     extract_evidence, extract_identifiers_from_text, luhn_checksum_valid, parse_cdr_csv,
-    parse_chat_json, ActiveRunPointer, CDRExtractionResult, ChatExtractionResult,
-    EvidenceExtractionRequest, EvidenceExtractionService, EvidenceUploadAndExtractResponse,
+    parse_cdr_csv_with_profile, parse_chat_json, ActiveRunPointer, CDRExtractionResult,
+    CdrProfile, ChatExtractionResult, EvidenceExtractionRequest, EvidenceExtractionService, EvidenceUploadAndExtractResponse,
     ExtractedEventCandidate, ExtractedIdentifier, ExtractionConfiguration, ExtractionRunManifest,
     ExtractionRunStatus, ExtractionRunSummary, ExtractionStatus, ExtractionValidationIssue,
     ParsedCDRRecord, ParsedChatMessage, ProvisionalRelationshipCandidate, ReprocessRequest,

@@ -6,7 +6,7 @@ pub mod identifiers;
 pub mod model;
 pub mod service;
 
-pub use cdr::parse_cdr_csv;
+pub use cdr::{parse_cdr_csv, parse_cdr_csv_with_profile, CdrProfile};
 pub use chat::parse_chat_json;
 pub use identifiers::{extract_identifiers_from_text, luhn_checksum_valid};
 pub use model::{

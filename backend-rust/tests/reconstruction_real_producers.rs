@@ -244,6 +244,69 @@ async fn repeated_reconstruction_is_deterministic() {
     assert_eq!(a["export_safeguard"], b["export_safeguard"]);
 }
 
+#[tokio::test]
+async fn real_evidence_to_judicial_report_end_to_end() {
+    // Upload (Member 2) → extraction (Member 1) → reconstruction → report (Member 4), real code.
+    let temp = tempdir().unwrap();
+    let app = create_router(AppConfig {
+        evidence_storage_path: temp.path().join("raw"),
+        derived_storage_path: temp.path().join("derived"),
+        ..Default::default()
+    });
+    let composite = upload(&app, &[]).await;
+    let reconstruction = reconstruct(&app).await;
+
+    let req = Request::builder()
+        .method("GET")
+        .uri(format!("/api/v1/cases/{CASE_ID}/report"))
+        .body(Body::empty())
+        .unwrap();
+    let res = app.clone().oneshot(req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::OK);
+    let report: serde_json::Value =
+        serde_json::from_slice(&res.into_body().collect().await.unwrap().to_bytes()).unwrap();
+
+    // Evidence inventory is the uploaded exhibit, with the receipt's integrity values.
+    let inventory = report["evidence_inventory"].as_array().unwrap();
+    assert_eq!(inventory.len(), 1);
+    assert_eq!(
+        inventory[0]["evidence_id"],
+        composite.receipt.evidence_id.as_str()
+    );
+    assert_eq!(
+        inventory[0]["sha256_hash"],
+        composite.receipt.sha256_hash.as_str()
+    );
+    assert_eq!(
+        inventory[0]["file_size_bytes"],
+        composite.receipt.file_size_bytes
+    );
+
+    // The report summarises the same reconstruction the API returned.
+    let entries = reconstruction["timeline"]["entries"].as_array().unwrap();
+    assert_eq!(
+        report["summary"]["total_timeline_events"].as_u64().unwrap() as usize,
+        entries.len()
+    );
+    assert_eq!(
+        report["summary"]["open_contradictions_count"]
+            .as_u64()
+            .unwrap() as usize,
+        reconstruction["contradictions"]["leads"]
+            .as_array()
+            .unwrap()
+            .len()
+    );
+
+    // Undeclared clock calibration → the report must not clear judicial export.
+    assert_eq!(report["judicial_export_status"], "SHIP_EXPORT_BLOCKED");
+    assert_eq!(reconstruction["export_safeguard"]["status"], "BLOCKED");
+    assert!(report["markdown_dossier"]
+        .as_str()
+        .unwrap()
+        .contains(&composite.receipt.evidence_id));
+}
+
 // --- Failure and boundary cases (service level, real producer model) ------------------------
 
 mod service_cases {

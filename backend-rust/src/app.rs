@@ -18,8 +18,10 @@ use crate::{
         graph::{find_entity_path, get_case_graph_summary, get_entity_neighbors},
         health::{health_check, readiness_check},
         reconstruction::{
-            get_case_contradictions, get_case_reconstruction, get_case_report, get_case_spatial,
-            get_case_timeline, trigger_case_reconstruction,
+            get_case_contradictions, get_case_evidence_gaps, get_case_reconstruction,
+            get_case_reconstruction_provenance, get_case_report, get_case_spatial,
+            get_case_timeline, get_finding_provenance, simulate_case_scenario,
+            trigger_case_reconstruction,
         },
     },
     config::AppConfig,
@@ -246,6 +248,14 @@ pub fn create_router_with_state(state: AppState) -> Router {
             "/api/v1/cases/:case_id/reconstruction",
             post(trigger_case_reconstruction).get(get_case_reconstruction),
         )
+        .route(
+            "/api/v1/cases/:case_id/reconstruction/simulate",
+            post(simulate_case_scenario),
+        )
+        .route(
+            "/api/v1/cases/:case_id/what-if",
+            post(simulate_case_scenario),
+        )
         .route("/api/v1/cases/:case_id/timeline", get(get_case_timeline))
         .route("/api/v1/cases/:case_id/spatial", get(get_case_spatial))
         .route(
@@ -255,6 +265,26 @@ pub fn create_router_with_state(state: AppState) -> Router {
         .route(
             "/api/v1/cases/:case_id/report",
             get(get_case_report).post(get_case_report),
+        )
+        .route(
+            "/api/v1/cases/:case_id/reconstruction/provenance",
+            get(get_case_reconstruction_provenance),
+        )
+        .route(
+            "/api/v1/cases/:case_id/reconstruction/findings/:finding_id/provenance",
+            get(get_finding_provenance),
+        )
+        .route(
+            "/api/v1/cases/:case_id/findings/:finding_id/provenance",
+            get(get_finding_provenance),
+        )
+        .route(
+            "/api/v1/cases/:case_id/reconstruction/gaps",
+            get(get_case_evidence_gaps),
+        )
+        .route(
+            "/api/v1/cases/:case_id/gaps",
+            get(get_case_evidence_gaps),
         )
         .layer(TraceLayer::new_for_http())
         .with_state(state)

@@ -5,7 +5,7 @@
 
 use chrono::Utc;
 use sqlx::PgPool;
-use tracing::{debug, info, warn};
+use tracing::{debug, info};
 use uuid::Uuid;
 
 use super::model::{deterministic_uuid, ContradictionEntity, EventEntity, ReconstructionRunEntity};
@@ -53,7 +53,7 @@ impl ReconstructionRunRepository {
         &self,
         case_id: Uuid,
         run_id: Uuid,
-        extraction_run_id: Option<Uuid>,
+        contributing_extraction_run_ids: &[Uuid],
         reconstruction_type: &str,
         parameters: &serde_json::Value,
         result: &FullCaseReconstructionResult,
@@ -73,6 +73,8 @@ impl ReconstructionRunRepository {
             ))
         })?;
 
+        let primary_extraction_run_id = contributing_extraction_run_ids.first().copied();
+
         // 1. Insert reconstruction_runs row
         sqlx::query(
             r#"
@@ -84,7 +86,7 @@ impl ReconstructionRunRepository {
             "#,
         )
         .bind(run_id)
-        .bind(extraction_run_id)
+        .bind(primary_extraction_run_id)
         .bind(case_id)
         .bind(reconstruction_type)
         .bind(parameters)
@@ -95,8 +97,8 @@ impl ReconstructionRunRepository {
         .map_err(|e| AppError::Internal(anyhow::anyhow!("Failed to insert reconstruction_run: {}", e)))?;
 
         // 1b. Preserve multi-input provenance links in reconstruction_run_inputs
-        if let Some(ext_id) = extraction_run_id {
-            let _ = sqlx::query(
+        for ext_id in contributing_extraction_run_ids {
+            sqlx::query(
                 r#"
                 INSERT INTO reconstruction_run_inputs (reconstruction_run_id, extraction_run_id, created_at)
                 VALUES ($1, $2, $3)
@@ -107,11 +109,18 @@ impl ReconstructionRunRepository {
             .bind(ext_id)
             .bind(now)
             .execute(&mut *tx)
-            .await;
+            .await
+            .map_err(|e| {
+                AppError::Internal(anyhow::anyhow!(
+                    "Failed to insert reconstruction_run_inputs for {}: {}",
+                    ext_id,
+                    e
+                ))
+            })?;
         }
 
         // Also associate all distinct extraction runs found from the case's events
-        let _ = sqlx::query(
+        sqlx::query(
             r#"
             INSERT INTO reconstruction_run_inputs (reconstruction_run_id, extraction_run_id, created_at)
             SELECT DISTINCT $1, extraction_run_id, $2
@@ -124,7 +133,13 @@ impl ReconstructionRunRepository {
         .bind(now)
         .bind(case_id)
         .execute(&mut *tx)
-        .await;
+        .await
+        .map_err(|e| {
+            AppError::Internal(anyhow::anyhow!(
+                "Failed to insert reconstruction_run_inputs from events: {}",
+                e
+            ))
+        })?;
 
         // 2. Insert detected contradiction leads
         for lead in &result.contradictions.leads {
@@ -143,7 +158,12 @@ impl ReconstructionRunRepository {
             .bind(case_id)
             .fetch_one(&mut *tx)
             .await
-            .unwrap_or(0);
+            .map_err(|e| {
+                AppError::Internal(anyhow::anyhow!(
+                    "Failed to verify contradiction event foreign keys: {}",
+                    e
+                ))
+            })?;
 
             if exists_query == 2 {
                 let metrics_json = serde_json::json!({
@@ -161,7 +181,7 @@ impl ReconstructionRunRepository {
                     }
                 };
 
-                if let Err(e) = sqlx::query(
+                sqlx::query(
                     r#"
                     INSERT INTO contradictions (
                         contradiction_id, reconstruction_run_id, case_id, event_id_1, event_id_2,
@@ -181,9 +201,9 @@ impl ReconstructionRunRepository {
                 .bind(now)
                 .execute(&mut *tx)
                 .await
-                {
-                    warn!("Failed to insert contradiction row: {}", e);
-                }
+                .map_err(|e| {
+                    AppError::Internal(anyhow::anyhow!("Failed to insert contradiction row: {}", e))
+                })?;
             } else {
                 debug!(
                     lead_id = %lead.lead_id,
@@ -199,7 +219,7 @@ impl ReconstructionRunRepository {
             let trajectory_id = Uuid::new_v4();
             let waypoints_json = serde_json::to_value(&traj.waypoints).unwrap_or_default();
 
-            if let Err(e) = sqlx::query(
+            sqlx::query(
                 r#"
                 INSERT INTO spatial_trajectories (
                     trajectory_id, reconstruction_run_id, case_id, entity_id,
@@ -218,9 +238,9 @@ impl ReconstructionRunRepository {
             .bind(now)
             .execute(&mut *tx)
             .await
-            {
-                warn!("Failed to insert spatial_trajectory row: {}", e);
-            }
+            .map_err(|e| {
+                AppError::Internal(anyhow::anyhow!("Failed to insert spatial_trajectory row: {}", e))
+            })?;
         }
 
         // 4. Enqueue RECONSTRUCTION_COMPLETED event into graph outbox
@@ -266,9 +286,9 @@ impl ReconstructionRunRepository {
         &self,
         case_id: Uuid,
     ) -> Result<Option<FullCaseReconstructionResult>, AppError> {
-        let row = sqlx::query_scalar::<_, Option<serde_json::Value>>(
+        let row = sqlx::query_as::<_, (Uuid, Option<serde_json::Value>)>(
             r#"
-            SELECT result_snapshot
+            SELECT reconstruction_run_id, result_snapshot
             FROM reconstruction_runs
             WHERE case_id = $1 AND status = 'SUCCESS' AND result_snapshot IS NOT NULL
             ORDER BY started_at DESC
@@ -285,14 +305,20 @@ impl ReconstructionRunRepository {
             ))
         })?;
 
-        if let Some(Some(snapshot)) = row {
-            let res =
+        if let Some((run_id, Some(snapshot))) = row {
+            let mut res =
                 serde_json::from_value::<FullCaseReconstructionResult>(snapshot).map_err(|e| {
                     AppError::Internal(anyhow::anyhow!(
                         "Failed to parse reconstruction snapshot: {}",
                         e
                     ))
                 })?;
+            if res.reconstruction_run_id.is_none() {
+                res.reconstruction_run_id = Some(run_id.to_string());
+            }
+            if res.run_id.is_none() {
+                res.run_id = Some(run_id.to_string());
+            }
             Ok(Some(res))
         } else {
             Ok(None)

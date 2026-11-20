@@ -243,15 +243,31 @@ pub fn extract_identifiers_from_text(
         let clean_char_len = clean_raw.chars().count();
         let actual_char_end = char_start + clean_char_len;
 
+        let norm_res = crate::correlation::resolution::normalize_phone_number(
+            clean_raw,
+            _default_country_code,
+        );
+
+        let (norm_val, is_ambig, ambig_reason) = if norm_res.is_normalized {
+            (norm_res.normalized_e164, false, None)
+        } else {
+            (
+                None,
+                norm_res.resolution_status.contains("AMBIGUOUS")
+                    || norm_res.resolution_status.contains("INVALID"),
+                Some(norm_res.reason),
+            )
+        };
+
         identifiers.push(ExtractedIdentifier {
             identifier_type: "PHONE_NUMBER".to_string(),
-            normalized_value: None,
+            normalized_value: norm_val,
             raw_value: clean_raw.to_string(),
             source_evidence_id: source_evidence_id.to_string(),
             source_record_id: source_record_id.to_string(),
             location_reference: Some(format!("char_offset:{}-{}", char_start, actual_char_end)),
-            is_ambiguous: false,
-            ambiguity_reason: None,
+            is_ambiguous: is_ambig,
+            ambiguity_reason: ambig_reason,
             context_snippet: Some(extract_context_window(
                 &chars,
                 char_start,

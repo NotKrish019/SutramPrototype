@@ -17,7 +17,7 @@ use crate::{
     correlation::resolution::deduplicate_identifiers,
     error::AppError,
     extraction::{
-        cdr::parse_cdr_csv,
+        cdr::{parse_cdr_csv_with_profile, CdrProfile},
         chat::parse_chat_json,
         model::{
             ActiveRunPointer, EvidenceExtractionRequest, ExtractionConfiguration,
@@ -253,10 +253,29 @@ pub fn extract_evidence(request: &EvidenceExtractionRequest) -> UnifiedExtractio
         total_records_processed,
     ) = match canonical_modality {
         "CALL_DETAIL_RECORD" => {
-            let res = parse_cdr_csv(
+            let profile = request
+                .metadata
+                .get("cdr_profile")
+                .or_else(|| request.metadata.get("carrier_profile"))
+                .and_then(|v| v.as_str())
+                .and_then(|s| match s.to_ascii_lowercase().as_str() {
+                    "standard" => Some(CdrProfile::Standard),
+                    "airtel" => Some(CdrProfile::Airtel),
+                    "jio" => Some(CdrProfile::Jio),
+                    "vi" | "vodafone" | "idea" => Some(CdrProfile::Vi),
+                    "bsnl" => Some(CdrProfile::Bsnl),
+                    "indiantelecom" | "indian_telecom" | "indian" => {
+                        Some(CdrProfile::IndianTelecom)
+                    }
+                    _ => None,
+                })
+                .unwrap_or(CdrProfile::AutoDetect);
+
+            let res = parse_cdr_csv_with_profile(
                 &raw_text,
                 &request.evidence_id,
                 request.default_country_prefix.as_deref(),
+                profile,
             );
             let valid_cnt = res.valid_records.len();
             let rej_cnt = res.rejected_records.len();
