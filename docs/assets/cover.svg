@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="440" viewBox="0 0 1280 440" role="img" aria-labelledby="t d">
+  <title id="t">YUKTI: digital evidence correlation and crime reconstruction</title>
+  <desc id="d">Banner with the YUKTI name, a knowledge graph of linked evidence on the right, and a reconstructed timeline along the bottom.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1220"/>
+      <stop offset="0.55" stop-color="#101b33"/>
+      <stop offset="1" stop-color="#0d2a3a"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.78" cy="0.42" r="0.45">
+      <stop offset="0" stop-color="#2dd4bf" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#2dd4bf" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#2dd4bf"/>
+      <stop offset="1" stop-color="#60a5fa"/>
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#ffffff" stroke-opacity="0.035"/>
+    </pattern>
+  </defs>
+
+  <rect width="1280" height="440" fill="url(#bg)"/>
+  <rect width="1280" height="440" fill="url(#grid)"/>
+  <rect width="1280" height="440" fill="url(#glow)"/>
+
+  <!-- Knowledge graph: evidence linked across sources -->
+  <g stroke="#60a5fa" stroke-opacity="0.45" stroke-width="1.6">
+    <line x1="840" y1="120" x2="960" y2="90"/>
+    <line x1="960" y1="90" x2="1090" y2="140"/>
+    <line x1="840" y1="120" x2="900" y2="220"/>
+    <line x1="900" y1="220" x2="1030" y2="235"/>
+    <line x1="1030" y1="235" x2="1090" y2="140"/>
+    <line x1="960" y1="90" x2="1030" y2="235"/>
+    <line x1="1090" y1="140" x2="1180" y2="210"/>
+    <line x1="1030" y1="235" x2="1180" y2="210"/>
+    <line x1="900" y1="220" x2="800" y2="250"/>
+  </g>
+  <!-- the flagged contradiction edge -->
+  <line x1="960" y1="90" x2="900" y2="220" stroke="#f59e0b" stroke-width="2.2" stroke-dasharray="6 5"/>
+  <g>
+    <circle cx="840" cy="120" r="11" fill="#0b1220" stroke="#2dd4bf" stroke-width="2.5"/>
+    <circle cx="960" cy="90" r="14" fill="#2dd4bf"/>
+    <circle cx="1090" cy="140" r="11" fill="#0b1220" stroke="#60a5fa" stroke-width="2.5"/>
+    <circle cx="900" cy="220" r="14" fill="#60a5fa"/>
+    <circle cx="1030" cy="235" r="11" fill="#0b1220" stroke="#2dd4bf" stroke-width="2.5"/>
+    <circle cx="1180" cy="210" r="9" fill="#0b1220" stroke="#60a5fa" stroke-width="2.5"/>
+    <circle cx="800" cy="250" r="8" fill="#0b1220" stroke="#2dd4bf" stroke-width="2"/>
+  </g>
+  <g font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#94a3b8">
+    <text x="975" y="72">CDR</text>
+    <text x="852" y="104">Chat</text>
+    <text x="1104" y="128">Tower</text>
+    <text x="852" y="250">Device</text>
+    <text x="1044" y="262">Place</text>
+    <text x="1100" y="236" fill="#64748b">IMEI</text>
+  </g>
+  <g font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11.5" fill="#f59e0b">
+    <text x="891" y="200" transform="rotate(-65 891 200)">contradiction lead</text>
+  </g>
+
+  <!-- Title block -->
+  <g font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif">
+    <text x="80" y="150" font-size="104" font-weight="800" fill="#f8fafc" letter-spacing="10">YUKTI</text>
+    <rect x="84" y="172" width="150" height="5" rx="2.5" fill="url(#accent)"/>
+    <text x="82" y="222" font-size="28" font-weight="600" fill="#e2e8f0">Digital evidence correlation &amp; crime reconstruction</text>
+    <text x="82" y="258" font-size="18" fill="#94a3b8">Ingest · Hash · Extract · Correlate · Reconstruct · Report</text>
+    <text x="82" y="292" font-size="15" fill="#2dd4bf" font-weight="600" letter-spacing="1.5">SUTRAM 2026 · ISEA–IGDTUW NATIONAL HACKATHON</text>
+  </g>
+
+  <!-- Reconstructed timeline -->
+  <g>
+    <line x1="80" y1="370" x2="1200" y2="370" stroke="#334155" stroke-width="2"/>
+    <line x1="80" y1="370" x2="760" y2="370" stroke="url(#accent)" stroke-width="3"/>
+    <g fill="#2dd4bf">
+      <circle cx="120" cy="370" r="6"/><circle cx="230" cy="370" r="6"/><circle cx="315" cy="370" r="6"/>
+      <circle cx="470" cy="370" r="6"/><circle cx="545" cy="370" r="6"/><circle cx="690" cy="370" r="6"/>
+    </g>
+    <rect x="590" y="358" width="70" height="24" rx="12" fill="#60a5fa" fill-opacity="0.18" stroke="#60a5fa" stroke-opacity="0.6"/>
+    <circle cx="880" cy="370" r="7" fill="#0b1220" stroke="#f59e0b" stroke-width="2.5"/>
+    <g fill="#475569"><circle cx="1000" cy="370" r="5"/><circle cx="1120" cy="370" r="5"/></g>
+    <g font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#64748b">
+      <text x="98" y="400">20:15 IST</text>
+      <text x="592" y="400">time window</text>
+      <text x="838" y="400" fill="#f59e0b">needs review</text>
+      <text x="1060" y="400">export gated</text>
+    </g>
+  </g>
+</svg>
