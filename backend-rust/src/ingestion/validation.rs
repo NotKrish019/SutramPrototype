@@ -156,6 +156,19 @@ pub async fn sniff_and_validate_content(
         });
     }
 
+    // 5b. WhatsApp plain-text chat export ("Export chat" -> .txt). Checked before CSV because
+    // its "date, time - sender: text" lines contain commas and would otherwise read as CSV.
+    if ext == "txt"
+        && crate::extraction::whatsapp::looks_like_whatsapp_txt(&String::from_utf8_lossy(&header))
+    {
+        return Ok(ContentInspection {
+            mime_type: "text/plain".to_string(),
+            source_type: "CHAT_EXPORT".to_string(),
+            diagnostic: "WhatsApp plain-text chat export layout verified (dated message lines)."
+                .to_string(),
+        });
+    }
+
     // 6. CSV / Delimited Text Inspection
     // Crucial requirement: Generic CSV must NOT be classified as CALL_DETAIL_RECORD.
     // It must initially be classified as TABULAR_CSV until parsed in Phase 1H.

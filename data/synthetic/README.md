@@ -34,3 +34,7 @@ This folder is reserved for lightweight, synthetic test fixtures used in integra
 
 ### Integrity Requirements:
 Every synthetic file placed here should have an accompanying `.sha256` checksum file to validate pipeline hashing logic.
+
+### Demo case (`demo/`)
+
+A small synthetic investigation used by `yukti demo` and the backend tests: two operators' call records and an Android WhatsApp `.txt` export. It produces ROBUST, SENSITIVE and FRAGILE contradiction leads. See [`demo/README.md`](demo/README.md).

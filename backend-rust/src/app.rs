@@ -10,6 +10,7 @@ use tracing::{info, warn};
 
 use crate::{
     api::routes::{
+        assurance::{get_case_custody_audit, get_case_robustness},
         cases::{create_case, get_case, list_cases},
         evidence::{
             get_active_extraction, get_evidence_item, list_case_evidence, list_extraction_runs,
@@ -285,6 +286,14 @@ pub fn create_router_with_state(state: AppState) -> Router {
         .route(
             "/api/v1/cases/:case_id/gaps",
             get(get_case_evidence_gaps),
+        )
+        .route(
+            "/api/v1/cases/:case_id/robustness",
+            get(get_case_robustness),
+        )
+        .route(
+            "/api/v1/cases/:case_id/custody/verify",
+            get(get_case_custody_audit),
         )
         .layer(TraceLayer::new_for_http())
         .with_state(state)

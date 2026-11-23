@@ -7,6 +7,7 @@ pub mod api;
 pub mod app;
 pub mod config;
 pub mod correlation;
+pub mod custody_audit;
 pub mod error;
 pub mod extraction;
 pub mod graph;

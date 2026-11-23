@@ -1,5 +1,6 @@
 //! Route definitions for API modules.
 
+pub mod assurance;
 pub mod cases;
 pub mod evidence;
 pub mod graph;

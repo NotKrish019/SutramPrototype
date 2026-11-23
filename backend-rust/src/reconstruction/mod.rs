@@ -5,6 +5,7 @@ pub mod contradictions;
 pub mod gaps;
 pub mod model;
 pub mod report;
+pub mod robustness;
 pub mod scenario;
 pub mod service;
 pub mod spatial;

@@ -292,15 +292,32 @@ pub fn extract_evidence(request: &EvidenceExtractionRequest) -> UnifiedExtractio
             )
         }
         "CHAT_EXPORT" => {
-            let res = parse_chat_json(
-                &raw_text,
-                &request.evidence_id,
-                request.default_country_prefix.as_deref(),
-            );
+            // JSON exports start with '{'; anything else is a WhatsApp plain-text export.
+            let is_json = raw_text
+                .trim_start_matches('\u{feff}')
+                .trim_start()
+                .starts_with('{');
+            let res = if is_json {
+                parse_chat_json(
+                    &raw_text,
+                    &request.evidence_id,
+                    request.default_country_prefix.as_deref(),
+                )
+            } else {
+                crate::extraction::whatsapp::parse_whatsapp_txt(
+                    &raw_text,
+                    &request.evidence_id,
+                    request.default_country_prefix.as_deref(),
+                )
+            };
             let valid_cnt = res.valid_messages.len();
             let rej_cnt = res.rejected_messages.len();
             (
-                "chat_parser",
+                if is_json {
+                    "chat_parser"
+                } else {
+                    "whatsapp_txt_parser"
+                },
                 "1.0.0",
                 res.identifiers,
                 res.event_candidates,

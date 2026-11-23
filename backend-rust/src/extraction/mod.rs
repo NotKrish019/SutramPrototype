@@ -5,6 +5,7 @@ pub mod chat;
 pub mod identifiers;
 pub mod model;
 pub mod service;
+pub mod whatsapp;
 
 pub use cdr::{parse_cdr_csv, parse_cdr_csv_with_profile, CdrProfile};
 pub use chat::parse_chat_json;
@@ -18,3 +19,4 @@ pub use model::{
     UnifiedExtractionResult, FORENSIC_DISCLAIMER,
 };
 pub use service::{consume_video_frames, extract_evidence, EvidenceExtractionService};
+pub use whatsapp::{looks_like_whatsapp_txt, parse_whatsapp_txt};

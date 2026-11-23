@@ -25,6 +25,9 @@ pub fn resolve_cell_tower_centroid(tower_id: &str) -> Option<GeoPoint> {
     } else if normalized.contains("AIRPORT") || normalized.contains("IGI") {
         // IGI Airport T3 centroid
         GeoPoint::new(28.5562, 77.1000).ok()
+    } else if normalized.contains("MUMBAI") || normalized.contains("BKC") {
+        // Bandra Kurla Complex / Mumbai centroid
+        GeoPoint::new(19.0607, 72.8633).ok()
     } else {
         None
     }

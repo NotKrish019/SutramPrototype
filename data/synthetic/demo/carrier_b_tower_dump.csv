@@ -1,0 +1,2 @@
+record_id,caller_phone,receiver_phone,call_timestamp,duration_seconds,cell_tower_id,call_type
+b-001,+919811002233,+919800000201,2026-11-10T20:55:10+05:30,30,TOWER-NOIDA-SEC62-02C,VOICE_OUTGOING
