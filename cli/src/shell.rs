@@ -161,6 +161,88 @@ fn help_text(ui: &Ui) -> String {
     out
 }
 
+/// Commands people paste from Terminal or PowerShell guides. None is a yukti command.
+const TERMINAL_COMMANDS: [&str; 44] = [
+    "cd",
+    "ls",
+    "dir",
+    "pwd",
+    "mkdir",
+    "rmdir",
+    "rm",
+    "cp",
+    "mv",
+    "cat",
+    "touch",
+    "echo",
+    "export",
+    "set",
+    "unset",
+    "source",
+    "curl",
+    "wget",
+    "irm",
+    "iwr",
+    "iex",
+    "open",
+    "notepad",
+    "start",
+    "sudo",
+    "brew",
+    "apt",
+    "git",
+    "cargo",
+    "npm",
+    "python",
+    "python3",
+    "pip",
+    "sh",
+    "bash",
+    "zsh",
+    "pwsh",
+    "powershell",
+    "chmod",
+    "which",
+    "where",
+    "tar",
+    "unzip",
+    "shasum",
+];
+
+/// A friendly explanation when a line is a Terminal/PowerShell command rather than a yukti one.
+pub fn terminal_command_hint(first: &str) -> Option<String> {
+    let lower = first.to_ascii_lowercase();
+    let is_assignment = first.split_once('=').is_some_and(|(name, _)| {
+        !name.is_empty() && name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
+    });
+    let looks_terminal = TERMINAL_COMMANDS.contains(&lower.as_str())
+        || lower.contains('-')
+            && lower.split('-').count() == 2
+            && lower
+                .chars()
+                .next()
+                .is_some_and(|c| c.is_ascii_alphabetic())
+            && first.chars().next().is_some_and(char::is_uppercase)
+        || first.starts_with('$')
+        || first.starts_with("./")
+        || first.starts_with('/')
+        || first.starts_with('~')
+        || is_assignment;
+    if !looks_terminal {
+        return None;
+    }
+    let shown = if first.chars().count() > 30 {
+        format!("{}...", first.chars().take(30).collect::<String>())
+    } else {
+        first.to_string()
+    };
+    Some(format!(
+        "error: `{shown}` is a Terminal command, not a yukti command.\n\
+         note: type `exit` to go back to Terminal and run it there, then run `yukti` again.\n\
+         note: inside yukti, type commands without the word yukti, for example `case list`. Type `help` for the list.\n"
+    ))
+}
+
 /// Decides what one line does. Pure: no I/O, so it is unit-tested.
 pub fn plan(session: &mut Session, line: &str, globals: &[String], ui: &Ui) -> Action {
     let mut words = match split_words(line) {
@@ -214,6 +296,9 @@ pub fn plan(session: &mut Session, line: &str, globals: &[String], ui: &Ui) -> A
         }
         "shell" => return Action::Error("error: already in a yukti shell\n".to_string()),
         _ => {}
+    }
+    if let Some(hint) = terminal_command_hint(&first) {
+        return Action::Error(hint);
     }
 
     let mut argv = vec!["yukti".to_string()];
@@ -376,6 +461,45 @@ mod tests {
 
         assert!(matches!(plan(&mut s, "unuse", &[], &ui), Action::Print(_)));
         assert_eq!(s.case, None);
+    }
+
+    #[test]
+    fn terminal_commands_get_a_hint_instead_of_a_usage_error() {
+        let ui = Ui::plain();
+        let mut s = Session::default();
+        for line in [
+            "mkdir -p ~/yukti-demo && cd ~/yukti-demo",
+            "curl -fsSL -o sample_cdr.csv \"$url\"",
+            "url=\"https://example.com/sample_cdr.csv\"",
+            "export YUKTI_CASE=abc",
+            "$env:YUKTI_CASE = \"abc\"",
+            "New-Item -ItemType Directory demo",
+            "irm https://example.com -OutFile x",
+            "cd ~/yukti-demo",
+        ] {
+            match plan(&mut s, line, &[], &ui) {
+                Action::Error(text) => {
+                    assert!(text.contains("is a Terminal command"), "{line}: {text}");
+                    assert!(text.contains("type `exit`"), "{line}");
+                }
+                other => panic!("{line}: {other:?}"),
+            }
+        }
+        // Real yukti commands are untouched.
+        assert!(matches!(
+            plan(&mut s, "case list", &[], &ui),
+            Action::Run(_)
+        ));
+        assert!(matches!(
+            plan(&mut s, "yukti timeline --limit 2", &[], &ui),
+            Action::Run(_)
+        ));
+        assert!(matches!(
+            plan(&mut s, "whatif --case c --clock-offset 30", &[], &ui),
+            Action::Run(_)
+        ));
+        assert_eq!(terminal_command_hint("evidence"), None);
+        assert_eq!(terminal_command_hint("reconstruction"), None);
     }
 
     #[test]
