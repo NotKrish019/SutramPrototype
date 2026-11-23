@@ -6,7 +6,7 @@ Owner: Member 3 (Frontend & Visualization). Frontend only; no backend or `shared
 
 | Variable       | Where                                   | Default                 |
 | -------------- | --------------------------------------- | ----------------------- |
-| `VITE_API_URL` | `apps/web/.env.local` (see `.env.example`) | `http://localhost:8000` |
+| `VITE_API_URL` | `apps/web/.env.local` (see `.env.example`) | `http://localhost:8080` (the Rust API) |
 
 - Vite only loads `.env*` files from `apps/web/`. The repository-root `.env` does not reach the frontend.
 - `services/config.ts` trims the value, strips trailing slashes, and rejects anything that is not an

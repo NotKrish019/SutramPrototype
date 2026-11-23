@@ -30,7 +30,7 @@ We adhere to the Conventional Commits specification:
 - `chore`: Changes to build process, dependency configuration, or tools.
 
 ### Allowed Scopes:
-- `ingestion`, `extraction`, `correlation`, `reconstruction`, `reporting`, `api`, `web`, `decision`, `shared`, `infra`, `ci`
+- `ingestion`, `extraction`, `correlation`, `reconstruction`, `reporting`, `graph`, `api`, `backend-rust`, `web`, `cli`, `decision`, `shared`, `infra`, `ci`, `docs`
 
 ---
 
@@ -42,12 +42,16 @@ git pull --rebase origin main
 ```
 
 Before committing:
-1. Run local tests:
+1. Run the tests for every component you changed:
    ```bash
-   # Backend
-   cd backend && uv run pytest
-   # Frontend
+   # Rust API
+   cd backend-rust && cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test
+   # CLI
+   cd cli && cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test
+   # Web workspace
    cd apps/web && npm run test && npm run build
+   # Python service
+   cd backend && uv run pytest
    # Decision service
    cd decision-service && npm run test
    ```
@@ -84,7 +88,8 @@ If another team member pushed to `main` while you were editing:
 ## 5. Dependency Management Rules
 
 - Never install packages directly with global pip or arbitrary tools.
-- Backend: Use `uv add <package>` in `backend/`.
+- Rust API and CLI: Use `cargo add <crate>` in `backend-rust/` or `cli/`, and commit the updated `Cargo.lock`.
+- Python service: Use `uv add <package>` in `backend/`.
 - Frontend: Use `npm install <package>` in `apps/web/`.
 - Decision service: Use `npm install <package>` in `decision-service/`.
 - Do not add massive AI weights or unneeded packages in early phases.

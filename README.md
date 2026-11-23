@@ -104,10 +104,14 @@ Then walk through a full synthetic case: create it, ingest the sample CDR and ch
 
 ```bash
 docker compose -f docker-compose.graph.yml up -d
-cp backend-rust/.env.example backend-rust/.env   # then review DATABASE_URL and the NEO4J_* values
+
+# The API reads environment variables only (no .env file). In the API's terminal:
+export DATABASE_URL=postgres://postgres:postgres@localhost:5432/sutram_forensics
+export GRAPH_ENABLED=true NEO4J_URI=http://127.0.0.1:7474 NEO4J_USER=neo4j NEO4J_PASSWORD=forensic_graph_password_2026
+cargo run --bin sutram-backend-rust
 ```
 
-Restart the API afterwards. It runs its migrations on startup. `yukti doctor` should now show the database and graph as connected.
+The API runs its migrations on startup. `yukti doctor` should now show the database and graph as connected. The [setup guide](docs/development/setup-guide.md#5-optional-postgresql-and-neo4j) has PowerShell equivalents.
 
 </details>
 

@@ -8,14 +8,16 @@ Welcome to the **YUKTI** engineering team (SUTRAM 2026 — ISEA-IGDTUW National 
 
 ```mermaid
 graph TD
-    M1["Member 1: AI/ML & Evidence Intelligence"] -->|Owns| MOD1["backend/app/modules/extraction & correlation"]
-    M2["Member 2: Backend & Data Engineering"] -->|Owns| MOD2["backend/app/api, models, core, db"]
+    M1["Member 1: AI/ML & Evidence Intelligence"] -->|Owns| MOD1["extraction & correlation"]
+    M2["Member 2: Backend & Data Engineering"] -->|Owns| MOD2["api, ingestion, persistence, graph"]
     M3["Member 3: Frontend & Visualization"] -->|Owns| MOD3["apps/web/"]
-    M4["Member 4: Forensic Intelligence & Integration"] -->|Owns| MOD4["backend/app/modules/reconstruction & decision-service/"]
+    M4["Member 4: Forensic Intelligence & Integration"] -->|Owns| MOD4["reconstruction & decision-service/"]
 ```
 
+The application backend is now the Rust API in `backend-rust/src/` ([ADR 001](../architecture/rust-backend-migration.md)). Each backend domain below lists its Rust module first, then the matching module in the original Python service (`backend/app/`), which is kept as a reference.
+
 ### Member 1: AI/ML and Evidence Intelligence
-- **Primary Domain:** `backend/app/modules/extraction/` and `backend/app/modules/correlation/`
+- **Primary Domain:** `backend-rust/src/extraction/` and `backend-rust/src/correlation/` (Python: `backend/app/modules/extraction/`, `correlation/`)
 - **Responsibilities:**
   - Optical Character Recognition (PaddleOCR) for seized documents and mobile screenshots.
   - Named Entity Recognition (spaCy NER) for identifying persons, organizations, phone numbers, and locations.
@@ -24,9 +26,9 @@ graph TD
   - Cross-modality similarity scoring.
 
 ### Member 2: Backend and Data Engineering
-- **Primary Domain:** `backend/app/api/`, `backend/app/models/`, `backend/app/services/`, PostgreSQL, and Neo4j
+- **Primary Domain:** `backend-rust/src/api/`, `ingestion/`, `persistence/`, `graph/`, `migrations/`, PostgreSQL and Neo4j (Python: `backend/app/api/`, `models/`, `services/`)
 - **Responsibilities:**
-  - FastAPI routing architecture, authentication, and core application configuration.
+  - API routing (Axum), authentication, and core application configuration.
   - Relational schema design, migrations, and PostgreSQL persistence for Case and Evidence records.
   - Neo4j graph schema design, Cypher queries, and graph synchronization.
   - Secure file ingestion endpoints, SHA-256 integrity verification, and storage paths.
@@ -43,7 +45,7 @@ graph TD
   - Investigative report viewing and PDF export rendering.
 
 ### Member 4: Forensic Intelligence and Integration
-- **Primary Domain:** `backend/app/modules/reconstruction/` and `decision-service/`
+- **Primary Domain:** `backend-rust/src/reconstruction/` and `decision-service/` (Python: `backend/app/modules/reconstruction/`)
 - **Responsibilities:**
   - Video and CCTV frame extraction, timestamp OCR, and motion event detection (OpenCV).
   - Timestamp normalization across inconsistent timezones and device clocks.
@@ -62,24 +64,32 @@ git clone https://github.com/NotKrish019/SutramPrototype.git
 cd SutramPrototype
 ```
 
-### Step 2: Environment Setup
-```bash
-# Copy the environment template
-cp .env.example .env
-```
+### Step 2: Toolchain Setup
+The [setup guide](setup-guide.md) covers every component in detail, including environment variables and the optional databases.
 
-### Step 3: Toolchain Setup
-- **Python Backend:**
+- **Rust API:**
   ```bash
-  cd backend
-  uv sync
-  uv run pytest
+  cd backend-rust
+  cargo test
+  cargo run --bin sutram-backend-rust    # http://127.0.0.1:8080
   ```
 - **React Frontend:**
   ```bash
   cd apps/web
   npm ci
   npm run test
+  ```
+- **CLI:**
+  ```bash
+  cd cli
+  cargo install --path .
+  yukti doctor                           # checks the whole setup
+  ```
+- **Python Service** (reference implementation):
+  ```bash
+  cd backend
+  uv sync
+  uv run pytest
   ```
 - **Decision Service:**
   ```bash

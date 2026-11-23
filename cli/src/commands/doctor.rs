@@ -345,7 +345,7 @@ fn database_check(value: &str) -> Check {
             "database",
             "Database",
             detail,
-            "Fine for local use: cases and evidence are kept on disk. To use PostgreSQL, set DATABASE_URL in backend-rust/.env and restart the API.",
+            "Fine for local use: cases and evidence are kept on disk. To use PostgreSQL, set the DATABASE_URL environment variable in the terminal that runs the API and restart it (see docs/development/setup-guide.md).",
         ),
         _ => Check::fail("database", "Database", detail, exit::SERVER_ERROR).with_hint(
             "PostgreSQL is configured but not usable. Check that it is running and that DATABASE_URL is correct.",
@@ -361,7 +361,7 @@ fn graph_check(value: &str) -> Check {
             "graph",
             "Graph",
             detail,
-            "Optional: knowledge-graph projection is off. To enable it, set GRAPH_ENABLED and the NEO4J_* values in backend-rust/.env and restart the API.",
+            "Optional: knowledge-graph projection is off. To enable it, set the GRAPH_ENABLED and NEO4J_* environment variables in the terminal that runs the API and restart it (see docs/development/setup-guide.md).",
         ),
         _ => Check::fail("graph", "Graph", detail, exit::SERVER_ERROR).with_hint(
             "Neo4j is configured but not usable. Check that it is running and that the NEO4J_* values are correct.",
