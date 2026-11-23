@@ -11,13 +11,17 @@ pub mod dto;
 pub mod error;
 pub mod output;
 
-use cli::Cli;
+use cli::{Cli, Command};
 use client::ApiClient;
 use config::{Config, EnvVars};
 use output::Rendered;
 
 /// Resolves configuration, runs the parsed command and returns its rendered output.
 pub async fn execute(cli: &Cli, env: &EnvVars) -> Rendered {
+    // Doctor reports an invalid configuration as a failed check, so it resolves it itself.
+    if cli.command == Command::Doctor {
+        return commands::doctor::run(cli.api_url.as_deref(), cli.timeout, env, cli.json).await;
+    }
     let config = match Config::resolve(cli.api_url.as_deref(), cli.timeout, env) {
         Ok(config) => config,
         Err(err) => return output::render_error(&err, cli.json),

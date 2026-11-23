@@ -32,6 +32,9 @@ pub enum Command {
     /// Check that the API is reachable and report database and graph readiness
     Status,
 
+    /// Check that yukti is set up: configuration, API, readiness, database, graph and case API (read-only)
+    Doctor,
+
     /// Manage investigation cases
     #[command(subcommand)]
     Case(CaseCommand),

@@ -18,13 +18,14 @@ cargo install --path .           # optional: put `yukti` on your PATH (~/.cargo/
 
 The minimum Rust version is 1.82.
 
-Start the API first (from `backend-rust/`: `cargo run`). It listens on `http://127.0.0.1:8080` by default.
+Start the API first (from `backend-rust/`: `cargo run --bin sutram-backend-rust`; plain `cargo run` fails because that crate has two binaries). It listens on `http://127.0.0.1:8080` by default.
 
 ## Commands
 
 | Command | API calls | Description |
 |---|---|---|
 | `yukti status` | `GET /health`, `GET /health/ready` | API reachability, plus database and graph readiness |
+| `yukti doctor` | `GET /health`, `GET /health/ready`, `GET /api/v1/cases` | Setup checklist: config, API, readiness, database, graph and case API, with a fix hint for each problem |
 | `yukti case list` | `GET /api/v1/cases`, then `GET /health/ready` (storage mode) | Cases in the API's order |
 | `yukti case create --title …` | `POST /api/v1/cases` | Register a case and print the UUID the API assigned |
 | `yukti case show --case <UUID>` | `GET /api/v1/cases/:case_id` | One case's fields |
@@ -43,6 +44,50 @@ These are not implemented yet:
 - `graph open`
 
 Each will be added as a new `Command` variant in `src/cli.rs`, with a handler module under `src/commands/`. Commands that need API functionality that doesn't exist yet will exit with code `69`.
+
+### `yukti doctor`
+
+```bash
+yukti doctor
+yukti doctor --json
+```
+
+A checklist that tells you whether `yukti` is set up and usable. Each line is `[PASS]`, `[WARN]`, `[FAIL]` or `[SKIP]`, and every warning or failure comes with a `hint:` saying what to do.
+
+| Check | Passes when | Warns when | Fails when |
+|---|---|---|---|
+| CLI | always (shows the version) | | |
+| Config | the API URL and timeout are valid (shows where each came from: flag, environment or default) | | either is invalid (exit 2) |
+| API | `GET /health` answers like the YUKTI API | | unreachable (exit 3) or a different server answered |
+| Readiness | `ready` | `degraded` | `not_ready` (exit 5) or unreadable |
+| Database | `connected` | filesystem mode (no PostgreSQL) | configured but not connected |
+| Graph | `connected` | disabled (no Neo4j) | configured but not connected |
+| Cases API | `GET /api/v1/cases` returns a list | | any error |
+
+- **Read-only.** Doctor only sends `GET` requests. It never creates a case, uploads evidence or runs a reconstruction.
+- **Skipped checks.** A check that can't run because an earlier one failed shows `[SKIP]`. For example, everything after `API` is skipped when the API is unreachable.
+- **Exit code.** `0` when nothing failed, even with warnings. Otherwise the exit code of the first failed check, following the exit-code table below.
+- **Invalid configuration** is reported as a failed `Config` check, not as a bare error, so `doctor` still prints the checklist.
+
+Example (API running in filesystem mode, which is fine for local use):
+
+```text
+yukti doctor
+
+  [PASS] CLI         yukti 0.1.0
+  [PASS] Config      API URL http://127.0.0.1:8080 (from default), timeout 10 s (from default)
+  [PASS] API         reachable at http://127.0.0.1:8080 (GET /health -> HTTP 200, service sutram-backend-rust)
+  [WARN] Readiness   degraded (GET /health/ready -> HTTP 200)
+                     hint: The API works, but an optional dependency is not configured (see below).
+  [WARN] Database    not configured (filesystem mode, no PostgreSQL)
+                     hint: Fine for local use: cases and evidence are kept on disk. ...
+  [WARN] Graph       disabled (Neo4j not configured)
+                     hint: Optional: knowledge-graph projection is off. ...
+  [PASS] Cases API   GET /api/v1/cases -> 2 case(s)
+
+4 passed, 3 warning(s), 0 failed, 0 skipped
+Result  OK with warnings: yukti is set up and you can use every command. Warnings are optional setup. (exit 0)
+```
 
 ### `yukti status`
 
@@ -229,6 +274,28 @@ Invalid configuration exits with code `2`, and the message names the source (`--
 
 - **Human mode (default):** results go to stdout and errors that stop a command go to stderr. The text is plain ASCII with no colour, so it's safe in logs. `yukti status` always prints its report to stdout, including on failure.
 - **JSON mode (`--json`):** exactly one JSON document is written to stdout, for success and failure alike, and nothing is written to stderr. Each document has a `schema` field naming its versioned shape.
+
+### `yukti.cli.doctor/v1`
+
+```json
+{
+  "schema": "yukti.cli.doctor/v1",
+  "cli_version": "0.1.0",
+  "api_url": "http://127.0.0.1:8080",
+  "result": "ok_with_warnings",
+  "exit_code": 0,
+  "passed": 4, "warnings": 3, "failed": 0, "skipped": 0,
+  "checks": [
+    { "id": "database", "label": "Database", "status": "warn",
+      "detail": "not configured (filesystem mode, no PostgreSQL)",
+      "hint": "Fine for local use: ...", "error": null }
+  ]
+}
+```
+
+- `result` is `ok`, `ok_with_warnings` or `failed`. `api_url` is `null` when the configuration is invalid.
+- `checks` always lists `cli`, `config`, `api`, `readiness`, `database`, `graph`, `cases_api`, in that order.
+- Each check's `status` is `pass`, `warn`, `fail` or `skipped`. `error` uses the same shape as `yukti.cli.error/v1`'s `error`.
 
 ### `yukti.cli.status/v1`
 
@@ -427,11 +494,12 @@ src/dto.rs            client-side mirrors of API types (cases, evidence receipts
                       runs, upload fields, reconstruction results, case reports), CaseId validation
 src/error.rs          CliError, exit-code contract, API error-envelope parsing
 src/output.rs         Rendered output, JSON error document
-src/commands/         one module per command group (status.rs, case.rs, evidence.rs,
+src/commands/         one module per command group (status.rs, doctor.rs, case.rs, evidence.rs,
                       reconstruction.rs); each renders its own human and JSON output
 tests/support/        std-only mock HTTP server (method routing, per-route delays, request
                       recording) and fixtures
 tests/status_command.rs   status behaviour against mock APIs (library level)
+tests/doctor_command.rs   doctor checklist against mock APIs, incl. read-only and skip behaviour
 tests/case_command.rs     case list/create/show against mock APIs (library level)
 tests/evidence_command.rs evidence ingest/list against mock APIs, incl. multipart byte checks
 tests/reconstruction_command.rs  reconstruction run/explain/compare against mock APIs
