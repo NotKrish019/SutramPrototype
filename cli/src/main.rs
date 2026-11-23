@@ -44,8 +44,23 @@ fn main() -> ExitCode {
     if wants_local_server(&cli.command) {
         autostart(&cli, &env, &runtime);
     }
-    if cli.command == Command::Shell {
-        return yukti_cli::shell::run_interactive(&cli, &env, &runtime);
+    match &cli.command {
+        Command::Shell => return yukti_cli::shell::run_interactive(&cli, &env, &runtime),
+        Command::Demo(args) => return yukti_cli::commands::demo::run(&cli, args, &env, &runtime),
+        Command::Replay(args) if !cli.json && !args.no_animate && env.terminal.stdout_tty => {
+            let ui = Ui::resolve(cli.color, cli.ascii, &env.terminal);
+            return match yukti_cli::client_for(&cli, &env) {
+                Ok(client) => ExitCode::from(
+                    runtime.block_on(yukti_cli::commands::replay::animate(args, &client, &ui)),
+                ),
+                Err(err) => {
+                    let r = yukti_cli::output::render_error(&err, false);
+                    let _ = std::io::stderr().write_all(r.stderr.as_bytes());
+                    ExitCode::from(r.exit_code)
+                }
+            };
+        }
+        _ => {}
     }
 
     let rendered = runtime.block_on(yukti_cli::execute(&cli, &env));

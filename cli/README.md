@@ -114,6 +114,13 @@ Every command that takes `--case` also reads `YUKTI_CASE`, so `export YUKTI_CASE
 | `yukti graph neighbors --case <UUID> --entity <ID> [--depth 1-3] [--limit 1-100]` | case, then `GET …/graph/entities/:id/neighbors` | Nodes and relationships around one entity |
 | `yukti graph path --case <UUID> --from <ID> --to <ID> [--max-hops N]` | case, then `GET …/graph/path` | Relationship chain between two entities |
 | `yukti whatif --case <UUID> [--clock-offset S] [--exhibit-offset ID=S]… [--timezone TZ] [--speed-threshold KMH] [--half-width S] [--exclude-evidence ID]… [--exclude-event ID]… [--scenario-file FILE] [--name TEXT]` | case, then `POST …/what-if` | Hypothetical scenario against the baseline: appearing, disappearing and changed findings. Nothing is stored |
+| `yukti robustness --case <UUID>` (alias `breaking-point`) | case, then `GET …/robustness` | For every contradiction lead, the clock, location and threshold margins before it dissolves, each verified by recomputation, and a ROBUST / SENSITIVE / FRAGILE class. Weakest first |
+| `yukti custody verify --case <UUID>` | case, then `GET …/custody/verify` | Every stored exhibit re-hashed, ledger links checked (PostgreSQL), case seal and its QR code. Exit `7` when an exhibit fails |
+| `yukti certificate --case <UUID> [--out FILE] [--deponent …] [--designation …] [--organisation …] [--force]` | case, `GET …/custody/verify`, `GET …/evidence` | Draft Section 63 (Bharatiya Sakshya Adhiniyam, 2023) certificate: schedule of exhibits with SHA-256 and re-hash result, Part A / Part B with blanks for what YUKTI cannot know, case seal and QR. Never presented as signed |
+| `yukti challenge --case <UUID>` | case, then reconstruction, robustness, gaps and custody audit in parallel | Weaknesses as defence counsel would raise them, by a fixed ranking (integrity failures, fragile leads and high gaps, sensitive leads and widespread assumptions, context), each with what would close it |
+| `yukti ask --case <UUID> "<question>"` | case, then reconstruction, evidence, robustness and gaps | Plain-English questions (where was a number at a time, who it contacted, what happened between two times, leads, gaps, keyword search) answered by fixed rules from the evidence only, citing file, record and the timestamp as written. Refuses when the evidence does not answer. No language model |
+| `yukti replay --case <UUID> [--delay MS] [--no-animate]` | case, then reconstruction, evidence and robustness | The timeline played back event by event on a terminal map, flagging steps that are contradiction leads with their class. Prints a summary when not on a terminal |
+| `yukti demo [--fast]` | everything above | Guided demonstration on the embedded synthetic case (`data/synthetic/demo/`); pauses between steps on a terminal |
 | `yukti completions <bash\|zsh\|fish\|elvish\|powershell>` | none | Shell completion script |
 | `yukti` (no arguments, in a terminal) / `yukti shell` | per command | Interactive session; `use <uuid>` sets the working case, which is added as `--case` to every command that accepts it. Without a terminal, plain `yukti` prints usage and exits `2` |
 | `yukti server start\|stop\|status\|logs` | `GET /health` | Manage the bundled local server (see above) |
@@ -374,7 +381,7 @@ Human output follows the web workspace theme (`apps/web/tailwind.config.js`), im
 
 ### JSON schemas
 
-The schemas below are documented in detail. The newer commands each emit their own versioned document, carrying the request made and the complete response exactly as returned: `yukti.cli.doctor/v1`, `yukti.cli.config/v1`, `yukti.cli.case_overview/v1`, `yukti.cli.evidence/v1`, `yukti.cli.evidence_verify/v1`, `yukti.cli.extraction_run/v1`, `yukti.cli.extraction_result/v1`, `yukti.cli.extraction_runs/v1`, `yukti.cli.timeline/v1`, `yukti.cli.spatial/v1`, `yukti.cli.contradictions/v1`, `yukti.cli.gaps/v1`, `yukti.cli.provenance/v1`, `yukti.cli.report/v1`, `yukti.cli.graph_summary/v1`, `yukti.cli.graph_neighbors/v1`, `yukti.cli.graph_path/v1`, `yukti.cli.whatif/v1` and `yukti.cli.server/v1`. `yukti.cli.evidence_ingest/v1` adds `local_sha256` and `hash_match`. `yukti.cli.case_list/v1` adds `total_count` and `filters`; `count` is the number shown after filtering.
+The schemas below are documented in detail. The newer commands each emit their own versioned document, carrying the request made and the complete response exactly as returned: `yukti.cli.doctor/v1`, `yukti.cli.config/v1`, `yukti.cli.case_overview/v1`, `yukti.cli.evidence/v1`, `yukti.cli.evidence_verify/v1`, `yukti.cli.extraction_run/v1`, `yukti.cli.extraction_result/v1`, `yukti.cli.extraction_runs/v1`, `yukti.cli.timeline/v1`, `yukti.cli.spatial/v1`, `yukti.cli.contradictions/v1`, `yukti.cli.gaps/v1`, `yukti.cli.provenance/v1`, `yukti.cli.report/v1`, `yukti.cli.graph_summary/v1`, `yukti.cli.graph_neighbors/v1`, `yukti.cli.graph_path/v1`, `yukti.cli.whatif/v1`, `yukti.cli.server/v1`, `yukti.cli.robustness/v1`, `yukti.cli.custody_verify/v1`, `yukti.cli.certificate/v1`, `yukti.cli.challenge/v1`, `yukti.cli.ask/v1` and `yukti.cli.replay/v1`. `yukti.cli.evidence_ingest/v1` adds `local_sha256` and `hash_match`. `yukti.cli.case_list/v1` adds `total_count` and `filters`; `count` is the number shown after filtering.
 
 ### `yukti.cli.doctor/v1`
 
@@ -601,7 +608,8 @@ src/error.rs          CliError, exit-code contract, API error-envelope parsing
 src/output.rs         Rendered output, JSON error document
 src/commands/         one module per command group: status, doctor, config, completions, case
                       (incl. overview), evidence, reconstruction, analysis (timeline, spatial,
-                      contradictions, gaps, provenance, report), graph, whatif
+                      contradictions, gaps, provenance, report), graph, whatif, robustness,
+                      custody (verify + certificate), challenge, ask, replay, demo
 tests/support/        std-only mock HTTP server (method routing, per-route delays, request
                       recording), fixtures and the `flat` whitespace helper
 tests/status_command.rs   status behaviour against mock APIs (library level)

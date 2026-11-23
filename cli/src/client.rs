@@ -70,6 +70,16 @@ pub fn finding_provenance_path(case_id: &CaseId, finding_id: &str) -> String {
     )
 }
 
+/// `GET /api/v1/cases/:case_id/robustness`.
+pub fn case_robustness_path(case_id: &CaseId) -> String {
+    format!("{CASES_PATH}/{}/robustness", case_id.as_str())
+}
+
+/// `GET /api/v1/cases/:case_id/custody/verify`.
+pub fn case_custody_path(case_id: &CaseId) -> String {
+    format!("{CASES_PATH}/{}/custody/verify", case_id.as_str())
+}
+
 /// `POST /api/v1/cases/:case_id/what-if`.
 pub fn case_whatif_path(case_id: &CaseId) -> String {
     format!("{CASES_PATH}/{}/what-if", case_id.as_str())

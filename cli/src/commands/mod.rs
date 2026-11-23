@@ -1,13 +1,19 @@
 //! Command handlers. Each command lives in its own module and returns a [`Rendered`] result.
 
 pub mod analysis;
+pub mod ask;
 pub mod case;
+pub mod challenge;
 pub mod completions;
 pub mod config;
+pub mod custody;
+pub mod demo;
 pub mod doctor;
 pub mod evidence;
 pub mod graph;
 pub mod reconstruction;
+pub mod replay;
+pub mod robustness;
 pub mod status;
 pub mod whatif;
 
@@ -37,11 +43,18 @@ pub async fn dispatch(command: &Command, client: &ApiClient, json: bool, ui: &Ui
         Command::Report(a) => analysis::report(a, client, json, ui).await,
         Command::Graph(c) => graph::run(c, client, json, ui).await,
         Command::WhatIf(a) => whatif::run(a, client, json, ui).await,
+        Command::Robustness(a) => robustness::run(a, client, json, ui).await,
+        Command::Custody(c) => custody::run(c, client, json, ui).await,
+        Command::Certificate(a) => custody::certificate(a, client, json, ui).await,
+        Command::Challenge(a) => challenge::run(a, client, json, ui).await,
+        Command::Ask(a) => ask::run(a, client, json, ui).await,
+        Command::Replay(a) => replay::run(a, client, json, ui).await,
         // Handled before a client exists (see `crate::execute`).
         Command::Doctor
         | Command::Config
         | Command::Completions(_)
         | Command::Shell
+        | Command::Demo(_)
         | Command::Server(_) => {
             let err = CliError::Internal(format!("{command:?} cannot be dispatched to the API"));
             crate::output::render_error(&err, json)

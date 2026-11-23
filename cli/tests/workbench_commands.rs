@@ -1128,3 +1128,323 @@ async fn completions_are_generated_offline() {
         assert!(r.stdout.contains(cmd), "{cmd}");
     }
 }
+
+/* ---------------------------------------------- robustness, custody, certificate, challenge */
+
+const ROBUSTNESS_PATH: &str = "/api/v1/cases/3f2b8c1e-7a4d-4e1b-9c3a-5d6e7f8a9b0c/robustness";
+const CUSTODY_PATH: &str = "/api/v1/cases/3f2b8c1e-7a4d-4e1b-9c3a-5d6e7f8a9b0c/custody/verify";
+
+fn robustness_body() -> Value {
+    json!({
+        "case_id": fixtures::CASE_A_ID, "generated_at": "t", "total_leads": 2,
+        "robust_count": 1, "sensitive_count": 0, "fragile_count": 1,
+        "bands": {"clock_fragile_below_seconds": 120.0, "clock_robust_from_seconds": 900.0,
+                  "location_fragile_below_km": 2.0, "location_robust_from_km": 10.0},
+        "leads": [
+            {"lead_id": "lead-r", "lead_type": "SPATIAL_TRANSIT_IMPOSSIBLE", "entity_id": "+919811002233",
+             "event_a_id": "evt-a", "event_b_id": "evt-b", "same_clock": true, "distance_km": 1141.0,
+             "max_possible_elapsed_seconds": 1801.0, "speed_threshold_kmh": 180.0,
+             "breaking_points": [
+                {"dimension": "CLOCK_OFFSET", "applicable": false, "unit": "seconds", "explanation": "Both events share one device clock."},
+                {"dimension": "LOCATION_ERROR", "applicable": true, "margin": 1050.9, "unit": "km", "explanation": "Holds unless locations are wrong by more than 1050.9 km."},
+                {"dimension": "SPEED_THRESHOLD", "applicable": true, "margin": 2280.0, "unit": "km/h", "explanation": "Raise to 2280 km/h."}],
+             "robustness_class": "ROBUST", "assumption_dependencies": ["COORDINATES_INFERRED_FROM_TOWER_ID"],
+             "boundary_verified": true, "verdict": "ROBUST: survives every realistic error."},
+            {"lead_id": "lead-f", "lead_type": "SPATIAL_TRANSIT_IMPOSSIBLE", "entity_id": "+919811002233",
+             "event_a_id": "evt-c", "event_b_id": "evt-a", "same_clock": false, "distance_km": 19.8,
+             "max_possible_elapsed_seconds": 291.0, "speed_threshold_kmh": 180.0,
+             "breaking_points": [
+                {"dimension": "CLOCK_OFFSET", "applicable": true, "margin": 105.0, "unit": "seconds", "explanation": "Holds unless clocks disagree by more than 105 s."},
+                {"dimension": "LOCATION_ERROR", "applicable": true, "margin": 5.26, "unit": "km", "explanation": "Holds unless locations are wrong by more than 5.26 km."},
+                {"dimension": "SPEED_THRESHOLD", "applicable": true, "margin": 245.0, "unit": "km/h", "explanation": "Raise to 245 km/h."}],
+             "robustness_class": "FRAGILE", "assumption_dependencies": [],
+             "boundary_verified": true, "verdict": "FRAGILE: an ordinary error could dissolve this lead."}
+        ],
+        "disclaimer": "Bands are triage aids, not probabilities."
+    })
+}
+
+fn custody_body(status: &str, stored: &str) -> Value {
+    json!({
+        "case_id": fixtures::CASE_A_ID, "audited_at": "t", "status": status,
+        "ledger_mode": "FILESYSTEM_NO_LEDGER", "exhibit_count": 1,
+        "verified_count": if status == "VERIFIED" { 1 } else { 0 },
+        "failed_count": if status == "VERIFIED" { 0 } else { 1 },
+        "case_seal_sha256": "ab".repeat(32), "seal_recipe": "SHA-256 over ...",
+        "exhibits": [{"evidence_id": fixtures::RECEIPT_CSV_ID, "original_filename": "cdr.csv",
+                      "recorded_sha256": "cd".repeat(32), "stored_file": stored,
+                      "ledger": {"available": false, "entry_count": 0, "hashes_matched": 0, "hashes_not_reproducible": 0, "entries": []},
+                      "verified": status == "VERIFIED"}],
+        "disclaimer": "Supports, does not replace, the certificate."
+    })
+}
+
+#[tokio::test]
+async fn robustness_shows_weakest_leads_first_with_verified_boundaries() {
+    let server = with_case(vec![Route::json(
+        ROBUSTNESS_PATH,
+        200,
+        &robustness_body().to_string(),
+    )]);
+    let r = yukti(
+        &server.base_url,
+        &["robustness", "--case", fixtures::CASE_A_ID],
+    )
+    .await;
+    assert_eq!(r.exit_code, 0, "{}", r.stderr);
+    let fragile = r.stdout.find("FRAGILE  SPATIAL").unwrap();
+    let robust = r.stdout.find("ROBUST  SPATIAL").unwrap();
+    assert!(fragile < robust, "weakest first:\n{}", r.stdout);
+    assert_has(
+        &r.stdout,
+        &[
+            "2 leads │ 1 robust │ 0 sensitive │ 1 fragile",
+            "Clock",
+            "1 min 45 s",
+            "not applicable",
+            "Both events share one device clock.",
+            "1050.90 km",
+            "rests on: COORDINATES_INFERRED_FROM_TOWER_ID",
+            "boundary verified",
+            "one exhibit, one clock",
+        ],
+    );
+    let alias = yukti(
+        &server.base_url,
+        &["breaking-point", "--case", fixtures::CASE_A_ID, "--json"],
+    )
+    .await;
+    let v = parse(&alias);
+    assert_eq!(v["schema"], "yukti.cli.robustness/v1");
+    assert_eq!(v["response"], robustness_body());
+}
+
+#[tokio::test]
+async fn custody_verify_seals_the_case_and_exits_seven_on_failure() {
+    let ok = with_case(vec![Route::json(
+        CUSTODY_PATH,
+        200,
+        &custody_body("VERIFIED", "VERIFIED_MATCH").to_string(),
+    )]);
+    let r = yukti(
+        &ok.base_url,
+        &["custody", "verify", "--case", fixtures::CASE_A_ID],
+    )
+    .await;
+    assert_eq!(r.exit_code, 0);
+    assert_has(
+        &r.stdout,
+        &[
+            "✓ VERIFIED",
+            "✓ VERIFIED_MATCH cdr.csv",
+            "no ledger",
+            &"ab".repeat(32),
+            "scan to read the seal",
+        ],
+    );
+    let bad = with_case(vec![Route::json(
+        CUSTODY_PATH,
+        200,
+        &custody_body("FAILED", "HASH_MISMATCH").to_string(),
+    )]);
+    let r = yukti(
+        &bad.base_url,
+        &["custody", "verify", "--case", fixtures::CASE_A_ID],
+    )
+    .await;
+    assert_eq!(r.exit_code, 7);
+    assert_has(&r.stdout, &["✕ FAILED", "✕ HASH_MISMATCH"]);
+}
+
+#[tokio::test]
+async fn certificate_is_a_draft_with_every_exhibit_and_the_seal() {
+    let server = with_case(vec![
+        Route::json(
+            CUSTODY_PATH,
+            200,
+            &custody_body("VERIFIED", "VERIFIED_MATCH").to_string(),
+        ),
+        Route::json(
+            EVIDENCE_LIST_PATH,
+            200,
+            &format!("[{}]", fixtures::RECEIPT_CSV),
+        ),
+    ]);
+    let out = scratch("certificate.md", b"");
+    std::fs::remove_file(&out).unwrap();
+    let r = yukti(
+        &server.base_url,
+        &[
+            "certificate",
+            "--case",
+            fixtures::CASE_A_ID,
+            "--out",
+            out.to_str().unwrap(),
+            "--deponent",
+            "Insp. Demo",
+        ],
+    )
+    .await;
+    assert_eq!(r.exit_code, 0, "{}", r.stderr);
+    let md = std::fs::read_to_string(&out).unwrap();
+    assert!(md.contains("BHARATIYA SAKSHYA ADHINIYAM, 2023"));
+    assert!(md.contains("DRAFT prepared by YUKTI"));
+    assert!(md.contains("cdr.csv"));
+    assert!(md.contains(fixtures::RECEIPT_CSV_SHA));
+    assert!(md.contains(&"ab".repeat(32)));
+    assert!(md.contains("Insp. Demo"));
+    assert_has(&r.stdout, &["◐ DRAFT", "WRITTEN markdown"]);
+    let again = yukti(
+        &server.base_url,
+        &[
+            "certificate",
+            "--case",
+            fixtures::CASE_A_ID,
+            "--out",
+            out.to_str().unwrap(),
+        ],
+    )
+    .await;
+    assert_eq!(again.exit_code, 2, "never overwrites without --force");
+}
+
+#[tokio::test]
+async fn challenge_lists_integrity_failures_first() {
+    let recon = json!({"case_id": fixtures::CASE_A_ID, "timeline": timeline_body(), "spatial": spatial_body(),
+                       "contradictions": contradictions_body(), "export_safeguard": {"status": "BLOCKED", "reasons": []}});
+    let server = with_case(vec![
+        Route::json(RECON_PATH, 200, &recon.to_string()),
+        Route::json(ROBUSTNESS_PATH, 200, &robustness_body().to_string()),
+        Route::json(
+            GAPS_PATH,
+            200,
+            &json!({"gaps": [gap("g-1", "HIGH")]}).to_string(),
+        ),
+        Route::json(
+            CUSTODY_PATH,
+            200,
+            &custody_body("FAILED", "HASH_MISMATCH").to_string(),
+        ),
+    ]);
+    let r = yukti(
+        &server.base_url,
+        &["challenge", "--case", fixtures::CASE_A_ID],
+    )
+    .await;
+    assert_eq!(r.exit_code, 0, "{}", r.stderr);
+    let critical = r.stdout.find("CRITICAL").unwrap();
+    let high = r.stdout.find("HIGH  ").unwrap();
+    assert!(critical < high, "{}", r.stdout);
+    assert_has(
+        &r.stdout,
+        &[
+            "Is exhibit cdr.csv the file that was seized?",
+            "Couldn't an ordinary clock or location error explain the lead evt-c -> evt-a?",
+            "rests on one record",
+            "TIMEZONE_NOT_DECLARED_ON_EVENT",
+        ],
+    );
+    let v = parse(
+        &yukti(
+            &server.base_url,
+            &["challenge", "--case", fixtures::CASE_A_ID, "--json"],
+        )
+        .await,
+    );
+    assert_eq!(v["schema"], "yukti.cli.challenge/v1");
+    assert_eq!(v["weaknesses"][0]["severity"], "CRITICAL");
+}
+
+#[tokio::test]
+async fn ask_answers_with_sources_and_refuses_without_evidence() {
+    let recon = json!({"case_id": fixtures::CASE_A_ID, "timeline": timeline_body()});
+    let server = with_case(vec![
+        Route::json(RECON_PATH, 200, &recon.to_string()),
+        Route::json(
+            EVIDENCE_LIST_PATH,
+            200,
+            &format!("[{}]", fixtures::RECEIPT_CSV),
+        ),
+    ]);
+    let r = yukti(
+        &server.base_url,
+        &[
+            "ask",
+            "--case",
+            fixtures::CASE_A_ID,
+            "what",
+            "happened",
+            "between",
+            "16:10",
+            "and",
+            "16:21",
+        ],
+    )
+    .await;
+    assert_eq!(r.exit_code, 0, "{}", r.stderr);
+    assert_has(
+        &r.stdout,
+        &["2 event(s) between 16:10 and 16:21", "source: cdr.csv"],
+    );
+    let none = yukti(
+        &server.base_url,
+        &["ask", "--case", fixtures::CASE_A_ID, "what was the motive"],
+    )
+    .await;
+    assert_has(
+        &none.stdout,
+        &[
+            "No ingested evidence answers this question",
+            "does not guess",
+        ],
+    );
+    let v = parse(
+        &yukti(
+            &server.base_url,
+            &[
+                "ask",
+                "--case",
+                fixtures::CASE_A_ID,
+                "--json",
+                "any contradictions",
+            ],
+        )
+        .await,
+    );
+    assert_eq!(v["schema"], "yukti.cli.ask/v1");
+    assert_eq!(v["answer"]["intent"]["kind"], "leads");
+}
+
+#[tokio::test]
+async fn replay_prints_a_summary_when_not_animating() {
+    let recon = json!({"case_id": fixtures::CASE_A_ID, "timeline": timeline_body()});
+    let server = with_case(vec![
+        Route::json(RECON_PATH, 200, &recon.to_string()),
+        Route::json(EVIDENCE_LIST_PATH, 200, &format!("[{}]", fixtures::RECEIPT_CSV)),
+        Route::json(ROBUSTNESS_PATH, 200, &json!({"leads": [{"event_a_id": "evt-a", "event_b_id": "evt-b", "robustness_class": "FRAGILE", "verdict": "FRAGILE: x"}]}).to_string()),
+    ]);
+    let r = yukti(
+        &server.base_url,
+        &["replay", "--case", fixtures::CASE_A_ID, "--no-animate"],
+    )
+    .await;
+    assert_eq!(r.exit_code, 0, "{}", r.stderr);
+    assert_has(
+        &r.stdout,
+        &[
+            "▌ YUKTI │ REPLAY",
+            "event 3 of 3",
+            "ALL EVENTS 3",
+            "▲ 2. 16:20",
+        ],
+    );
+}
+
+#[tokio::test]
+async fn interactive_commands_refuse_to_run_in_process() {
+    for cmd in [vec!["demo"], vec!["shell"]] {
+        let r = yukti(&unused_base_url(), &cmd).await;
+        assert_eq!(r.exit_code, 2, "{cmd:?}");
+        assert!(r.stderr.contains("interactive"), "{}", r.stderr);
+    }
+}

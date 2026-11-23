@@ -149,6 +149,100 @@ pub enum Command {
     /// Start, stop and inspect the local YUKTI server bundled with installed builds
     #[command(subcommand)]
     Server(ServerCommand),
+
+    /// Breaking-point analysis: how wrong an assumption must be before each lead dissolves
+    #[command(visible_alias = "breaking-point")]
+    Robustness(CaseArgs),
+
+    /// Chain-of-custody checks: re-hash stored exhibits, check the ledger, compute the case seal
+    #[command(subcommand)]
+    Custody(CustodyCommand),
+
+    /// Draft the Section 63 (Bharatiya Sakshya Adhiniyam, 2023) certificate for the case's exhibits
+    Certificate(CertificateArgs),
+
+    /// Defence-counsel view: the weakest points of the case first, with how to close each one
+    Challenge(CaseArgs),
+
+    /// Ask a question in plain English; answers cite evidence and refuse when there is none
+    Ask(AskArgs),
+
+    /// Replay the reconstructed timeline as an animation with a movement map
+    Replay(ReplayArgs),
+
+    /// Run a guided demonstration on a synthetic case (starts the local server if needed)
+    Demo(DemoArgs),
+}
+
+/// `yukti custody ...` subcommands.
+#[derive(Debug, Clone, PartialEq, Eq, Subcommand)]
+pub enum CustodyCommand {
+    /// Re-hash every stored exhibit, check the custody ledger and print the case seal
+    Verify(CaseArgs),
+}
+
+/// Arguments of `yukti certificate`.
+#[derive(Debug, Clone, PartialEq, Eq, Args)]
+pub struct CertificateArgs {
+    /// Case UUID [env: YUKTI_CASE]
+    #[arg(long = "case", value_name = "UUID", env = ENV_CASE, hide_env = true)]
+    pub case_id: String,
+
+    /// Write the draft certificate (markdown) to this file
+    #[arg(long, value_name = "FILE")]
+    pub out: Option<PathBuf>,
+
+    /// Replace --out if it already exists
+    #[arg(long)]
+    pub force: bool,
+
+    /// Name of the person giving Part A (left blank to fill by hand)
+    #[arg(long, value_name = "NAME")]
+    pub deponent: Option<String>,
+
+    /// Designation of that person
+    #[arg(long, value_name = "TEXT")]
+    pub designation: Option<String>,
+
+    /// Organisation or police station
+    #[arg(long, value_name = "TEXT")]
+    pub organisation: Option<String>,
+}
+
+/// Arguments of `yukti ask`.
+#[derive(Debug, Clone, PartialEq, Eq, Args)]
+pub struct AskArgs {
+    /// Case UUID [env: YUKTI_CASE]
+    #[arg(long = "case", value_name = "UUID", env = ENV_CASE, hide_env = true)]
+    pub case_id: String,
+
+    /// The question, e.g. "where was 9811002233 at 9 pm"
+    #[arg(value_name = "QUESTION", required = true, num_args = 1..)]
+    pub question: Vec<String>,
+}
+
+/// Arguments of `yukti replay`.
+#[derive(Debug, Clone, PartialEq, Eq, Args)]
+pub struct ReplayArgs {
+    /// Case UUID [env: YUKTI_CASE]
+    #[arg(long = "case", value_name = "UUID", env = ENV_CASE, hide_env = true)]
+    pub case_id: String,
+
+    /// Milliseconds between events in the animation (0-5000)
+    #[arg(long, value_name = "MS", default_value_t = 700, value_parser = clap::value_parser!(u64).range(0..=5000))]
+    pub delay: u64,
+
+    /// Print the whole replay at once instead of animating
+    #[arg(long)]
+    pub no_animate: bool,
+}
+
+/// Arguments of `yukti demo`.
+#[derive(Debug, Clone, PartialEq, Eq, Args)]
+pub struct DemoArgs {
+    /// Do not pause between steps
+    #[arg(long)]
+    pub fast: bool,
 }
 
 /// `yukti server ...` subcommands.

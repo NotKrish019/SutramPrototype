@@ -39,9 +39,10 @@ async fn execute_with_ui(cli: &Cli, env: &EnvVars, ui: &Ui) -> Rendered {
             return commands::doctor::run(cli.api_url.as_deref(), cli.timeout, env, cli.json).await
         }
         Command::Completions(args) => return commands::completions::run(args),
-        Command::Shell => {
+        Command::Shell | Command::Demo(_) => {
             let err = CliError::InvalidArgument(
-                "`yukti shell` is interactive and runs only from the yukti binary".to_string(),
+                "`yukti shell` and `yukti demo` are interactive and run only from the yukti binary"
+                    .to_string(),
             );
             return output::render_error(&err, cli.json);
         }
@@ -62,4 +63,10 @@ async fn execute_with_ui(cli: &Cli, env: &EnvVars, ui: &Ui) -> Rendered {
         return server::run(command, &config, &client, cli.json, ui).await;
     }
     commands::dispatch(&cli.command, &client, cli.json, ui).await
+}
+
+/// Resolves the configuration and builds an API client (for commands that stream output).
+pub fn client_for(cli: &Cli, env: &EnvVars) -> Result<ApiClient, CliError> {
+    let config = Config::resolve(cli.api_url.as_deref(), cli.timeout, env)?;
+    ApiClient::new(&config)
 }

@@ -263,17 +263,17 @@ fn finding_line(f: &Value, glyph: Glyph, tone: Tone, sign: &str, ui: &Ui) -> Str
     );
     let rail = ui.paint(Tone::Line, ui.g(Glyph::Rail));
     let cont = format!("{MARGIN}{rail}   ");
-    out.push_str(&format!(
-        "{cont}{}\n",
-        ui.paint(
-            Tone::Muted,
-            &format!(
-                "entity {}  {}  events {}",
-                short_id(&s("entity_id"), ui),
-                ui.g(Glyph::Dot),
-                events.join(", ")
-            )
-        )
+    out.push_str(&ui.hang(
+        &cont,
+        &cont,
+        MARGIN.len() + 4,
+        Tone::Muted,
+        &format!(
+            "entity {}  {}  events {}",
+            short_id(&s("entity_id"), ui),
+            ui.g(Glyph::Dot),
+            events.join(", ")
+        ),
     ));
     let summary = s("summary");
     if !summary.is_empty() {
