@@ -197,10 +197,13 @@ fn call(method: &str, path: &str) -> (String, String) {
     (method.to_string(), path.to_string())
 }
 
+/// Every needle appears in the output, ignoring how whitespace wraps or aligns it.
 fn assert_contains(haystack: &str, needles: &[&str]) {
+    // Card rails (│) start wrapped continuation lines; they are layout, not text.
+    let flat_haystack = support::flat(&haystack.replace('│', " "));
     for needle in needles {
         assert!(
-            haystack.contains(needle),
+            flat_haystack.contains(&support::flat(needle)),
             "missing {needle:?} in\n{haystack}"
         );
     }
@@ -234,19 +237,20 @@ async fn run_checks_the_case_then_posts_an_empty_request_and_summarises_the_resu
         &r.stdout,
         &[
             &format!("Reconstruction completed for case {}", fixtures::CASE_A_ID),
-            &format!("POST {RECON_PATH} -> HTTP 200"),
-            "Run ID            not returned by the API",
+            &format!("POST {RECON_PATH} → HTTP 200"),
+            "run ID not returned by the API",
             &format!("Case ID (server)  {}", fixtures::CASE_A_ID),
-            "2 event(s): 2 strictly ordered, 0 concurrent/uncertain; 1 excluded; 0 overlapping pair(s)",
+            "2 event(s): 2 strictly ordered, 0 concurrent/uncertain 1 excluded · 0 overlapping pair(s)",
             "1 trajectory(ies), 1 movement segment(s) (1 exceed the configured speed threshold), 0 spatial-temporal overlap(s)",
             "1 lead(s) from 1 evaluated segment(s), 1 flagged",
             "2 labelled assumption(s) on 2 event(s)",
-            "Export safeguard  BLOCKED",
-            &format!("  - {SAFEGUARD_REASON}"),
-            "TIMEZONE_NOT_DECLARED_ON_EVENT: source_timezone = \"UTC\" on 2 event(s)",
+            "Export safeguard ✕ BLOCKED",
+            &format!("▲ {SAFEGUARD_REASON}"),
+            "◆ TIMEZONE_NOT_DECLARED_ON_EVENT source_timezone = \"UTC\" on 2 event(s)",
             ASSUMPTION_BASIS,
-            "evt-x (evidence 7c2d1e3f-9a4b-4c5d-8e6f-2b3c4d5e6f7a): Unknown timezone 'Mars/Olympus'",
-            "lead-0001 SPATIAL_TRANSIT_IMPOSSIBLE entity +919811002233: event evt-a -> event evt-b",
+            "evt-x evidence 7c2d1e3f… Unknown timezone 'Mars/Olympus'",
+            "▲ SPATIAL_TRANSIT_IMPOSSIBLE lead-0001",
+            "entity +919811002233 · event evt-a → event evt-b",
             "do not constitute conclusive proof",
             LIMITATION_NO_RUN_ID,
             LIMITATION_PERSISTENCE_NOT_REPORTED,
@@ -518,24 +522,25 @@ async fn explain_shows_the_reconstruction_report_and_provenance_limitation() {
             LIMITATION_PROVENANCE_UNKNOWN,
             LIMITATION_REPORT_SEPARATE,
             // Timeline.
-            "2026-11-10T16:15:12Z  EXACT_SECOND  STRICTLY_ORDERED  event evt-a",
-            "description: Cell tower handover",
+            "2026-11-10T16:15:12Z 1s window STRICTLY_ORDERED #1",
+            "event evt-a · evidence 5b1f0c2e… · EXACT_SECOND",
+            "Cell tower handover",
             // Assumptions, with the events they apply to.
-            "events: evt-a, evt-b",
+            "events evt-a, evt-b",
             // Excluded events.
             "Unknown timezone 'Mars/Olympus'",
             // Spatial findings.
-            "entity +919811002233: 2 waypoint(s), 1 segment(s), 1153.200 km total",
+            "entity +919811002233 2 waypoint(s), 1 segment(s), 1153.200 km total",
             "EXCEEDS_CONFIGURED_THRESHOLD",
             // Contradiction leads with their limitations.
             LEAD_EXPLANATION,
-            &format!("* {LEAD_LIMITATION}"),
+            &format!("◆ {LEAD_LIMITATION}"),
             // Export safeguard and judicial report.
-            &format!("  - {SAFEGUARD_REASON}"),
-            "Judicial export   SHIP_EXPORT_BLOCKED",
+            &format!("▲ {SAFEGUARD_REASON}"),
+            "Judicial export ✕ SHIP_EXPORT_BLOCKED",
             "Report ID         0b9d7c1e-5a4f-5e3d-8c2b-1a0f9e8d7c6b",
             DOSSIER,
-            "----- end of dossier -----",
+            "end of dossier",
         ],
     );
 }
@@ -592,8 +597,9 @@ async fn a_failed_report_is_shown_as_unavailable_with_the_reconstruction_kept() 
     assert_contains(
         &human.stdout,
         &[
-            "Export safeguard  BLOCKED",
-            &format!("Judicial report (GET {REPORT_PATH}): UNAVAILABLE"),
+            "Export safeguard ✕ BLOCKED",
+            &format!("JUDICIAL REPORT GET {REPORT_PATH}"),
+            "Status ✕ UNAVAILABLE",
         ],
     );
     assert!(

@@ -195,6 +195,7 @@ async fn invalid_configuration_is_a_failed_check_with_exit_two() {
     let env = EnvVars {
         api_url: Some("ftp://example.com".into()),
         timeout_secs: None,
+        ..EnvVars::default()
     };
     let r = doctor_with_env(&[], &env).await;
     assert_eq!(r.exit_code, 2, "{}", r.stdout);
@@ -213,6 +214,7 @@ async fn environment_url_is_reported_as_the_source() {
     let env = EnvVars {
         api_url: Some(server.base_url.clone()),
         timeout_secs: Some("7".into()),
+        ..EnvVars::default()
     };
     let r = doctor_with_env(&[], &env).await;
     assert_eq!(r.exit_code, 0, "{}", r.stdout);

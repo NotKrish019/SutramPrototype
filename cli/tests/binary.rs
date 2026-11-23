@@ -150,7 +150,11 @@ fn case_commands_use_env_configuration_and_real_exit_codes() {
 
     let list = yukti(&["case", "list"], &env);
     assert_eq!(code(&list), 0);
-    assert_eq!(stdout(&list), "No cases returned by the API.\n");
+    assert!(stdout(&list).contains("\n  No cases returned by the API.\n"));
+    assert!(
+        !stdout(&list).contains('\x1b'),
+        "no colour when stdout is not a terminal"
+    );
     assert!(stderr(&list).contains("warning: The API is running without PostgreSQL"));
 
     let missing = yukti(

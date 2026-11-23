@@ -4,7 +4,7 @@ mod support;
 
 use clap::Parser;
 use serde_json::Value;
-use support::{fixtures, unused_base_url, MockServer, Route};
+use support::{fixtures, flat, unused_base_url, MockServer, Route};
 use yukti_cli::cli::Cli;
 use yukti_cli::config::EnvVars;
 use yukti_cli::output::Rendered;
@@ -44,11 +44,13 @@ async fn ready_api_exits_zero_and_reports_connected_dependencies() {
     assert_eq!(r.exit_code, 0, "{}", r.stdout);
     assert!(r
         .stdout
-        .contains("reachable (GET /health -> HTTP 200, service sutram-backend-rust)"));
-    assert!(r.stdout.contains("ready (GET /health/ready -> HTTP 200)"));
-    assert!(r.stdout.contains("  Database    connected"));
-    assert!(r.stdout.contains("  Graph       connected"));
-    assert!(r.stdout.contains("(exit 0)"));
+        .contains("✓ REACHABLE  GET /health → HTTP 200  service sutram-backend-rust"));
+    assert!(r
+        .stdout
+        .contains("Readiness         ✓ READY  GET /health/ready → HTTP 200"));
+    assert!(r.stdout.contains("  Database          ✓ connected"));
+    assert!(r.stdout.contains("  Graph             ✓ connected"));
+    assert!(r.stdout.contains("\n  exit 0\n"));
 }
 
 #[tokio::test]
@@ -61,8 +63,8 @@ async fn degraded_api_exits_zero_and_never_claims_a_connection() {
         .stdout
         .contains("not configured (filesystem mode, no PostgreSQL)"));
     assert!(r.stdout.contains("disabled (Neo4j not configured)"));
-    assert!(!r.stdout.contains("Database    connected"));
-    assert!(!r.stdout.contains("Graph       connected"));
+    assert!(!r.stdout.contains("Database          ✓ connected"));
+    assert!(!r.stdout.contains("Graph             ✓ connected"));
 
     let (v, code) = status_json(&server.base_url).await;
     assert_eq!(code, 0);
@@ -90,7 +92,7 @@ async fn not_ready_is_exit_five_and_shows_the_api_error() {
     assert_eq!(r.exit_code, 5);
     assert!(r
         .stdout
-        .contains("NOT READY (GET /health/ready -> HTTP 503)"));
+        .contains("✕ NOT READY  GET /health/ready → HTTP 503"));
     assert!(r.stdout.contains("DISCONNECTED"));
     assert!(r.stdout.contains("Database error: pool timed out"));
     assert!(r
@@ -122,9 +124,9 @@ async fn unreachable_api_is_exit_three() {
     assert_eq!(r.exit_code, 3);
     assert!(r
         .stdout
-        .contains("UNREACHABLE (GET /health -> no response)"));
-    assert!(r.stdout.contains("Readiness     not checked"));
-    assert!(r.stdout.contains("cannot reach the YUKTI API"));
+        .contains("✕ UNREACHABLE  GET /health → no response"));
+    assert!(r.stdout.contains("Readiness         not checked"));
+    assert!(flat(&r.stdout).contains("cannot reach the YUKTI API"));
 
     let (v, code) = status_json(&url).await;
     assert_eq!(code, 3);
@@ -153,10 +155,8 @@ async fn health_http_errors_map_to_exit_four_and_five() {
     assert_eq!(r.exit_code, 4);
     assert!(r
         .stdout
-        .contains("health check FAILED (GET /health -> HTTP 404)"));
-    assert!(r
-        .stdout
-        .contains("HTTP 404 (NOT_FOUND): no such route in mock"));
+        .contains("✕ HEALTH CHECK FAILED  GET /health → HTTP 404"));
+    assert!(flat(&r.stdout).contains("HTTP 404 (NOT_FOUND): no such route in mock"));
 
     let broken = api(
         Route::json(
@@ -188,8 +188,8 @@ async fn html_from_the_web_app_is_exit_six_with_a_hint() {
     )]);
     let r = status(&web_app.base_url, &[]).await;
     assert_eq!(r.exit_code, 6);
-    assert!(r.stdout.contains("not valid JSON"));
-    assert!(r.stdout.contains("pointing at the web app"));
+    assert!(flat(&r.stdout).contains("not valid JSON"));
+    assert!(flat(&r.stdout).contains("pointing at the web app"));
 }
 
 #[tokio::test]
@@ -245,7 +245,7 @@ async fn readiness_problems_are_distinguished() {
     let r = status(&unknown.base_url, &[]).await;
     assert_eq!(r.exit_code, 6);
     assert!(r.stdout.contains("UNKNOWN"));
-    assert!(r.stdout.contains("unknown readiness status \"warming_up\""));
+    assert!(flat(&r.stdout).contains("unknown readiness status \"warming_up\""));
 
     // Plain-text 502 from a proxy: server error.
     let proxy = api(

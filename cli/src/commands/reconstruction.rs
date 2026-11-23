@@ -21,11 +21,12 @@ use serde_json::Value;
 use crate::cli::{ReconstructionArgs, ReconstructionCommand};
 use crate::client::{case_reconstruction_path, case_report_path, ApiClient};
 use crate::dto::{
-    AssumptionDto, CaseId, CaseRecord, CaseReportRecord, ReconstructionRecord,
-    ReconstructionResult, TriggerReconstructionRequest,
+    AssumptionDto, CaseId, CaseRecord, CaseReportRecord, ContradictionsDto, ReconstructionRecord,
+    ReconstructionResult, SpatialDto, TimelineDto, TimelineEntryDto, TriggerReconstructionRequest,
 };
 use crate::error::{exit, CliError, ErrorInfo};
 use crate::output::{render_error_with_notes, render_warnings, to_json, Rendered};
+use crate::ui::{pad, short_id, status_badge, Badge, Glyph, Tone, Ui, MARGIN};
 
 /// Schema of the `reconstruction run` JSON document.
 pub const RECONSTRUCTION_RUN_SCHEMA: &str = "yukti.cli.reconstruction_run/v1";
@@ -50,10 +51,15 @@ pub const LIMITATION_REPORT_SEPARATE: &str = "The judicial report is generated b
 const PROVENANCE_UNKNOWN: &str = "unknown_stored_or_computed_on_the_fly";
 
 /// Runs a `reconstruction` subcommand.
-pub async fn run(command: &ReconstructionCommand, client: &ApiClient, json: bool) -> Rendered {
+pub async fn run(
+    command: &ReconstructionCommand,
+    client: &ApiClient,
+    json: bool,
+    ui: &Ui,
+) -> Rendered {
     match command {
-        ReconstructionCommand::Run(args) => run_reconstruction(args, client, json).await,
-        ReconstructionCommand::Explain(args) => explain(args, client, json).await,
+        ReconstructionCommand::Run(args) => run_reconstruction(args, client, json, ui).await,
+        ReconstructionCommand::Explain(args) => explain(args, client, json, ui).await,
         ReconstructionCommand::Compare(args) => compare(args, json),
     }
 }
@@ -112,18 +118,7 @@ async fn preflight(
     json: bool,
     action: &str,
 ) -> Result<(CaseId, CaseRecord), Rendered> {
-    let case_id = CaseId::parse(&args.case_id, "--case")
-        .map_err(|e| render_error_with_notes(&e, json, &[]))?;
-    match client.get_case(&case_id).await {
-        Ok(case) => Ok((case_id, case)),
-        Err(err) => {
-            let note = format!(
-                "Nothing was {action}: the case check for {} failed.",
-                case_id.as_str()
-            );
-            Err(render_error_with_notes(&err, json, &[note]))
-        }
-    }
+    super::require_case(&args.case_id, client, json, action).await
 }
 
 /// Warnings about the case and the reconstruction's identity and content.
@@ -132,13 +127,9 @@ fn reconstruction_warnings(
     case: &CaseRecord,
     result: &ReconstructionResult,
 ) -> Vec<String> {
-    let mut warnings = Vec::new();
-    if case.dto.has_filesystem_placeholder_marker() {
-        warnings.push(format!(
-            "Case {} is a filesystem placeholder record (metadata.storage = \"filesystem\"), not a registered case.",
-            case_id.as_str()
-        ));
-    }
+    let mut warnings: Vec<String> = super::placeholder_warning(case_id, case)
+        .into_iter()
+        .collect();
     match result.case_id.as_deref() {
         None => warnings.push(
             "The reconstruction response does not name a case_id, so it cannot be matched to the requested case.".to_string(),
@@ -161,15 +152,6 @@ fn reconstruction_warnings(
     warnings
 }
 
-fn row(out: &mut String, label: &str, value: &str) {
-    out.push_str(&format!("{label:<18}{value}\n"));
-}
-
-/// A [`row`] indented under a section heading, with its value column kept aligned.
-fn sub_row(out: &mut String, label: &str, value: &str) {
-    out.push_str(&format!("  {label:<18}{value}\n"));
-}
-
 fn server_case_id(result: &ReconstructionResult) -> String {
     result
         .case_id
@@ -178,25 +160,66 @@ fn server_case_id(result: &ReconstructionResult) -> String {
 }
 
 /// The headline counts and the export safeguard.
-pub fn render_summary(result: &ReconstructionResult) -> String {
+pub fn render_summary(result: &ReconstructionResult, ui: &Ui) -> String {
     let s = ReconstructionSummary::of(result);
-    let mut out = String::new();
-    row(&mut out, "Case ID (server)", &server_case_id(result));
-    row(
-        &mut out,
+    let dot = ui.g(Glyph::Dot);
+    let mut out = String::from("\n");
+    out.push_str(&ui.stats(&[
+        (s.timeline_total_events.to_string(), "events", Tone::Strong),
+        (
+            s.spatial_movement_segments.to_string(),
+            "movements",
+            Tone::Muted,
+        ),
+        (
+            s.assumptions.to_string(),
+            "assumptions",
+            if s.assumptions > 0 {
+                Tone::Warn
+            } else {
+                Tone::Muted
+            },
+        ),
+        (
+            s.contradiction_leads.to_string(),
+            "leads",
+            if s.contradiction_leads > 0 {
+                Tone::Flag
+            } else {
+                Tone::Muted
+            },
+        ),
+    ]));
+    out.push_str(&ui.section("Summary", ""));
+    out.push_str(&ui.kv("Case ID (server)", Tone::Text, &server_case_id(result)));
+    let total = s.timeline_total_events.max(1) as f64;
+    out.push_str(&ui.kv_painted(
         "Timeline",
         &format!(
-            "{} event(s): {} strictly ordered, {} concurrent/uncertain; {} excluded; {} overlapping pair(s)",
-            s.timeline_total_events,
-            s.timeline_strictly_ordered,
-            s.timeline_concurrent_uncertain,
-            s.timeline_excluded_events,
-            s.timeline_overlap_pairs
+            "{}  {}",
+            ui.meter(s.timeline_strictly_ordered as f64 / total, 16, Tone::Ok),
+            ui.paint(
+                Tone::Text,
+                &format!(
+                    "{} event(s): {} strictly ordered, {} concurrent/uncertain",
+                    s.timeline_total_events,
+                    s.timeline_strictly_ordered,
+                    s.timeline_concurrent_uncertain
+                )
+            )
         ),
-    );
-    row(
-        &mut out,
+    ));
+    out.push_str(&ui.kv(
+        "",
+        Tone::Muted,
+        &format!(
+            "{} excluded {dot} {} overlapping pair(s)",
+            s.timeline_excluded_events, s.timeline_overlap_pairs
+        ),
+    ));
+    out.push_str(&ui.kv(
         "Spatial",
+        Tone::Text,
         &format!(
             "{} trajectory(ies), {} movement segment(s) ({} exceed the configured speed threshold), {} spatial-temporal overlap(s)",
             s.spatial_trajectories,
@@ -204,41 +227,63 @@ pub fn render_summary(result: &ReconstructionResult) -> String {
             s.spatial_segments_exceeding_speed_threshold,
             s.spatial_overlaps
         ),
-    );
-    row(
-        &mut out,
+    ));
+    out.push_str(&ui.kv(
         "Contradictions",
+        if s.contradiction_leads > 0 {
+            Tone::Flag
+        } else {
+            Tone::Text
+        },
         &format!(
             "{} lead(s) from {} evaluated segment(s), {} flagged",
             s.contradiction_leads,
             s.contradiction_evaluated_segments,
             s.contradiction_flagged_segments
         ),
-    );
-    row(
-        &mut out,
+    ));
+    out.push_str(&ui.kv(
         "Assumptions",
+        if s.assumptions > 0 {
+            Tone::Warn
+        } else {
+            Tone::Text
+        },
         &format!(
             "{} labelled assumption(s) on {} event(s)",
             s.assumptions, s.events_with_assumptions
         ),
-    );
-    out.push_str(&render_export_safeguard(result));
+    ));
+    out.push_str(&render_export_gate(result, ui));
     out
 }
 
-fn render_export_safeguard(result: &ReconstructionResult) -> String {
+/// The export safeguard line and its reasons. A missing safeguard reads as unknown, never clear.
+pub fn render_export_gate(result: &ReconstructionResult, ui: &Ui) -> String {
     let mut out = String::new();
     match &result.export_safeguard {
-        None => row(
-            &mut out,
+        None => out.push_str(&ui.kv_painted(
             "Export safeguard",
-            "NOT REPORTED by the API (unknown)",
-        ),
+            &format!(
+                "{}  {}",
+                ui.badge(Badge::Warn, "not reported"),
+                ui.paint(Tone::Muted, "NOT REPORTED by the API (unknown)")
+            ),
+        )),
         Some(gate) => {
-            row(&mut out, "Export safeguard", &gate.status);
+            out.push_str(&ui.kv_painted(
+                "Export safeguard",
+                &ui.badge(status_badge(&gate.status), &gate.status),
+            ));
+            let indent = MARGIN.len() + crate::ui::LABEL_WIDTH;
             for reason in &gate.reasons {
-                out.push_str(&format!("  - {reason}\n"));
+                let prefix = format!(
+                    "{}{} ",
+                    " ".repeat(indent),
+                    ui.mark(Glyph::Flag, Tone::Flag)
+                );
+                let cont = " ".repeat(indent + 2);
+                out.push_str(&ui.hang(&prefix, &cont, indent + 2, Tone::Muted, reason));
             }
         }
     }
@@ -257,80 +302,343 @@ pub fn group_assumptions(result: &ReconstructionResult) -> Vec<(&AssumptionDto, 
     groups
 }
 
-fn render_assumptions(result: &ReconstructionResult, list_events: bool) -> String {
+/// Grouped assumptions as amber `◆` items.
+pub fn render_assumptions(result: &ReconstructionResult, list_events: bool, ui: &Ui) -> String {
     let groups = group_assumptions(result);
+    let mut out = ui.section("Assumptions", "values the API used that were not observed");
     if groups.is_empty() {
-        return "\nAssumptions: none labelled by the API.\n".to_string();
+        out.push_str(&format!(
+            "{MARGIN}{}\n",
+            ui.paint(Tone::Muted, "Assumptions: none labelled by the API.")
+        ));
+        return out;
     }
-    let mut out = String::from("\nAssumptions (values the API used that were not observed):\n");
     for (a, events) in groups {
         out.push_str(&format!(
-            "  - {}: {} = {:?} on {} event(s)\n      basis: {}\n",
-            a.kind,
-            a.field,
-            a.assumed_value,
-            events.len(),
-            a.basis
+            "{MARGIN}{} {}  {}\n",
+            ui.mark(Glyph::Assumed, Tone::Warn),
+            ui.bold(Tone::Warn, &a.kind),
+            ui.paint(
+                Tone::Text,
+                &format!(
+                    "{} = {:?} on {} event(s)",
+                    a.field,
+                    a.assumed_value,
+                    events.len()
+                )
+            )
+        ));
+        let pre = format!("{MARGIN}  {}", ui.paint(Tone::Subtle, "basis   "));
+        out.push_str(&ui.hang(
+            &pre,
+            &" ".repeat(MARGIN.len() + 10),
+            MARGIN.len() + 10,
+            Tone::Muted,
+            &a.basis,
         ));
         if list_events {
-            out.push_str(&format!("      events: {}\n", events.join(", ")));
+            let pre = format!("{MARGIN}  {}", ui.paint(Tone::Subtle, "events  "));
+            out.push_str(&ui.hang(
+                &pre,
+                &" ".repeat(MARGIN.len() + 10),
+                MARGIN.len() + 10,
+                Tone::Subtle,
+                &events.join(", "),
+            ));
         }
     }
     out
 }
 
-fn render_excluded(result: &ReconstructionResult) -> String {
-    let excluded = &result.timeline.excluded_events;
+fn render_excluded(timeline: &TimelineDto, ui: &Ui) -> String {
+    let excluded = &timeline.excluded_events;
     if excluded.is_empty() {
         return String::new();
     }
-    let mut out = String::from("\nExcluded events (not placed on the timeline):\n");
+    let mut out = ui.section("Excluded events", "not placed on the timeline");
     for e in excluded {
         out.push_str(&format!(
-            "  - {} (evidence {}): {}\n",
-            e.event_id, e.source_evidence_id, e.reason
+            "{MARGIN}{} {}  {}  {}\n",
+            ui.mark(Glyph::Cross, Tone::Subtle),
+            ui.paint(Tone::Text, &e.event_id),
+            ui.paint(
+                Tone::Subtle,
+                &format!("evidence {}", short_id(&e.source_evidence_id, ui))
+            ),
+            ui.paint(Tone::Muted, &e.reason)
         ));
     }
     out
 }
 
-fn render_leads(result: &ReconstructionResult, detailed: bool) -> String {
-    let c = &result.contradictions;
-    let mut out = String::new();
+/// Contradiction leads as crimson cards, with the API's disclaimer.
+pub fn render_leads(c: &ContradictionsDto, detailed: bool, ui: &Ui) -> String {
+    let mut out = ui.section(
+        "Contradiction leads",
+        &format!(
+            "{} lead(s) {} investigative leads, not findings",
+            c.leads.len(),
+            ui.g(Glyph::Dot)
+        ),
+    );
     if c.leads.is_empty() {
-        out.push_str("\nContradiction leads: none returned.\n");
-    } else {
-        out.push_str("\nContradiction leads (investigative leads, not findings):\n");
-        for lead in &c.leads {
+        out.push_str(&format!(
+            "{MARGIN}{}\n",
+            ui.paint(Tone::Muted, "Contradiction leads: none returned.")
+        ));
+    }
+    let rail = ui.paint(Tone::Flag, ui.g(Glyph::Rail));
+    let cont = format!("{MARGIN}{rail}   ");
+    let cont_w = MARGIN.len() + 4;
+    for lead in &c.leads {
+        out.push_str(&format!(
+            "{MARGIN}{} {}  {}\n",
+            ui.mark(Glyph::Flag, Tone::Flag),
+            ui.bold(Tone::Flag, &lead.lead_type),
+            ui.paint(Tone::Subtle, &lead.lead_id)
+        ));
+        out.push_str(&format!(
+            "{cont}{}\n",
+            ui.paint(
+                Tone::Text,
+                &format!(
+                    "entity {}  {}  event {} {} event {}",
+                    lead.entity_id,
+                    ui.g(Glyph::Dot),
+                    lead.event_a_id,
+                    ui.g(Glyph::Arrow),
+                    lead.event_b_id
+                )
+            )
+        ));
+        if detailed {
+            out.push_str(&ui.hang(&cont, &cont, cont_w, Tone::Muted, &lead.neutral_explanation));
             out.push_str(&format!(
-                "  - {} {} entity {}: event {} -> event {}\n",
-                lead.lead_id, lead.lead_type, lead.entity_id, lead.event_a_id, lead.event_b_id
+                "{cont}{}\n",
+                ui.paint(Tone::Subtle, &format!("generated {}", lead.generated_at))
             ));
-            if detailed {
+            if lead.limitations.is_empty() {
                 out.push_str(&format!(
-                    "      explanation: {}\n",
-                    lead.neutral_explanation
+                    "{cont}{}\n",
+                    ui.paint(Tone::Subtle, "limitations: none stated by the API")
                 ));
-                out.push_str(&format!("      generated:   {}\n", lead.generated_at));
-                if lead.limitations.is_empty() {
-                    out.push_str("      limitations: none stated by the API\n");
-                } else {
-                    out.push_str("      limitations:\n");
-                    for l in &lead.limitations {
-                        out.push_str(&format!("        * {l}\n"));
-                    }
+            } else {
+                for l in &lead.limitations {
+                    let pre = format!("{cont}{} ", ui.mark(Glyph::Assumed, Tone::Warn));
+                    let more = format!("{cont}  ");
+                    out.push_str(&ui.hang(&pre, &more, cont_w + 2, Tone::Muted, l));
                 }
             }
+            out.push_str(&format!(
+                "{MARGIN}{}\n",
+                ui.paint(Tone::Flag, ui.g(Glyph::RailEnd))
+            ));
         }
     }
-    out.push_str(&format!("  Disclaimer: {}\n", c.disclaimer));
+    let pre = format!("{MARGIN}{}", ui.paint(Tone::Subtle, "Disclaimer: "));
+    out.push_str(&ui.hang(
+        &pre,
+        &" ".repeat(MARGIN.len() + 12),
+        MARGIN.len() + 12,
+        Tone::Subtle,
+        &c.disclaimer,
+    ));
     out
 }
 
-fn render_limitations(limitations: &[&str]) -> String {
-    let mut out = String::from("\nAPI limitations:\n");
+fn render_limitations(limitations: &[&str], ui: &Ui) -> String {
+    let mut out = ui.section("API limitations", "");
     for l in limitations {
-        out.push_str(&format!("  - {l}\n"));
+        let pre = format!("{MARGIN}{} ", ui.mark(Glyph::Supplied, Tone::Supplied));
+        out.push_str(&ui.hang(
+            &pre,
+            &" ".repeat(MARGIN.len() + 2),
+            MARGIN.len() + 2,
+            Tone::Subtle,
+            l,
+        ));
+    }
+    out
+}
+
+/// Vertical timeline rail. Each entry shows its nominal time, uncertainty and ordering; the
+/// glyph says whether the time is observed (`●`), carries an assumption (`◆`) or is
+/// concurrent/uncertain (`○`).
+pub fn render_timeline_rail(entries: &[&TimelineEntryDto], ui: &Ui) -> String {
+    let mut out = String::new();
+    let rail = ui.paint(Tone::Line, ui.g(Glyph::Rail));
+    let indent = format!("{MARGIN}{rail}   ");
+    let indent_w = MARGIN.len() + 4;
+    for (i, e) in entries.iter().enumerate() {
+        let w = &e.time_window;
+        let uncertain = e.ordering_status != "STRICTLY_ORDERED";
+        let (glyph, tone) = if !e.assumptions.is_empty() {
+            (Glyph::Assumed, Tone::Warn)
+        } else if uncertain {
+            (Glyph::Inferred, Tone::Inferred)
+        } else {
+            (Glyph::Observed, Tone::Text)
+        };
+        // The API's own window span; the CLI does not derive a half-width from it.
+        let span = format!("{}s window", w.uncertainty_span_seconds);
+        out.push_str(&format!(
+            "{MARGIN}{}  {}  {}  {}  {}\n",
+            ui.mark(glyph, tone),
+            ui.bold(Tone::Strong, &w.nominal_utc),
+            ui.paint(Tone::Muted, &pad(&span, 11)),
+            ui.paint(
+                if uncertain {
+                    Tone::Inferred
+                } else {
+                    Tone::Subtle
+                },
+                &e.ordering_status
+            ),
+            ui.paint(Tone::Subtle, &format!("#{}", i + 1))
+        ));
+        out.push_str(&ui.hang(
+            &indent,
+            &indent,
+            indent_w,
+            Tone::Muted,
+            &format!(
+                "event {}  {}  evidence {}  {}  {}",
+                e.event_id,
+                ui.g(Glyph::Dot),
+                short_id(&e.source_evidence_id, ui),
+                ui.g(Glyph::Dot),
+                w.precision
+            ),
+        ));
+        if let Some(desc) = &e.raw_description {
+            out.push_str(&ui.hang(&indent, &indent, indent_w, Tone::Text, desc));
+        }
+        out.push_str(&ui.hang(
+            &indent,
+            &indent,
+            indent_w,
+            Tone::Subtle,
+            &format!(
+                "window {} .. {} ({} s); timezone {}, clock offset {} s; raw {:?}",
+                w.window_start_utc,
+                w.window_end_utc,
+                w.uncertainty_span_seconds,
+                w.source_timezone,
+                w.clock_offset_seconds,
+                e.raw_timestamp
+            ),
+        ));
+        for a in &e.assumptions {
+            out.push_str(&format!(
+                "{indent}{} {}\n",
+                ui.mark(Glyph::Assumed, Tone::Warn),
+                ui.paint(
+                    Tone::Warn,
+                    &format!("assumed {} = {:?} ({})", a.field, a.assumed_value, a.kind)
+                )
+            ));
+        }
+        if i + 1 < entries.len() {
+            out.push_str(&format!("{MARGIN}{rail}\n"));
+        }
+    }
+    out
+}
+
+/// Trajectories with per-segment speed against the threshold, and spatial-temporal overlaps.
+pub fn render_spatial(spatial: &SpatialDto, ui: &Ui) -> String {
+    let mut out = ui.section(
+        "Spatial findings",
+        &format!(
+            "{} trajectory(ies) {} {} overlap(s)",
+            spatial.trajectories.len(),
+            ui.g(Glyph::Dot),
+            spatial.overlaps.len()
+        ),
+    );
+    if spatial.trajectories.is_empty() && spatial.overlaps.is_empty() {
+        out.push_str(&format!(
+            "{MARGIN}{}\n",
+            ui.paint(
+                Tone::Muted,
+                "Spatial findings: none returned (no located events were reconstructed)."
+            )
+        ));
+        return out;
+    }
+    for t in &spatial.trajectories {
+        let max_speed = t
+            .max_min_required_speed_kmh
+            .map(|v| format!("{v:.3} km/h"))
+            .unwrap_or_else(|| "not reported".to_string());
+        out.push_str(&format!(
+            "{MARGIN}{} {}  {}\n",
+            ui.mark(Glyph::Inferred, Tone::Inferred),
+            ui.bold(Tone::Strong, &format!("entity {}", t.entity_id)),
+            ui.paint(
+                Tone::Muted,
+                &format!(
+                    "{} waypoint(s), {} segment(s), {:.3} km total, max minimum required speed {max_speed}",
+                    t.waypoints.len(),
+                    t.segments.len(),
+                    t.total_distance_km
+                )
+            )
+        ));
+        for seg in &t.segments {
+            let m = &seg.transit_metrics;
+            let ratio = m.min_required_speed_kmh.map_or(0.0, |v| {
+                v / m.configured_speed_threshold_kmh.max(f64::MIN_POSITIVE)
+            });
+            let flagged = m.exceeds_configured_speed_threshold;
+            let speed = m
+                .min_required_speed_kmh
+                .map(|v| format!("{v:.3} km/h"))
+                .unwrap_or_else(|| "n/a".to_string());
+            out.push_str(&format!(
+                "{MARGIN}  {} {} {} {}  {}\n",
+                ui.paint(Tone::Line, ui.g(Glyph::Branch)),
+                ui.paint(Tone::Text, &seg.origin_event_id),
+                ui.paint(Tone::Subtle, ui.g(Glyph::Arrow)),
+                ui.paint(Tone::Text, &seg.destination_event_id),
+                ui.paint(Tone::Muted, &format!("{:.3} km", m.distance_km))
+            ));
+            let mut line = format!(
+                "{}  {}",
+                ui.meter(ratio, 12, if flagged { Tone::Flag } else { Tone::Inferred }),
+                ui.paint(
+                    if flagged { Tone::Flag } else { Tone::Muted },
+                    &format!(
+                        "min required {speed} vs threshold {} km/h: {}",
+                        m.configured_speed_threshold_kmh, m.threshold_evaluation
+                    )
+                )
+            );
+            if seg.has_intervening_unlocated_events {
+                line.push_str(&ui.paint(Tone::Warn, " (intervening unlocated events)"));
+            }
+            out.push_str(&format!(
+                "{MARGIN}  {}    {line}\n",
+                ui.paint(Tone::Line, ui.g(Glyph::Rail))
+            ));
+        }
+    }
+    for o in &spatial.overlaps {
+        out.push_str(&format!(
+            "{MARGIN}{} {}\n",
+            ui.mark(Glyph::Inferred, Tone::Inferred),
+            ui.paint(
+                Tone::Text,
+                &format!(
+                    "overlap, entity {}: event {} and event {} at {:.3} km apart, co-located: {}",
+                    o.entity_id,
+                    o.event_a_id,
+                    o.event_b_id,
+                    o.distance_km,
+                    if o.is_co_located { "yes" } else { "no" }
+                )
+            )
+        ));
     }
     out
 }
@@ -370,7 +678,12 @@ const RUN_LIMITATIONS: [&str; 3] = [
     LIMITATION_DEFAULT_OPTIONS,
 ];
 
-async fn run_reconstruction(args: &ReconstructionArgs, client: &ApiClient, json: bool) -> Rendered {
+async fn run_reconstruction(
+    args: &ReconstructionArgs,
+    client: &ApiClient,
+    json: bool,
+    ui: &Ui,
+) -> Rendered {
     let (case_id, case) = match preflight(args, client, json, "reconstructed").await {
         Ok(found) => found,
         Err(rendered) => return rendered,
@@ -407,20 +720,42 @@ async fn run_reconstruction(args: &ReconstructionArgs, client: &ApiClient, json:
         return Rendered::stdout(to_json(&doc), exit::SUCCESS);
     }
 
-    let mut out = format!(
-        "Reconstruction completed for case {} (POST {path} -> HTTP 200)\n",
-        case_id.as_str()
-    );
-    row(&mut out, "Run ID", "not returned by the API");
-    out.push_str(&render_summary(result));
-    out.push_str(&render_assumptions(result, false));
-    out.push_str(&render_excluded(result));
-    out.push_str(&render_leads(result, false));
-    out.push_str(&render_limitations(&RUN_LIMITATIONS));
+    let mut out = ui.header(&["reconstruction", "run"], client.base_url());
+    out.push('\n');
     out.push_str(&format!(
-        "\nRun `yukti reconstruction explain --case {}` for the full detail and the judicial report.\n",
-        case_id.as_str()
+        "{MARGIN}{}  {}\n",
+        ui.badge(Badge::Ok, "completed"),
+        ui.paint(
+            Tone::Text,
+            &format!("Reconstruction completed for case {}", case_id.as_str())
+        )
     ));
+    out.push_str(&format!(
+        "{MARGIN}{}\n",
+        ui.paint(
+            Tone::Subtle,
+            &format!(
+                "POST {path} {} HTTP 200 {} run ID not returned by the API",
+                ui.g(Glyph::Arrow),
+                ui.g(Glyph::Dot)
+            )
+        )
+    ));
+    out.push_str(&render_summary(result, ui));
+    out.push_str(&render_assumptions(result, false, ui));
+    out.push_str(&render_excluded(&result.timeline, ui));
+    out.push_str(&render_leads(&result.contradictions, false, ui));
+    out.push_str(&render_limitations(&RUN_LIMITATIONS, ui));
+    out.push('\n');
+    out.push_str(&ui.legend());
+    out.push('\n');
+    let id = case_id.as_str();
+    out.push_str(&ui.next(
+        "full detail",
+        &format!("yukti reconstruction explain --case {id}"),
+    ));
+    out.push_str(&ui.next("timeline", &format!("yukti timeline --case {id}")));
+    out.push_str(&ui.next("provenance", &format!("yukti provenance --case {id}")));
     Rendered {
         stdout: out,
         stderr: render_warnings(&warnings),
@@ -483,7 +818,7 @@ const EXPLAIN_LIMITATIONS: [&str; 3] = [
     LIMITATION_REPORT_SEPARATE,
 ];
 
-async fn explain(args: &ReconstructionArgs, client: &ApiClient, json: bool) -> Rendered {
+async fn explain(args: &ReconstructionArgs, client: &ApiClient, json: bool, ui: &Ui) -> Rendered {
     let (case_id, case) = match preflight(args, client, json, "requested").await {
         Ok(found) => found,
         Err(rendered) => return rendered,
@@ -540,9 +875,15 @@ async fn explain(args: &ReconstructionArgs, client: &ApiClient, json: bool) -> R
         return Rendered::stdout(to_json(&doc), exit_code);
     }
 
-    let mut stdout = render_explanation(&case_id, &reconstruction_path, &record.dto);
-    stdout.push_str(&render_report(&report_path, &report));
-    stdout.push_str(&render_limitations(&EXPLAIN_LIMITATIONS));
+    let mut stdout = ui.header(&["reconstruction", "explain"], client.base_url());
+    stdout.push_str(&render_explanation(
+        &case_id,
+        &reconstruction_path,
+        &record.dto,
+        ui,
+    ));
+    stdout.push_str(&render_report(&report_path, &report, ui));
+    stdout.push_str(&render_limitations(&EXPLAIN_LIMITATIONS, ui));
     let mut stderr = render_warnings(&warnings);
     if let Err(err) = &report {
         stderr.push_str(&format!(
@@ -600,140 +941,112 @@ pub fn report_warnings(
 }
 
 /// Full human-readable reconstruction detail.
-pub fn render_explanation(case_id: &CaseId, path: &str, result: &ReconstructionResult) -> String {
-    let mut out = format!(
-        "Reconstruction of case {} (GET {path} -> HTTP 200)\n",
-        case_id.as_str()
-    );
-    row(
-        &mut out,
-        "Provenance",
-        "UNKNOWN: stored result or computed on the fly (see API limitations)",
-    );
-    out.push_str(&render_summary(result));
+pub fn render_explanation(
+    case_id: &CaseId,
+    path: &str,
+    result: &ReconstructionResult,
+    ui: &Ui,
+) -> String {
+    let mut out = String::from("\n");
+    out.push_str(&format!(
+        "{MARGIN}{}\n{MARGIN}{}\n",
+        ui.bold(
+            Tone::Strong,
+            &format!("Reconstruction of case {}", case_id.as_str())
+        ),
+        ui.paint(
+            Tone::Subtle,
+            &format!("GET {path} {} HTTP 200", ui.g(Glyph::Arrow))
+        )
+    ));
+    out.push_str(&format!(
+        "{MARGIN}{} {}\n",
+        ui.mark(Glyph::Assumed, Tone::Warn),
+        ui.paint(
+            Tone::Muted,
+            "Provenance UNKNOWN: stored result or computed on the fly (see API limitations)"
+        )
+    ));
+    out.push_str(&render_summary(result, ui));
 
-    out.push_str("\nTimeline (in the API's order):\n");
+    out.push_str(&ui.section(
+        "Timeline",
+        &format!(
+            "{} entries, in the API's order",
+            result.timeline.entries.len()
+        ),
+    ));
     if result.timeline.entries.is_empty() {
-        out.push_str("  no timeline entries returned\n");
-    }
-    for (i, e) in result.timeline.entries.iter().enumerate() {
-        let w = &e.time_window;
         out.push_str(&format!(
-            "  {:>3}. {}  {}  {}  event {}  evidence {}\n",
-            i + 1,
-            w.nominal_utc,
-            w.precision,
-            e.ordering_status,
-            e.event_id,
-            e.source_evidence_id
+            "{MARGIN}{}\n",
+            ui.paint(Tone::Muted, "no timeline entries returned")
         ));
-        out.push_str(&format!(
-            "       window {} .. {} ({} s); timezone {}, clock offset {} s; raw {:?}\n",
-            w.window_start_utc,
-            w.window_end_utc,
-            w.uncertainty_span_seconds,
-            w.source_timezone,
-            w.clock_offset_seconds,
-            e.raw_timestamp
-        ));
-        if let Some(desc) = &e.raw_description {
-            out.push_str(&format!("       description: {desc}\n"));
-        }
-        if !e.assumptions.is_empty() {
-            let kinds: Vec<&str> = e.assumptions.iter().map(|a| a.kind.as_str()).collect();
-            out.push_str(&format!("       assumptions: {}\n", kinds.join(", ")));
-        }
+    } else {
+        let entries: Vec<&TimelineEntryDto> = result.timeline.entries.iter().collect();
+        out.push_str(&render_timeline_rail(&entries, ui));
     }
 
-    out.push_str(&render_assumptions(result, true));
-    out.push_str(&render_excluded(result));
-    out.push_str(&render_spatial(result));
-    out.push_str(&render_leads(result, true));
+    out.push_str(&render_assumptions(result, true, ui));
+    out.push_str(&render_excluded(&result.timeline, ui));
+    out.push_str(&render_spatial(&result.spatial, ui));
+    out.push_str(&render_leads(&result.contradictions, true, ui));
     out
 }
 
-fn render_spatial(result: &ReconstructionResult) -> String {
-    let spatial = &result.spatial;
-    if spatial.trajectories.is_empty() && spatial.overlaps.is_empty() {
-        return "\nSpatial findings: none returned (no located events were reconstructed).\n"
-            .to_string();
-    }
-    let mut out = String::from("\nSpatial findings:\n");
-    for t in &spatial.trajectories {
-        let max_speed = t
-            .max_min_required_speed_kmh
-            .map(|v| format!("{v:.3} km/h"))
-            .unwrap_or_else(|| "not reported".to_string());
-        out.push_str(&format!(
-            "  - entity {}: {} waypoint(s), {} segment(s), {:.3} km total, max minimum required speed {max_speed}\n",
-            t.entity_id,
-            t.waypoints.len(),
-            t.segments.len(),
-            t.total_distance_km
-        ));
-        for s in &t.segments {
-            let m = &s.transit_metrics;
-            let speed = m
-                .min_required_speed_kmh
-                .map(|v| format!("{v:.3} km/h"))
-                .unwrap_or_else(|| "n/a".to_string());
-            out.push_str(&format!(
-                "      {} -> {}: {:.3} km, min required {speed} vs threshold {} km/h: {}{}\n",
-                s.origin_event_id,
-                s.destination_event_id,
-                m.distance_km,
-                m.configured_speed_threshold_kmh,
-                m.threshold_evaluation,
-                if s.has_intervening_unlocated_events {
-                    " (intervening unlocated events)"
-                } else {
-                    ""
-                }
-            ));
-        }
-    }
-    for o in &spatial.overlaps {
-        out.push_str(&format!(
-            "  - overlap, entity {}: event {} and event {} at {:.3} km apart, co-located: {}\n",
-            o.entity_id,
-            o.event_a_id,
-            o.event_b_id,
-            o.distance_km,
-            if o.is_co_located { "yes" } else { "no" }
-        ));
-    }
-    out
-}
-
-fn render_report(path: &str, report: &Result<CaseReportRecord, CliError>) -> String {
-    let mut out = String::from("\nJudicial report");
+fn render_report(path: &str, report: &Result<CaseReportRecord, CliError>, ui: &Ui) -> String {
+    let mut out = ui.section("Judicial report", &format!("GET {path}"));
     match report {
         Err(err) => {
-            out.push_str(&format!(" (GET {path}): UNAVAILABLE\n"));
-            sub_row(&mut out, "Error", &err.to_string());
+            out.push_str(&ui.kv_painted("Status", &ui.badge(Badge::Flag, "unavailable")));
+            out.push_str(&ui.kv("Error", Tone::Flag, &err.to_string()));
         }
         Ok(record) => {
             let r = &record.dto;
-            out.push_str(&format!(" (GET {path} -> HTTP 200):\n"));
-            sub_row(&mut out, "Report ID", &r.report_id);
-            sub_row(&mut out, "Title", &r.title);
-            sub_row(&mut out, "Generated", &r.generated_at);
-            sub_row(
-                &mut out,
+            out.push_str(&ui.kv("Report ID", Tone::Text, &r.report_id));
+            out.push_str(&ui.kv("Title", Tone::Strong, &r.title));
+            out.push_str(&ui.kv("Generated", Tone::Muted, &r.generated_at));
+            out.push_str(&ui.kv(
                 "Evidence items",
+                Tone::Text,
                 &r.summary.evidence_count.to_string(),
-            );
-            sub_row(&mut out, "Judicial export", &r.judicial_export_status);
-            sub_row(&mut out, "Reason", &r.judicial_export_reason);
-            sub_row(&mut out, "Disclaimer", &r.forensic_disclaimer);
-            out.push_str("\n----- Markdown forensic dossier (as returned by the API) -----\n");
-            out.push_str(&r.markdown_dossier);
-            if !r.markdown_dossier.ends_with('\n') {
-                out.push('\n');
-            }
-            out.push_str("----- end of dossier -----\n");
+            ));
+            out.push_str(&ui.kv_painted(
+                "Judicial export",
+                &ui.badge(
+                    status_badge(&r.judicial_export_status),
+                    &r.judicial_export_status,
+                ),
+            ));
+            out.push_str(&ui.kv("Reason", Tone::Muted, &r.judicial_export_reason));
+            out.push_str(&ui.kv("Disclaimer", Tone::Subtle, &r.forensic_disclaimer));
+            out.push_str(&render_dossier(&r.markdown_dossier, ui));
         }
     }
+    out
+}
+
+/// The markdown dossier, exactly as returned, between two rules.
+pub fn render_dossier(markdown: &str, ui: &Ui) -> String {
+    let rule = |label: &str| {
+        let text = format!(" {label} ");
+        let side = ui
+            .width
+            .saturating_sub(text.chars().count() + MARGIN.len() * 2)
+            / 2;
+        format!(
+            "{MARGIN}{}{}{}\n",
+            ui.paint(Tone::Line, &ui.g(Glyph::Rule).repeat(side)),
+            ui.paint(Tone::Subtle, &text),
+            ui.paint(Tone::Line, &ui.g(Glyph::Rule).repeat(side))
+        )
+    };
+    let mut out = String::from("\n");
+    out.push_str(&rule("Markdown forensic dossier (as returned by the API)"));
+    out.push_str(markdown);
+    if !markdown.ends_with('\n') {
+        out.push('\n');
+    }
+    out.push_str(&rule("end of dossier"));
     out
 }
 
@@ -817,7 +1130,7 @@ mod tests {
     fn a_missing_export_safeguard_is_reported_as_unknown_not_clear() {
         let mut r = result(vec![]);
         r.export_safeguard = None;
-        let text = render_summary(&r);
+        let text = render_summary(&r, &Ui::plain());
         assert!(text.contains("NOT REPORTED"), "{text}");
         assert!(!text.contains("CLEAR"), "{text}");
     }

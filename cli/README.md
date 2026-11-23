@@ -5,6 +5,66 @@
 - It talks to the API **over HTTP only**, through the same endpoints the React workspace uses.
 - It never connects to PostgreSQL or Neo4j, shares no code with the backend crate, and contains no forensic logic.
 
+## Install
+
+**macOS and Linux**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/NotKrish019/SutramPrototype/main/cli/install/install.sh | sh
+```
+
+**Windows (PowerShell)**
+
+```powershell
+irm https://raw.githubusercontent.com/NotKrish019/SutramPrototype/main/cli/install/install.ps1 | iex
+```
+
+Each installer downloads the latest release for your platform (macOS Apple Silicon or Intel, Windows x64, Linux x64) and checks its SHA-256 before installing anything. It puts `yukti` and `yukti-server` in `~/.yukti/bin` (Windows: `%LOCALAPPDATA%\yukti\bin`) and adds that folder to your PATH. Open a new terminal, then run:
+
+```bash
+yukti
+```
+
+On first use, `yukti` starts the bundled local server in the background and opens the interactive session. Type `help` there. Every command also works directly, for example `yukti case list`.
+
+Installer settings (environment variables): `YUKTI_VERSION` (a release tag such as `yukti-v0.1.0`), `YUKTI_INSTALL_DIR`, `YUKTI_NO_MODIFY_PATH=1`, and `YUKTI_ARCHIVE` (install from a local archive, for testing).
+
+**Uninstall:** run `yukti server stop`, then delete `yukti` and `yukti-server` from the install folder. Case data stays in `~/.yukti/data` until you delete it.
+
+### The local server
+
+Installed builds bundle `yukti-server`, which is `backend-rust`'s API binary under another name. When a command needs the API at a loopback address (`127.0.0.1`, `localhost`) and nothing answers there, `yukti` starts `yukti-server` in the background. It runs in filesystem mode, keeps its data under the YUKTI home, and `yukti` waits for `/health` before continuing. The CLI still talks to it over HTTP only.
+
+| Command | Does |
+|---|---|
+| `yukti server start` | Start it now (does nothing if the API already answers) |
+| `yukti server status` | Running or stopped, PID, data and log locations |
+| `yukti server stop` | Stop the server `yukti` started |
+| `yukti server logs [--lines N]` | End of the server log |
+
+| Variable | Meaning | Default |
+|---|---|---|
+| `YUKTI_HOME` | Server data (`data/evidence/{raw,derived}`), `server.log`, `server.pid` | `~/.yukti`; Windows `%LOCALAPPDATA%\yukti` |
+| `YUKTI_SERVER_BIN` | Server binary to start | `yukti-server` next to `yukti` |
+| `YUKTI_NO_AUTOSTART=1` | Never start the server automatically | off |
+
+`status` and `doctor` never start the server, so they always report its real state. Auto-start is also skipped when the API URL points at another machine, or when no bundled server is installed. A source checkout is an example of the latter: there you run `backend-rust` yourself.
+
+### Releasing
+
+Push a tag named `yukti-v<version>`:
+
+```bash
+git tag yukti-v0.1.0 && git push origin yukti-v0.1.0
+```
+
+`.github/workflows/release.yml` then:
+- builds `yukti` and `yukti-server` for `aarch64-apple-darwin`, `x86_64-apple-darwin`, `x86_64-pc-windows-msvc` and `x86_64-unknown-linux-gnu`;
+- packages each as `yukti-<target>.tar.gz` or `.zip`, with a `.sha256` file;
+- publishes them, plus both installers, as a GitHub Release.
+
+A manual run (`workflow_dispatch`) only builds and uploads the archives as workflow artifacts. The binaries are not code-signed. The installers remove macOS quarantine and unblock the Windows executables, but browser downloads of the archives may still prompt Gatekeeper or SmartScreen.
+
 ## Build and run
 
 The crate is standalone. It has its own `Cargo.toml` and `Cargo.lock`, and there is no root Cargo workspace.
@@ -22,28 +82,51 @@ Start the API first (from `backend-rust/`: `cargo run --bin sutram-backend-rust`
 
 ## Commands
 
+Every command that takes `--case` also reads `YUKTI_CASE`, so `export YUKTI_CASE=<uuid>` sets a working case for a whole session. The case is always checked with `GET /api/v1/cases/:case_id` before anything else is requested.
+
 | Command | API calls | Description |
 |---|---|---|
 | `yukti status` | `GET /health`, `GET /health/ready` | API reachability, plus database and graph readiness |
 | `yukti doctor` | `GET /health`, `GET /health/ready`, `GET /api/v1/cases` | Setup checklist: config, API, readiness, database, graph and case API, with a fix hint for each problem |
-| `yukti case list` | `GET /api/v1/cases`, then `GET /health/ready` (storage mode) | Cases in the API's order |
+| `yukti config` | none | Resolved settings and where each came from (flag, environment, default) |
+| `yukti case list [--status S] [--search T] [--limit N]` | `GET /api/v1/cases`, then `GET /health/ready` (storage mode) | Cases in the API's order, with client-side filters |
 | `yukti case create --title …` | `POST /api/v1/cases` | Register a case and print the UUID the API assigned |
 | `yukti case show --case <UUID>` | `GET /api/v1/cases/:case_id` | One case's fields |
-| `yukti evidence ingest --case <UUID> <FILE>` | `GET /api/v1/cases/:case_id`, then `POST /api/v1/evidence/upload` (multipart) | Upload one evidence file |
-| `yukti evidence list --case <UUID>` | `GET /api/v1/cases/:case_id`, then `GET /api/v1/cases/:case_id/evidence` | A case's evidence receipts |
-| `yukti reconstruction run --case <UUID>` | `GET /api/v1/cases/:case_id`, then `POST /api/v1/cases/:case_id/reconstruction` | Reconstruct the case with the API's defaults and summarise the result |
-| `yukti reconstruction explain --case <UUID>` | `GET /api/v1/cases/:case_id`, `GET …/reconstruction`, then `GET …/report` | Full reconstruction detail plus the judicial report and dossier |
-| `yukti reconstruction compare --case <UUID>` | none | Not available yet: exits `69` |
+| `yukti case overview --case <UUID>` | case, then `…/evidence`, `…/reconstruction`, `…/gaps`, `…/graph/summary` in parallel | One-screen investigative brief; a missing section is shown as unavailable and makes the exit code non-zero |
+| `yukti evidence ingest --case <UUID> <FILE>` | case, then `POST /api/v1/evidence/upload` (multipart) | Upload one evidence file and compare the API's SHA-256 with the bytes sent (exit `7` on mismatch) |
+| `yukti evidence list --case <UUID>` | case, then `GET /api/v1/cases/:case_id/evidence` | A case's evidence receipts |
+| `yukti evidence show --evidence <ID>` | `GET /api/v1/evidence/:id`, `GET …/extraction/runs` | One receipt, chain of custody and extraction history |
+| `yukti evidence verify --evidence <ID> <FILE>` | `GET /api/v1/evidence/:id` | Stream a local copy through SHA-256 and compare it with the recorded hash (exit `7` on mismatch) |
+| `yukti evidence extract --evidence <ID>` | `POST /api/v1/evidence/:id/extract` | New extraction run with the API's defaults |
+| `yukti evidence reprocess --evidence <ID> [--source-timezone …] [--clock-offset-seconds …] [--default-country-code …] [--metadata …]` | `POST /api/v1/evidence/:id/reprocess` | New extraction run with declared values; only options you pass are sent |
+| `yukti evidence extraction --evidence <ID>` | `GET /api/v1/evidence/:id/extraction` | Active extraction result: event candidates, identifiers, entity candidates, validation issues |
+| `yukti evidence runs --evidence <ID>` | `GET /api/v1/evidence/:id/extraction/runs` | Every versioned extraction run |
+| `yukti reconstruction run --case <UUID>` | case, then `POST /api/v1/cases/:case_id/reconstruction` | Reconstruct the case with the API's defaults and summarise the result |
+| `yukti reconstruction explain --case <UUID>` | case, `GET …/reconstruction`, then `GET …/report` | Full reconstruction detail plus the judicial report and dossier |
+| `yukti reconstruction compare --case <UUID>` | none | Not available yet: exits `69` (use `whatif`) |
+| `yukti timeline --case <UUID> [--limit N] [--assumed-only] [--uncertain-only]` | case, then `GET …/timeline` | Timeline rail with windows, ordering and labelled assumptions |
+| `yukti spatial --case <UUID>` | case, then `GET …/spatial` | Trajectories and per-segment speed against the configured threshold |
+| `yukti contradictions --case <UUID>` | case, then `GET …/contradictions` | Contradiction leads with explanations, limitations and the disclaimer |
+| `yukti gaps --case <UUID> [--min-severity low\|medium\|high\|critical]` | case, then `GET …/gaps` | Evidence gaps, most severe first, with suggested corroboration |
+| `yukti provenance --case <UUID> [--finding ID]` | case, then `GET …/reconstruction/provenance` or `GET …/findings/:id/provenance` | Findings traced to source anchors, hashes and integrity status |
+| `yukti report --case <UUID> [--out FILE] [--format markdown\|json] [--force]` | case, then `GET …/report` | Judicial report; `--out` writes the dossier, never replaces a file without `--force`, and prints the SHA-256 of what it wrote |
+| `yukti graph summary --case <UUID>` | case, then `GET …/graph/summary` | Graph counts and synchronisation status |
+| `yukti graph neighbors --case <UUID> --entity <ID> [--depth 1-3] [--limit 1-100]` | case, then `GET …/graph/entities/:id/neighbors` | Nodes and relationships around one entity |
+| `yukti graph path --case <UUID> --from <ID> --to <ID> [--max-hops N]` | case, then `GET …/graph/path` | Relationship chain between two entities |
+| `yukti whatif --case <UUID> [--clock-offset S] [--exhibit-offset ID=S]… [--timezone TZ] [--speed-threshold KMH] [--half-width S] [--exclude-evidence ID]… [--exclude-event ID]… [--scenario-file FILE] [--name TEXT]` | case, then `POST …/what-if` | Hypothetical scenario against the baseline: appearing, disappearing and changed findings. Nothing is stored |
+| `yukti completions <bash\|zsh\|fish\|elvish\|powershell>` | none | Shell completion script |
+| `yukti` (no arguments, in a terminal) / `yukti shell` | per command | Interactive session; `use <uuid>` sets the working case, which is added as `--case` to every command that accepts it. Without a terminal, plain `yukti` prints usage and exits `2` |
+| `yukti server start\|stop\|status\|logs` | `GET /health` | Manage the bundled local server (see above) |
 
 ### Planned commands
 
-These are not implemented yet:
-- `evidence trace`
-- `reconstruction compare` (interface only; it exits `69` until the backend offers scenario comparison)
-- `gaps list`
-- `graph open`
+`reconstruction compare` keeps its interface and exits `69` until the backend offers persisted scenario comparison; `whatif` covers stateless comparison today. New commands are added as a `Command` variant in `src/cli.rs` with a handler under `src/commands/`.
 
-Each will be added as a new `Command` variant in `src/cli.rs`, with a handler module under `src/commands/`. Commands that need API functionality that doesn't exist yet will exit with code `69`.
+### Forensic rules every command follows
+
+- The CLI only counts, filters and displays what the API returned. It computes no findings, confidence or robustness. Two hashes are the exception: the SHA-256 of bytes it uploads, reads or writes, which it compares with the API's record rather than replacing it.
+- Simulated results are always labelled HYPOTHETICAL. Contradiction leads and graph links are labelled as leads, never as proof of identity.
+- Evidence files are only read. Exports are new files, and an existing file is never replaced without `--force`.
 
 ### `yukti doctor`
 
@@ -244,6 +327,9 @@ Each setting is resolved in this order: command-line flag, then environment vari
 | API base URL | `--api-url <URL>` | `YUKTI_API_URL` | `http://127.0.0.1:8080` |
 | Request timeout (whole seconds, 1-3600) | `--timeout <SECONDS>` | `YUKTI_TIMEOUT_SECS` | `10` |
 | JSON output | `--json` | — | off |
+| Working case for `--case` | `--case <UUID>` | `YUKTI_CASE` | none |
+| Colour | `--color auto\|always\|never` | `NO_COLOR` (disables in auto), `CLICOLOR_FORCE` (forces in auto) | `auto`: colour only on a terminal |
+| Glyphs | `--ascii` | `TERM=dumb` also selects ASCII | Unicode |
 
 Global options can appear before or after the command (`yukti --json status` = `yukti status --json`).
 
@@ -266,14 +352,29 @@ Invalid configuration exits with code `2`, and the message names the source (`--
 | `4` | The API answered with an HTTP 4xx (for example, a missing endpoint). |
 | `5` | The API answered with an HTTP 5xx, or readiness is `not_ready`. |
 | `6` | Unexpected response: invalid JSON, wrong shape, unknown status value, or a non-2xx/4xx/5xx status. |
+| `7` | Integrity check failed: a SHA-256 the CLI computed (`evidence verify`, or the bytes sent by `evidence ingest`) does not match the hash the API recorded. |
 | `69` | The functionality isn't supported by the API yet. |
 
 `yukti status` never exits `0` when the API is unreachable or not ready.
 
 ## Output
 
-- **Human mode (default):** results go to stdout and errors that stop a command go to stderr. The text is plain ASCII with no colour, so it's safe in logs. `yukti status` always prints its report to stdout, including on failure.
-- **JSON mode (`--json`):** exactly one JSON document is written to stdout, for success and failure alike, and nothing is written to stderr. Each document has a `schema` field naming its versioned shape.
+- **Human mode (default):** results go to stdout and errors that stop a command go to stderr (`error:` / `warning:` / `note:` lines). `yukti status` always prints its report to stdout, including on failure.
+- **JSON mode (`--json`):** exactly one JSON document is written to stdout, for success and failure alike, and nothing is written to stderr. Each document has a `schema` field naming its versioned shape. JSON is never coloured.
+
+### Design system
+
+Human output follows the web workspace theme (`apps/web/tailwind.config.js`), implemented in `src/ui.rs`:
+
+- **Palette:** forensic crimson `#E5243B` for the brand mark, active state and anything flagged; silver `#C8CAD0` for inferred values; steel `#8C9EB3` for supplied values; amber `#D9A441` for assumptions; green `#4FB37D` for verified; greys `#A1A1AA` / `#71717A` for labels and metadata; graphite `#3A3A41` for rules. Body text uses the terminal's own foreground, so output stays readable on light themes.
+- **Evidence semantics:** `●` observed, `○` inferred, `◇` supplied, `◆` assumed, `▲` flagged for review, `✓` verified, `✕` failed. Every state is also written in words, so nothing depends on colour alone.
+- **Components:** a `▌ YUKTI │ COMMAND` header bar, section rules, aligned key/value blocks that wrap to the terminal width, tables, stat rows, proportion meters, a vertical timeline rail and lead/gap cards.
+- **When colour is used:** truecolor when `COLORTERM` says so, otherwise 256 colours, and only when the stream is a terminal (or `--color always`). `NO_COLOR` and `TERM=dumb` turn it off, and `--ascii` swaps every glyph for 7-bit text. The layout is identical in every mode; colour output with its escape codes removed equals the plain output (tested).
+- `--help` uses the same colours through clap, which strips them for pipes.
+
+### JSON schemas
+
+The schemas below are documented in detail. The newer commands each emit their own versioned document, carrying the request made and the complete response exactly as returned: `yukti.cli.doctor/v1`, `yukti.cli.config/v1`, `yukti.cli.case_overview/v1`, `yukti.cli.evidence/v1`, `yukti.cli.evidence_verify/v1`, `yukti.cli.extraction_run/v1`, `yukti.cli.extraction_result/v1`, `yukti.cli.extraction_runs/v1`, `yukti.cli.timeline/v1`, `yukti.cli.spatial/v1`, `yukti.cli.contradictions/v1`, `yukti.cli.gaps/v1`, `yukti.cli.provenance/v1`, `yukti.cli.report/v1`, `yukti.cli.graph_summary/v1`, `yukti.cli.graph_neighbors/v1`, `yukti.cli.graph_path/v1`, `yukti.cli.whatif/v1` and `yukti.cli.server/v1`. `yukti.cli.evidence_ingest/v1` adds `local_sha256` and `hash_match`. `yukti.cli.case_list/v1` adds `total_count` and `filters`; `count` is the number shown after filtering.
 
 ### `yukti.cli.doctor/v1`
 
@@ -485,24 +586,30 @@ HTTP errors include the API's `{"error":{"code","message"}}` envelope fields as 
 ## Layout
 
 ```text
-src/main.rs           process entry: argument parsing, runtime, printing, exit code
-src/lib.rs            execute(): config -> client -> command dispatch (used by tests)
-src/cli.rs            clap definitions (global options + Command enum)
-src/config.rs         flag/env/default resolution and URL/timeout validation
+src/main.rs           process entry: argument parsing, runtime, printing, exit code; starts `shell`
+src/lib.rs            execute(): theme -> config -> client -> command dispatch (used by tests)
+src/cli.rs            clap definitions (global options, Command enum, themed help)
+src/ui.rs             design system: palette, colour detection, glyphs, header, sections,
+                      key/value, tables, meters, badges, wrapping, diagnostics styling
+src/shell.rs          interactive session (line splitting, working case, built-ins)
+src/server.rs         bundled local server: locate, start detached, health wait, stop, logs
+install/              install.sh (macOS/Linux), install.ps1 (Windows), PACKAGE_README.txt
+src/config.rs         flag/env/default resolution, URL/timeout validation, terminal facts
 src/client.rs         all HTTP: endpoint paths, typed API calls, transport-error mapping
-src/dto.rs            client-side mirrors of API types (cases, evidence receipts, extraction
-                      runs, upload fields, reconstruction results, case reports), CaseId validation
+src/dto.rs            client-side mirrors of API types, CaseId validation
 src/error.rs          CliError, exit-code contract, API error-envelope parsing
 src/output.rs         Rendered output, JSON error document
-src/commands/         one module per command group (status.rs, doctor.rs, case.rs, evidence.rs,
-                      reconstruction.rs); each renders its own human and JSON output
+src/commands/         one module per command group: status, doctor, config, completions, case
+                      (incl. overview), evidence, reconstruction, analysis (timeline, spatial,
+                      contradictions, gaps, provenance, report), graph, whatif
 tests/support/        std-only mock HTTP server (method routing, per-route delays, request
-                      recording) and fixtures
+                      recording), fixtures and the `flat` whitespace helper
 tests/status_command.rs   status behaviour against mock APIs (library level)
 tests/doctor_command.rs   doctor checklist against mock APIs, incl. read-only and skip behaviour
 tests/case_command.rs     case list/create/show against mock APIs (library level)
 tests/evidence_command.rs evidence ingest/list against mock APIs, incl. multipart byte checks
 tests/reconstruction_command.rs  reconstruction run/explain/compare against mock APIs
+tests/workbench_commands.rs  every newer command, colour/ASCII/NO_COLOR behaviour, exit 7
 tests/binary.rs       compiled-binary tests: env precedence, exit codes, streams
 ```
 
@@ -525,4 +632,5 @@ cargo clippy --all-targets -- -D warnings
 - The response fixtures copy the real handler output in `backend-rust/src/api/routes/health.rs` and `cases.rs`. If those handlers change, update `tests/support/mod.rs` and `src/dto.rs`.
 - The reconstruction and report fixtures in `tests/reconstruction_command.rs` follow `FullCaseReconstructionResult` and `CaseForensicReport` in `backend-rust/src/reconstruction/`. Update them together with `src/dto.rs` when those types change.
 - CI: `.github/workflows/cli.yml` runs on changes under `cli/`. It runs fmt, a locked check, tests and clippy (all targets) on Linux, and a locked check and tests on Windows MSVC. See `docs/decisions/0002-standalone-cli-crate.md` for why the CLI is a separate HTTP-only crate.
-- Every dependency is also used by `backend-rust`, so the crate builds offline (`cargo build --offline`) on any machine that has already built the backend.
+- Dependencies: `clap` (with `env`), `clap_complete`, `anstyle`, `reqwest`, `serde`, `serde_json`, `sha2`, `terminal_size` and `tokio`. `clap_complete` and `terminal_size` are not used by `backend-rust`, so an offline build (`cargo build --offline`) needs them in the local cargo cache. Fetch them once with `cargo fetch`.
+- Assertions on wrapped prose compare whitespace-collapsed text (`support::flat`), because human output wraps to the terminal width.

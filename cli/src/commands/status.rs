@@ -18,6 +18,7 @@ pub use crate::client::{HEALTH_PATH, READINESS_PATH};
 use crate::dto::{HealthResponse as HealthBody, ReadinessResponse as ReadinessBody};
 use crate::error::{exit, CliError, ErrorInfo};
 use crate::output::{to_json, Rendered};
+use crate::ui::{Badge, Glyph, Tone, Ui, MARGIN};
 
 /// Schema identifier of the `status` JSON document.
 pub const STATUS_SCHEMA: &str = "yukti.cli.status/v1";
@@ -47,7 +48,7 @@ impl StatusResult {
         match self {
             Self::Ready => "API and all configured dependencies are ready.",
             Self::Degraded => {
-                "API is up in degraded mode: at least one dependency is not configured (see above)."
+                "API is up in degraded mode: at least one dependency is not configured (see below)."
             }
             Self::NotReady => "API is up, but a configured dependency is not ready.",
             Self::Unreachable => {
@@ -125,12 +126,12 @@ impl StatusReport {
 }
 
 /// Runs both probes and renders the result.
-pub async fn run(client: &ApiClient, json: bool) -> Rendered {
+pub async fn run(client: &ApiClient, json: bool, ui: &Ui) -> Rendered {
     let report = check(client).await;
     let text = if json {
         to_json(&report)
     } else {
-        render_human(&report)
+        render_human(&report, ui)
     };
     Rendered::stdout(text, report.exit_code)
 }
@@ -296,69 +297,122 @@ pub fn describe_graph(value: &str) -> String {
     }
 }
 
-fn probe_line(check: &EndpointCheck, path: &str) -> String {
+fn probe_line(check: &EndpointCheck, path: &str, ui: &Ui) -> String {
+    let arrow = ui.g(Glyph::Arrow);
     match check.http_status {
-        Some(code) => format!("GET {path} -> HTTP {code}"),
-        None => format!("GET {path} -> no response"),
+        Some(code) => format!("GET {path} {arrow} HTTP {code}"),
+        None => format!("GET {path} {arrow} no response"),
     }
 }
 
-/// Plain-text rendering (no colour, ASCII only, so it is safe in any terminal or log).
-pub fn render_human(report: &StatusReport) -> String {
+/// Badge and one-word state for an overall result.
+pub fn result_badge(result: StatusResult) -> (Badge, &'static str) {
+    match result {
+        StatusResult::Ready => (Badge::Ok, "ready"),
+        StatusResult::Degraded => (Badge::Warn, "degraded"),
+        StatusResult::NotReady => (Badge::Flag, "not ready"),
+        StatusResult::Unreachable => (Badge::Flag, "unreachable"),
+        StatusResult::HealthFailed => (Badge::Flag, "health failed"),
+        StatusResult::ReadinessUnavailable => (Badge::Warn, "unknown"),
+        StatusResult::UnexpectedResponse => (Badge::Flag, "unexpected response"),
+    }
+}
+
+/// Badge for a dependency value. Only `"connected"` is healthy.
+pub fn dependency_badge(value: &str) -> Badge {
+    match value {
+        "connected" => Badge::Ok,
+        "unconfigured_filesystem_mode" | "disabled" => Badge::Off,
+        _ => Badge::Flag,
+    }
+}
+
+/// Dependency lines (`Database`, `Graph`) with a state glyph and the description.
+pub fn render_dependencies(deps: &Dependencies, ui: &Ui) -> String {
     let mut out = String::new();
-    let mut line = |label: &str, value: String| out.push_str(&format!("{label:<14}{value}\n"));
+    for (label, value, text) in [
+        (
+            "Database",
+            &deps.database,
+            describe_database(&deps.database),
+        ),
+        ("Graph", &deps.graph, describe_graph(&deps.graph)),
+    ] {
+        let badge = dependency_badge(value);
+        let tone = match badge {
+            Badge::Ok => Tone::Text,
+            Badge::Flag => Tone::Flag,
+            _ => Tone::Muted,
+        };
+        let glyph = match badge {
+            Badge::Ok => ui.mark(Glyph::Check, Tone::Ok),
+            Badge::Flag => ui.mark(Glyph::Cross, Tone::Flag),
+            _ => ui.mark(Glyph::Inferred, Tone::Subtle),
+        };
+        out.push_str(&ui.kv_painted(label, &format!("{glyph} {}", ui.paint(tone, &text))));
+    }
+    if let Some(api_error) = &deps.error {
+        out.push_str(&ui.kv("API error", Tone::Flag, api_error));
+    }
+    out
+}
 
-    line("YUKTI API", report.api_url.clone());
+/// Themed rendering. Colour is applied only when `ui` enables it; the layout is the same.
+pub fn render_human(report: &StatusReport, ui: &Ui) -> String {
+    let mut out = ui.header(&["status"], &report.api_url);
+    let (badge, label) = result_badge(report.result);
+    out.push('\n');
+    out.push_str(&format!("{MARGIN}{}\n", ui.badge(badge, label)));
+    out.push_str(&ui.para(MARGIN.len(), Tone::Muted, report.result.summary()));
 
-    let api = if !report.api_reachable {
-        format!("UNREACHABLE ({})", probe_line(&report.health, HEALTH_PATH))
+    out.push_str(&ui.section("Service", ""));
+    out.push_str(&ui.kv("Endpoint", Tone::Text, &report.api_url));
+    let (api_badge, api_state) = if !report.api_reachable {
+        (Badge::Flag, "unreachable")
     } else if report.result == StatusResult::HealthFailed || report.service.is_none() {
-        format!(
-            "responding, health check FAILED ({})",
-            probe_line(&report.health, HEALTH_PATH)
-        )
+        (Badge::Flag, "health check failed")
     } else {
-        format!(
-            "reachable ({}, service {})",
-            probe_line(&report.health, HEALTH_PATH),
-            report.service.as_deref().unwrap_or("?")
-        )
+        (Badge::Ok, "reachable")
     };
-    line("API", api);
+    let mut api_value = format!(
+        "{}  {}",
+        ui.badge(api_badge, api_state),
+        ui.paint(Tone::Subtle, &probe_line(&report.health, HEALTH_PATH, ui))
+    );
+    if let Some(service) = &report.service {
+        api_value.push_str(&ui.paint(Tone::Subtle, &format!("  service {service}")));
+    }
+    out.push_str(&ui.kv_painted("API", &api_value));
     if let Some(err) = &report.health.error {
-        line("", err.message.clone());
+        out.push_str(&ui.kv("", Tone::Flag, &err.message));
     }
 
     match &report.readiness {
-        None => line("Readiness", "not checked".to_string()),
+        None => out.push_str(&ui.kv("Readiness", Tone::Muted, "not checked")),
         Some(readiness) => {
-            let state = match report.result {
-                StatusResult::Ready => "ready",
-                StatusResult::Degraded => "DEGRADED",
-                StatusResult::NotReady => "NOT READY",
-                _ => "UNKNOWN",
+            let (b, state) = match report.result {
+                StatusResult::Ready => (Badge::Ok, "ready"),
+                StatusResult::Degraded => (Badge::Warn, "degraded"),
+                StatusResult::NotReady => (Badge::Flag, "not ready"),
+                _ => (Badge::Warn, "unknown"),
             };
-            line(
+            out.push_str(&ui.kv_painted(
                 "Readiness",
-                format!("{state} ({})", probe_line(readiness, READINESS_PATH)),
-            );
+                &format!(
+                    "{}  {}",
+                    ui.badge(b, state),
+                    ui.paint(Tone::Subtle, &probe_line(readiness, READINESS_PATH, ui))
+                ),
+            ));
             if let Some(deps) = &report.dependencies {
-                line("  Database", describe_database(&deps.database));
-                line("  Graph", describe_graph(&deps.graph));
-                if let Some(api_error) = &deps.error {
-                    line("  API error", api_error.clone());
-                }
+                out.push_str(&render_dependencies(deps, ui));
             }
             if let Some(err) = &readiness.error {
-                line("", err.message.clone());
+                out.push_str(&ui.kv("", Tone::Flag, &err.message));
             }
         }
     }
-
-    line(
-        "Result",
-        format!("{} (exit {})", report.result.summary(), report.exit_code),
-    );
+    out.push_str(&ui.footnote(&format!("exit {}", report.exit_code)));
     out
 }
 

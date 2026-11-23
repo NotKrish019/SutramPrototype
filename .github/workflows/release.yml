@@ -1,0 +1,130 @@
+name: YUKTI Release
+
+# Builds installable YUKTI archives (the `yukti` CLI plus the bundled `yukti-server`, which is
+# backend-rust's API binary) for macOS, Windows and Linux, and publishes them with the
+# installers to a GitHub Release.
+#
+#   git tag yukti-v0.1.0 && git push origin yukti-v0.1.0
+#
+# Manual runs (workflow_dispatch) build and upload the archives as workflow artifacts only.
+
+on:
+  push:
+    tags: ["yukti-v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: aarch64-apple-darwin
+            os: macos-latest
+          - target: x86_64-apple-darwin
+            os: macos-latest
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            cli
+            backend-rust
+          key: ${{ matrix.target }}
+
+      - name: Build yukti
+        working-directory: cli
+        run: cargo build --release --locked --target ${{ matrix.target }}
+
+      - name: Build yukti-server
+        working-directory: backend-rust
+        run: cargo build --release --locked --target ${{ matrix.target }} --bin sutram-backend-rust
+
+      - name: Package (macOS / Linux)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+          name="yukti-${{ matrix.target }}"
+          mkdir -p "dist/$name"
+          cp "cli/target/${{ matrix.target }}/release/yukti" "dist/$name/yukti"
+          cp "backend-rust/target/${{ matrix.target }}/release/sutram-backend-rust" "dist/$name/yukti-server"
+          cp cli/install/PACKAGE_README.txt "dist/$name/README.txt"
+          chmod +x "dist/$name/yukti" "dist/$name/yukti-server"
+          tar -C dist -czf "dist/$name.tar.gz" "$name"
+          if command -v sha256sum >/dev/null; then
+            (cd dist && sha256sum "$name.tar.gz" > "$name.tar.gz.sha256")
+          else
+            (cd dist && shasum -a 256 "$name.tar.gz" > "$name.tar.gz.sha256")
+          fi
+
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $name = "yukti-${{ matrix.target }}"
+          New-Item -ItemType Directory -Force -Path "dist/$name" | Out-Null
+          Copy-Item "cli/target/${{ matrix.target }}/release/yukti.exe" "dist/$name/yukti.exe"
+          Copy-Item "backend-rust/target/${{ matrix.target }}/release/sutram-backend-rust.exe" "dist/$name/yukti-server.exe"
+          Copy-Item "cli/install/PACKAGE_README.txt" "dist/$name/README.txt"
+          Compress-Archive -Path "dist/$name" -DestinationPath "dist/$name.zip" -Force
+          $hash = (Get-FileHash "dist/$name.zip" -Algorithm SHA256).Hash.ToLower()
+          Set-Content -Path "dist/$name.zip.sha256" -Value "$hash  $name.zip" -NoNewline
+
+      - name: Smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          dir="dist/yukti-${{ matrix.target }}"
+          case "${{ matrix.target }}" in
+            x86_64-apple-darwin) echo "cross-compiled on Apple Silicon; not executed" ;;
+            *) "$dir/yukti" --version && "$dir/yukti" completions bash > /dev/null ;;
+          esac
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: yukti-${{ matrix.target }}
+          path: |
+            dist/*.tar.gz
+            dist/*.zip
+            dist/*.sha256
+          if-no-files-found: error
+
+  publish:
+    name: Publish GitHub Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/yukti-v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Collect installers
+        run: cp cli/install/install.sh cli/install/install.ps1 dist/
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: YUKTI ${{ github.ref_name }}
+          generate_release_notes: true
+          files: dist/*

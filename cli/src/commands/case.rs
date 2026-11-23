@@ -1,4 +1,4 @@
-//! `yukti case list | create | show`.
+//! `yukti case list | create | show | overview`.
 //!
 //! API contracts (`backend-rust/src/api/routes/cases.rs`, registered in `backend-rust/src/app.rs`):
 //! * `GET  /api/v1/cases` returns `Vec<CaseDto>`.
@@ -13,25 +13,29 @@
 use serde::Serialize;
 use serde_json::{Map, Value};
 
-use crate::cli::{CaseCommand, CreateCaseArgs, ShowCaseArgs};
+use crate::cli::{CaseArgs, CaseCommand, CreateCaseArgs, ListCasesArgs, Severity, ShowCaseArgs};
 use crate::client::ApiClient;
 use crate::dto::{
     is_hyphenated_uuid, CaseDto, CaseId, CaseRecord, CreateCaseRequest, ReadinessResponse,
 };
 use crate::error::{exit, CliError};
 use crate::output::{compact_json, render_error, render_warnings, to_json, Rendered};
+use crate::ui::{short_id, status_badge, Badge, Cell, Column, Glyph, Tone, Ui, MARGIN};
 
 /// Schema of the `case list` JSON document.
 pub const CASE_LIST_SCHEMA: &str = "yukti.cli.case_list/v1";
 /// Schema of the `case create` / `case show` JSON document.
 pub const CASE_SCHEMA: &str = "yukti.cli.case/v1";
+/// Schema of the `case overview` JSON document.
+pub const CASE_OVERVIEW_SCHEMA: &str = "yukti.cli.case_overview/v1";
 
 /// Runs a `case` subcommand.
-pub async fn run(command: &CaseCommand, client: &ApiClient, json: bool) -> Rendered {
+pub async fn run(command: &CaseCommand, client: &ApiClient, json: bool, ui: &Ui) -> Rendered {
     let result = match command {
-        CaseCommand::List => list(client, json).await,
-        CaseCommand::Create(args) => create(args, client, json).await,
-        CaseCommand::Show(args) => show(args, client, json).await,
+        CaseCommand::List(args) => list(args, client, json, ui).await,
+        CaseCommand::Create(args) => create(args, client, json, ui).await,
+        CaseCommand::Show(args) => show(args, client, json, ui).await,
+        CaseCommand::Overview(args) => return overview(args, client, json, ui).await,
     };
     result.unwrap_or_else(|err| render_error(&err, json))
 }
@@ -49,11 +53,74 @@ pub struct StorageInfo {
     pub error: Option<String>,
 }
 
+/// Client-side filters applied to `case list`, echoed in the JSON document.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
+pub struct CaseFilters {
+    pub status: Option<String>,
+    pub search: Option<String>,
+    pub limit: Option<usize>,
+}
+
+impl CaseFilters {
+    pub fn from_args(args: &ListCasesArgs) -> Result<Self, CliError> {
+        let blank = |v: &Option<String>, o: &str| match v {
+            Some(x) if x.trim().is_empty() => Err(CliError::InvalidArgument(format!(
+                "{o} must not be blank; omit the option instead"
+            ))),
+            other => Ok(other.as_ref().map(|x| x.trim().to_string())),
+        };
+        if args.limit == Some(0) {
+            return Err(CliError::InvalidArgument(
+                "--limit must be at least 1".to_string(),
+            ));
+        }
+        Ok(Self {
+            status: blank(&args.status, "--status")?,
+            search: blank(&args.search, "--search")?,
+            limit: args.limit,
+        })
+    }
+
+    fn active(&self) -> bool {
+        self.status.is_some() || self.search.is_some() || self.limit.is_some()
+    }
+
+    /// The matching records, in the API's order.
+    pub fn apply<'a>(&self, cases: &'a [CaseRecord]) -> Vec<&'a CaseRecord> {
+        let needle = self.search.as_ref().map(|s| s.to_lowercase());
+        cases
+            .iter()
+            .filter(|c| {
+                self.status
+                    .as_ref()
+                    .is_none_or(|s| c.dto.status.eq_ignore_ascii_case(s))
+            })
+            .filter(|c| {
+                needle.as_ref().is_none_or(|n| {
+                    [
+                        Some(&c.dto.title),
+                        c.dto.fir_number.as_ref(),
+                        c.dto.description.as_ref(),
+                    ]
+                    .into_iter()
+                    .flatten()
+                    .any(|field| field.to_lowercase().contains(n))
+                })
+            })
+            .take(self.limit.unwrap_or(usize::MAX))
+            .collect()
+    }
+}
+
 #[derive(Serialize)]
 struct CaseListDocument<'a> {
     schema: &'static str,
     api_url: &'a str,
+    /// Records shown (after filters).
     count: usize,
+    /// Records returned by the API (before filters).
+    total_count: usize,
+    filters: &'a CaseFilters,
     /// Records exactly as returned, in the API's order.
     cases: Vec<&'a Value>,
     storage: &'a StorageInfo,
@@ -62,22 +129,31 @@ struct CaseListDocument<'a> {
     warnings: &'a [String],
 }
 
-async fn list(client: &ApiClient, json: bool) -> Result<Rendered, CliError> {
-    let cases = client.list_cases().await?;
+async fn list(
+    args: &ListCasesArgs,
+    client: &ApiClient,
+    json: bool,
+    ui: &Ui,
+) -> Result<Rendered, CliError> {
+    let filters = CaseFilters::from_args(args)?;
+    let all = client.list_cases().await?;
+    let shown = filters.apply(&all);
     let storage = storage_info(client).await;
 
     let mut warnings = Vec::new();
     warnings.extend(storage_warning(&storage));
-    warnings.extend(record_warnings(&cases));
+    warnings.extend(record_warnings(&all));
 
     if json {
         let doc = CaseListDocument {
             schema: CASE_LIST_SCHEMA,
             api_url: client.base_url(),
-            count: cases.len(),
-            cases: cases.iter().map(|c| &c.raw).collect(),
+            count: shown.len(),
+            total_count: all.len(),
+            filters: &filters,
+            cases: shown.iter().map(|c| &c.raw).collect(),
             storage: &storage,
-            placeholder_case_ids: cases
+            placeholder_case_ids: shown
                 .iter()
                 .filter(|c| c.dto.has_filesystem_placeholder_marker())
                 .map(|c| c.dto.case_id.as_str())
@@ -87,8 +163,10 @@ async fn list(client: &ApiClient, json: bool) -> Result<Rendered, CliError> {
         return Ok(Rendered::stdout(to_json(&doc), exit::SUCCESS));
     }
 
+    let mut stdout = ui.header(&["case", "list"], client.base_url());
+    stdout.push_str(&render_case_table(&shown, all.len(), &filters, ui));
     Ok(Rendered {
-        stdout: render_case_table(&cases),
+        stdout,
         stderr: render_warnings(&warnings),
         exit_code: exit::SUCCESS,
     })
@@ -164,44 +242,102 @@ fn record_warnings(cases: &[CaseRecord]) -> Vec<String> {
     warnings
 }
 
-/// Plain-text table of cases in the given order.
-pub fn render_case_table(cases: &[CaseRecord]) -> String {
+/// Themed table of cases in the given order, with status counts.
+pub fn render_case_table(
+    cases: &[&CaseRecord],
+    total: usize,
+    filters: &CaseFilters,
+    ui: &Ui,
+) -> String {
     if cases.is_empty() {
-        return "No cases returned by the API.\n".to_string();
-    }
-    let status_width = cases
-        .iter()
-        .map(|c| c.dto.status.len())
-        .max()
-        .unwrap_or(0)
-        .max("STATUS".len());
-    let created_width = cases
-        .iter()
-        .map(|c| c.dto.created_at.len())
-        .max()
-        .unwrap_or(0)
-        .max("CREATED".len());
-
-    let mut out = format!(
-        "{:<36}  {:<status_width$}  {:<created_width$}  TITLE\n",
-        "CASE ID", "STATUS", "CREATED"
-    );
-    for case in cases {
-        let marker = if case.dto.has_filesystem_placeholder_marker() {
-            "  [filesystem placeholder]"
+        let text = if total == 0 {
+            "No cases returned by the API.".to_string()
         } else {
-            ""
+            format!("No cases match the filters ({total} returned by the API).")
         };
-        out.push_str(&format!(
-            "{:<36}  {:<status_width$}  {:<created_width$}  {}{marker}\n",
-            case.dto.case_id, case.dto.status, case.dto.created_at, case.dto.title
+        let mut out = format!("\n{MARGIN}{}\n", ui.paint(Tone::Muted, &text));
+        out.push('\n');
+        out.push_str(&ui.next("create one", "yukti case create --title \"...\""));
+        return out;
+    }
+    // Status distribution, in first-seen order.
+    let mut by_status: Vec<(String, usize)> = Vec::new();
+    for c in cases {
+        match by_status.iter_mut().find(|(s, _)| *s == c.dto.status) {
+            Some((_, n)) => *n += 1,
+            None => by_status.push((c.dto.status.clone(), 1)),
+        }
+    }
+    let mut stats: Vec<(String, &str, Tone)> =
+        vec![(cases.len().to_string(), "cases", Tone::Strong)];
+    let labels: Vec<String> = by_status.iter().map(|(s, _)| s.to_lowercase()).collect();
+    for ((_, n), label) in by_status.iter().zip(labels.iter()) {
+        stats.push((n.to_string(), label.as_str(), Tone::Muted));
+    }
+    let placeholders = cases
+        .iter()
+        .filter(|c| c.dto.has_filesystem_placeholder_marker())
+        .count();
+    let mut out = String::from("\n");
+    out.push_str(&ui.stats(&stats));
+    out.push('\n');
+
+    let rows: Vec<Vec<Cell>> = cases
+        .iter()
+        .map(|c| {
+            let (glyph, tone) = badge_mark(status_badge(&c.dto.status));
+            let mut title = c.dto.title.clone();
+            let mut title_cell_tone = Tone::Text;
+            if c.dto.has_filesystem_placeholder_marker() {
+                title.push_str("  [filesystem placeholder]");
+                title_cell_tone = Tone::Supplied;
+            }
+            vec![
+                Cell::new(c.dto.case_id.clone(), Tone::Subtle),
+                Cell::new(c.dto.status.clone(), Tone::Text).marked(glyph, tone),
+                Cell::new(c.dto.created_at.clone(), Tone::Muted),
+                Cell::new(c.dto.fir_number.clone().unwrap_or_default(), Tone::Muted),
+                Cell::new(title, title_cell_tone),
+            ]
+        })
+        .collect();
+    out.push_str(&ui.table(
+        &[
+            Column::left("CASE ID"),
+            Column::left("STATUS"),
+            Column::left("CREATED"),
+            Column::left("FIR").max(18),
+            Column::left("TITLE"),
+        ],
+        &rows,
+    ));
+    let mut note = if filters.active() {
+        format!(
+            "{} of {total} case(s) match the filters, in the order returned by the API.",
+            cases.len()
+        )
+    } else {
+        format!("{} case(s), in the order returned by the API.", cases.len())
+    };
+    if placeholders > 0 {
+        note.push_str(&format!(
+            " {placeholders} filesystem placeholder(s): titles and timestamps generated by the API."
         ));
     }
-    out.push_str(&format!(
-        "\n{} case(s), in the order returned by the API.\n",
-        cases.len()
-    ));
+    out.push_str(&ui.footnote(&note));
+    out.push_str(&ui.next("brief", "yukti case overview --case <uuid>"));
     out
+}
+
+/// Glyph and tone for a badge, for table cells.
+pub fn badge_mark(badge: Badge) -> (Glyph, Tone) {
+    match badge {
+        Badge::Ok => (Glyph::Check, Tone::Ok),
+        Badge::Warn => (Glyph::Half, Tone::Warn),
+        Badge::Flag => (Glyph::Cross, Tone::Flag),
+        Badge::Info => (Glyph::Observed, Tone::Inferred),
+        Badge::Off => (Glyph::Observed, Tone::Subtle),
+    }
 }
 
 /* ---------------------------------------------------------------------------- create, show */
@@ -274,6 +410,7 @@ async fn create(
     args: &CreateCaseArgs,
     client: &ApiClient,
     json: bool,
+    ui: &Ui,
 ) -> Result<Rendered, CliError> {
     let request = build_create_request(args)?;
     let record = client.create_case(&request).await?;
@@ -294,10 +431,15 @@ async fn create(
         ));
     }
 
-    render_case(client, "create", &record, &warnings, json)
+    render_case(client, "create", &record, &warnings, json, ui)
 }
 
-async fn show(args: &ShowCaseArgs, client: &ApiClient, json: bool) -> Result<Rendered, CliError> {
+async fn show(
+    args: &ShowCaseArgs,
+    client: &ApiClient,
+    json: bool,
+    ui: &Ui,
+) -> Result<Rendered, CliError> {
     let case_id = CaseId::parse(&args.case_id, "--case")?;
     let record = client.get_case(&case_id).await?;
 
@@ -315,7 +457,7 @@ async fn show(args: &ShowCaseArgs, client: &ApiClient, json: bool) -> Result<Ren
         );
     }
 
-    render_case(client, "show", &record, &warnings, json)
+    render_case(client, "show", &record, &warnings, json, ui)
 }
 
 fn render_case(
@@ -324,6 +466,7 @@ fn render_case(
     record: &CaseRecord,
     warnings: &[String],
     json: bool,
+    ui: &Ui,
 ) -> Result<Rendered, CliError> {
     if json {
         let doc = CaseDocument {
@@ -335,11 +478,24 @@ fn render_case(
         };
         return Ok(Rendered::stdout(to_json(&doc), exit::SUCCESS));
     }
-    let mut stdout = String::new();
+    let mut stdout = ui.header(&["case", action], client.base_url());
+    stdout.push('\n');
     if action == "create" {
-        stdout.push_str(&format!("Created case {}\n\n", record.dto.case_id));
+        stdout.push_str(&format!(
+            "{MARGIN}{}  {}\n",
+            ui.badge(Badge::Ok, "created"),
+            ui.paint(Tone::Text, &format!("Created case {}", record.dto.case_id))
+        ));
     }
-    stdout.push_str(&render_case_details(&record.dto));
+    stdout.push_str(&render_case_details(&record.dto, ui));
+    stdout.push('\n');
+    let id = &record.dto.case_id;
+    stdout.push_str(&ui.next("set working", &format!("export YUKTI_CASE={id}")));
+    stdout.push_str(&ui.next(
+        "add evidence",
+        &format!("yukti evidence ingest <file> --case {id}"),
+    ));
+    stdout.push_str(&ui.next("brief", &format!("yukti case overview --case {id}")));
     Ok(Rendered {
         stdout,
         stderr: render_warnings(warnings),
@@ -347,26 +503,430 @@ fn render_case(
     })
 }
 
-/// Plain-text field list of one case. Absent values are shown as `(none)`.
-pub fn render_case_details(case: &CaseDto) -> String {
+/// Title line, status badge and the field list of one case. Absent values read `(none)`.
+pub fn render_case_details(case: &CaseDto, ui: &Ui) -> String {
     let none = || "(none)".to_string();
-    let rows: [(&str, String); 9] = [
-        ("Case ID", case.case_id.clone()),
-        ("Title", case.title.clone()),
-        ("Status", case.status.clone()),
-        ("Description", case.description.clone().unwrap_or_else(none)),
-        ("FIR number", case.fir_number.clone().unwrap_or_else(none)),
+    let mut out = format!(
+        "{MARGIN}{}  {}\n",
+        ui.bold(Tone::Strong, &case.title),
+        ui.badge(status_badge(&case.status), &case.status)
+    );
+    if case.has_filesystem_placeholder_marker() {
+        out.push_str(&format!(
+            "{MARGIN}{} {}\n",
+            ui.mark(Glyph::Supplied, Tone::Supplied),
+            ui.paint(
+                Tone::Supplied,
+                "filesystem placeholder: title and timestamps generated by the API"
+            )
+        ));
+    }
+    out.push_str(&ui.section("Case record", ""));
+    let rows: [(&str, Tone, String); 9] = [
+        ("Case ID", Tone::Text, case.case_id.clone()),
+        ("Title", Tone::Text, case.title.clone()),
+        ("Status", Tone::Text, case.status.clone()),
+        (
+            "Description",
+            Tone::Text,
+            case.description.clone().unwrap_or_else(none),
+        ),
+        (
+            "FIR number",
+            Tone::Text,
+            case.fir_number.clone().unwrap_or_else(none),
+        ),
         (
             "Investigator",
+            Tone::Text,
             case.investigator_id.clone().unwrap_or_else(none),
         ),
-        ("Created", case.created_at.clone()),
-        ("Updated", case.updated_at.clone()),
-        ("Metadata", compact_json(&case.metadata)),
+        ("Created", Tone::Muted, case.created_at.clone()),
+        ("Updated", Tone::Muted, case.updated_at.clone()),
+        ("Metadata", Tone::Subtle, compact_json(&case.metadata)),
     ];
-    rows.iter()
-        .map(|(label, value)| format!("{label:<14}{value}\n"))
-        .collect()
+    for (label, tone, value) in rows {
+        let tone = if value == "(none)" {
+            Tone::Subtle
+        } else {
+            tone
+        };
+        out.push_str(&ui.kv(label, tone, &value));
+    }
+    out
+}
+
+/* ------------------------------------------------------------------------------ overview */
+
+/// One section of the overview: the response exactly as returned, or why it is missing.
+#[derive(Serialize)]
+struct OverviewSection {
+    path: String,
+    response: Option<Value>,
+    error: Option<crate::error::ErrorInfo>,
+}
+
+impl OverviewSection {
+    fn of(path: String, result: &Result<Value, CliError>) -> Self {
+        Self {
+            path,
+            response: result.as_ref().ok().cloned(),
+            error: result.as_ref().err().map(crate::error::ErrorInfo::from),
+        }
+    }
+}
+
+#[derive(Serialize)]
+struct OverviewDocument<'a> {
+    schema: &'static str,
+    api_url: &'a str,
+    case_id: &'a str,
+    /// `false` when any section could not be retrieved (the exit code is then non-zero).
+    complete: bool,
+    case: &'a Value,
+    evidence: OverviewSection,
+    reconstruction: OverviewSection,
+    gaps: OverviewSection,
+    graph: OverviewSection,
+    warnings: &'a [String],
+}
+
+async fn overview(args: &CaseArgs, client: &ApiClient, json: bool, ui: &Ui) -> Rendered {
+    use crate::client::{case_evidence_path, case_reconstruction_path, case_view_path};
+    let (case_id, case) = match super::require_case(&args.case_id, client, json, "requested").await
+    {
+        Ok(found) => found,
+        Err(rendered) => return rendered,
+    };
+    let evidence_path = case_evidence_path(&case_id);
+    let reconstruction_path = case_reconstruction_path(&case_id);
+    let gaps_path = case_view_path(&case_id, "gaps");
+    let graph_path = case_view_path(&case_id, "graph/summary");
+    let (evidence, reconstruction, gaps, graph) = tokio::join!(
+        client.get_json(&evidence_path),
+        client.get_json(&reconstruction_path),
+        client.get_json(&gaps_path),
+        client.get_json(&graph_path),
+    );
+
+    let mut warnings: Vec<String> = super::placeholder_warning(&case_id, &case)
+        .into_iter()
+        .collect();
+    let failures: Vec<(&str, &CliError)> = [
+        ("evidence", &evidence),
+        ("reconstruction", &reconstruction),
+        ("gaps", &gaps),
+        ("graph summary", &graph),
+    ]
+    .into_iter()
+    .filter_map(|(name, r)| r.as_ref().err().map(|e| (name, e)))
+    .collect();
+    for (name, err) in &failures {
+        warnings.push(format!("The {name} section is unavailable: {err}"));
+    }
+    let exit_code = failures
+        .first()
+        .map_or(exit::SUCCESS, |(_, e)| e.exit_code());
+
+    if json {
+        let doc = OverviewDocument {
+            schema: CASE_OVERVIEW_SCHEMA,
+            api_url: client.base_url(),
+            case_id: case_id.as_str(),
+            complete: failures.is_empty(),
+            case: &case.raw,
+            evidence: OverviewSection::of(evidence_path, &evidence),
+            reconstruction: OverviewSection::of(reconstruction_path, &reconstruction),
+            gaps: OverviewSection::of(gaps_path, &gaps),
+            graph: OverviewSection::of(graph_path, &graph),
+            warnings: &warnings,
+        };
+        return Rendered::stdout(to_json(&doc), exit_code);
+    }
+
+    let mut out = ui.header(&["case", "overview"], client.base_url());
+    out.push('\n');
+    out.push_str(&format!(
+        "{MARGIN}{}  {}\n",
+        ui.bold(Tone::Strong, &case.dto.title),
+        ui.badge(status_badge(&case.dto.status), &case.dto.status)
+    ));
+    let mut meta = vec![case_id.as_str().to_string()];
+    if let Some(fir) = &case.dto.fir_number {
+        meta.push(format!("FIR {fir}"));
+    }
+    if let Some(inv) = &case.dto.investigator_id {
+        meta.push(format!("investigator {inv}"));
+    }
+    meta.push(format!("created {}", case.dto.created_at));
+    out.push_str(&ui.para(
+        MARGIN.len(),
+        Tone::Subtle,
+        &meta.join(&format!(" {} ", ui.g(Glyph::Dot))),
+    ));
+
+    // Evidence.
+    out.push_str(&ui.section("Evidence", ""));
+    match &evidence {
+        Err(err) => out.push_str(&ui.kv("Unavailable", Tone::Flag, &err.to_string())),
+        Ok(Value::Array(items)) => {
+            let mut by_type: Vec<(String, usize)> = Vec::new();
+            let mut bytes: u64 = 0;
+            let mut by_status: Vec<(String, usize)> = Vec::new();
+            for item in items {
+                let t = item["source_type"]
+                    .as_str()
+                    .unwrap_or("unknown")
+                    .to_string();
+                match by_type.iter_mut().find(|(k, _)| *k == t) {
+                    Some((_, n)) => *n += 1,
+                    None => by_type.push((t, 1)),
+                }
+                let st = item["status"].as_str().unwrap_or("unknown").to_string();
+                match by_status.iter_mut().find(|(k, _)| *k == st) {
+                    Some((_, n)) => *n += 1,
+                    None => by_status.push((st, 1)),
+                }
+                bytes += item["file_size_bytes"].as_u64().unwrap_or(0);
+            }
+            out.push_str(
+                &ui.stats(&[
+                    (items.len().to_string(), "exhibits", Tone::Strong),
+                    (
+                        crate::ui::human_bytes(bytes)
+                            .split(" (")
+                            .next()
+                            .unwrap_or("")
+                            .to_string(),
+                        "stored",
+                        Tone::Muted,
+                    ),
+                ]),
+            );
+            if !by_type.is_empty() {
+                let types = by_type
+                    .iter()
+                    .map(|(t, n)| format!("{t} {n}"))
+                    .collect::<Vec<_>>()
+                    .join(&format!(" {} ", ui.g(Glyph::Dot)));
+                out.push_str(&ui.kv("Source types", Tone::Text, &types));
+                let statuses = by_status
+                    .iter()
+                    .map(|(t, n)| format!("{t} {n}"))
+                    .collect::<Vec<_>>()
+                    .join(&format!(" {} ", ui.g(Glyph::Dot)));
+                out.push_str(&ui.kv("Ingestion", Tone::Text, &statuses));
+            }
+        }
+        Ok(_) => out.push_str(&ui.kv("Unavailable", Tone::Flag, "unexpected response shape")),
+    }
+
+    // Reconstruction.
+    out.push_str(&ui.section("Reconstruction", "GET, stored or computed by the API"));
+    match &reconstruction {
+        Err(err) => out.push_str(&ui.kv("Unavailable", Tone::Flag, &err.to_string())),
+        Ok(raw) => {
+            match crate::dto::ReconstructionRecord::from_value(&reconstruction_path, raw.clone()) {
+                Err(err) => out.push_str(&ui.kv("Unavailable", Tone::Flag, &err.to_string())),
+                Ok(record) => {
+                    let r = &record.dto;
+                    let s = super::reconstruction::ReconstructionSummary::of(r);
+                    out.push_str(&ui.stats(&[
+                        (s.timeline_total_events.to_string(), "events", Tone::Strong),
+                        (
+                            s.timeline_excluded_events.to_string(),
+                            "excluded",
+                            Tone::Muted,
+                        ),
+                        (
+                            s.assumptions.to_string(),
+                            "assumptions",
+                            if s.assumptions > 0 {
+                                Tone::Warn
+                            } else {
+                                Tone::Muted
+                            },
+                        ),
+                        (
+                            s.contradiction_leads.to_string(),
+                            "leads",
+                            if s.contradiction_leads > 0 {
+                                Tone::Flag
+                            } else {
+                                Tone::Muted
+                            },
+                        ),
+                    ]));
+                    let total = s.timeline_total_events.max(1) as f64;
+                    out.push_str(&ui.kv_painted(
+                        "Ordering",
+                        &format!(
+                            "{}  {}",
+                            ui.meter(s.timeline_strictly_ordered as f64 / total, 20, Tone::Ok),
+                            ui.paint(
+                                Tone::Muted,
+                                &format!(
+                                    "{} strictly ordered {} {} concurrent/uncertain",
+                                    s.timeline_strictly_ordered,
+                                    ui.g(Glyph::Dot),
+                                    s.timeline_concurrent_uncertain
+                                )
+                            )
+                        ),
+                    ));
+                    out.push_str(&ui.kv(
+                        "Movement",
+                        Tone::Text,
+                        &format!(
+                            "{} trajectory(ies), {} segment(s), {} over the speed threshold",
+                            s.spatial_trajectories,
+                            s.spatial_movement_segments,
+                            s.spatial_segments_exceeding_speed_threshold
+                        ),
+                    ));
+                    out.push_str(&super::reconstruction::render_export_gate(r, ui));
+                    for lead in r.contradictions.leads.iter().take(3) {
+                        out.push_str(&format!(
+                            "{MARGIN}{} {}  {}\n",
+                            ui.mark(Glyph::Flag, Tone::Flag),
+                            ui.bold(Tone::Flag, &lead.lead_type),
+                            ui.paint(
+                                Tone::Muted,
+                                &format!(
+                                    "{} {} {}  entity {}",
+                                    lead.event_a_id,
+                                    ui.g(Glyph::Arrow),
+                                    lead.event_b_id,
+                                    short_id(&lead.entity_id, ui)
+                                )
+                            )
+                        ));
+                    }
+                    if r.contradictions.leads.len() > 3 {
+                        out.push_str(&ui.hint(&format!(
+                            "{} more lead(s): yukti contradictions --case {}",
+                            r.contradictions.leads.len() - 3,
+                            case_id.as_str()
+                        )));
+                    }
+                }
+            }
+        }
+    }
+
+    // Gaps.
+    out.push_str(&ui.section("Evidence gaps", ""));
+    match &gaps {
+        Err(err) => out.push_str(&ui.kv("Unavailable", Tone::Flag, &err.to_string())),
+        Ok(raw) => {
+            let total = raw["total_gaps_count"].as_u64().unwrap_or(0);
+            let sev = |k: &str| raw["gaps_by_severity"][k].as_u64().unwrap_or(0);
+            out.push_str(&ui.stats(&[
+                (total.to_string(), "gaps", Tone::Strong),
+                (
+                    sev("CRITICAL").to_string(),
+                    "critical",
+                    if sev("CRITICAL") > 0 {
+                        Tone::Flag
+                    } else {
+                        Tone::Muted
+                    },
+                ),
+                (
+                    sev("HIGH").to_string(),
+                    "high",
+                    if sev("HIGH") > 0 {
+                        Tone::Flag
+                    } else {
+                        Tone::Muted
+                    },
+                ),
+                (
+                    sev("MEDIUM").to_string(),
+                    "medium",
+                    if sev("MEDIUM") > 0 {
+                        Tone::Warn
+                    } else {
+                        Tone::Muted
+                    },
+                ),
+                (sev("LOW").to_string(), "low", Tone::Muted),
+            ]));
+            if let Some(items) = raw["gaps"].as_array() {
+                let mut sorted: Vec<&Value> = items.iter().collect();
+                sorted.sort_by_key(|g| {
+                    std::cmp::Reverse(Severity::rank(g["severity"].as_str().unwrap_or("")))
+                });
+                for g in sorted.iter().take(3) {
+                    let sevr = g["severity"].as_str().unwrap_or("?");
+                    let tone = match Severity::rank(sevr) {
+                        2 | 3 => Tone::Flag,
+                        1 => Tone::Warn,
+                        _ => Tone::Muted,
+                    };
+                    let glyph = if Severity::rank(sevr) >= 2 {
+                        Glyph::Flag
+                    } else {
+                        Glyph::Assumed
+                    };
+                    out.push_str(&format!(
+                        "{MARGIN}{} {}  {}\n",
+                        ui.mark(glyph, tone),
+                        ui.bold(tone, &crate::ui::pad(sevr, 8)),
+                        ui.paint(
+                            Tone::Text,
+                            &crate::ui::truncate(
+                                g["title"].as_str().unwrap_or(""),
+                                ui.width.saturating_sub(16),
+                                ui.g(Glyph::Ellipsis)
+                            )
+                        )
+                    ));
+                }
+            }
+        }
+    }
+
+    // Graph.
+    out.push_str(&ui.section("Knowledge graph", ""));
+    match &graph {
+        Err(err) => out.push_str(&ui.kv("Unavailable", Tone::Flag, &err.to_string())),
+        Ok(raw) => {
+            let n = |k: &str| raw[k].as_i64().unwrap_or(0).to_string();
+            out.push_str(&ui.stats(&[
+                (n("entity_candidate_count"), "entities", Tone::Strong),
+                (n("event_candidate_count"), "events", Tone::Muted),
+                (
+                    n("relationship_assertion_count"),
+                    "relationships",
+                    Tone::Inferred,
+                ),
+            ]));
+            let status = raw["graph_synchronization_status"]
+                .as_str()
+                .unwrap_or("unknown");
+            out.push_str(
+                &ui.kv_painted("Sync", &ui.badge(super::graph::sync_badge(status), status)),
+            );
+        }
+    }
+
+    out.push('\n');
+    out.push_str(&ui.legend());
+    out.push('\n');
+    let id = case_id.as_str();
+    out.push_str(&ui.next("timeline", &format!("yukti timeline --case {id}")));
+    out.push_str(&ui.next("leads", &format!("yukti contradictions --case {id}")));
+    out.push_str(&ui.next("gaps", &format!("yukti gaps --case {id}")));
+    out.push_str(&ui.next(
+        "dossier",
+        &format!("yukti report --case {id} --out dossier.md"),
+    ));
+    Rendered {
+        stdout: out,
+        stderr: render_warnings(&warnings),
+        exit_code,
+    }
 }
 
 #[cfg(test)]

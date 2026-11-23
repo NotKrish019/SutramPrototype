@@ -314,3 +314,9 @@ fn handle(mut stream: TcpStream, routes: &[Route], log: &Mutex<Vec<RecordedReque
     let _ = stream.write_all(response.as_bytes());
     let _ = stream.flush();
 }
+
+/// Collapses every whitespace run to one space, so assertions on prose survive the human
+/// output's word wrapping and column alignment.
+pub fn flat(text: &str) -> String {
+    text.split_whitespace().collect::<Vec<_>>().join(" ")
+}

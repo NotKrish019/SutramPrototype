@@ -41,6 +41,91 @@ pub fn case_report_path(case_id: &CaseId) -> String {
     format!("{CASES_PATH}/{}/report", case_id.as_str())
 }
 
+/// Percent-encodes one path segment or query value (RFC 3986 unreserved characters pass).
+pub fn encode_component(raw: &str) -> String {
+    let mut out = String::with_capacity(raw.len());
+    for byte in raw.bytes() {
+        match byte {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                out.push(byte as char)
+            }
+            other => out.push_str(&format!("%{other:02X}")),
+        }
+    }
+    out
+}
+
+/// `/api/v1/cases/:case_id/<suffix>` for the read-only reconstruction views
+/// (`timeline`, `spatial`, `contradictions`, `gaps`, `reconstruction/provenance`, `graph/summary`).
+pub fn case_view_path(case_id: &CaseId, suffix: &str) -> String {
+    format!("{CASES_PATH}/{}/{suffix}", case_id.as_str())
+}
+
+/// `GET /api/v1/cases/:case_id/findings/:finding_id/provenance`.
+pub fn finding_provenance_path(case_id: &CaseId, finding_id: &str) -> String {
+    format!(
+        "{CASES_PATH}/{}/findings/{}/provenance",
+        case_id.as_str(),
+        encode_component(finding_id)
+    )
+}
+
+/// `POST /api/v1/cases/:case_id/what-if`.
+pub fn case_whatif_path(case_id: &CaseId) -> String {
+    format!("{CASES_PATH}/{}/what-if", case_id.as_str())
+}
+
+/// `GET /api/v1/cases/:case_id/graph/entities/:entity_id/neighbors[?depth=&limit=]`.
+pub fn graph_neighbors_path(
+    case_id: &CaseId,
+    entity_id: &str,
+    depth: Option<u32>,
+    limit: Option<i64>,
+) -> String {
+    let mut query = Vec::new();
+    if let Some(d) = depth {
+        query.push(format!("depth={d}"));
+    }
+    if let Some(l) = limit {
+        query.push(format!("limit={l}"));
+    }
+    let mut path = format!(
+        "{CASES_PATH}/{}/graph/entities/{}/neighbors",
+        case_id.as_str(),
+        encode_component(entity_id)
+    );
+    if !query.is_empty() {
+        path.push('?');
+        path.push_str(&query.join("&"));
+    }
+    path
+}
+
+/// `GET /api/v1/cases/:case_id/graph/path?from=&to=[&max_hops=]`.
+pub fn graph_path_path(case_id: &CaseId, from: &str, to: &str, max_hops: Option<u32>) -> String {
+    let mut path = format!(
+        "{CASES_PATH}/{}/graph/path?from={}&to={}",
+        case_id.as_str(),
+        encode_component(from),
+        encode_component(to)
+    );
+    if let Some(h) = max_hops {
+        path.push_str(&format!("&max_hops={h}"));
+    }
+    path
+}
+
+/// `/api/v1/evidence/:evidence_id[/<suffix>]` (`extract`, `reprocess`, `extraction`,
+/// `extraction/runs`; empty suffix for the receipt).
+pub fn evidence_path(evidence_id: &str, suffix: &str) -> String {
+    let base = format!("/api/v1/evidence/{}", encode_component(evidence_id));
+    if suffix.is_empty() {
+        base
+    } else {
+        format!("{base}/{suffix}")
+    }
+}
+
 /// A completed HTTP exchange, kept raw so callers can decide how to interpret any status.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RawResponse {

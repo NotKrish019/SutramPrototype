@@ -7,8 +7,9 @@ use std::sync::atomic::{AtomicU32, Ordering};
 
 use clap::Parser;
 use serde_json::{json, Value};
-use support::{fixtures, MockServer, Route};
+use support::{fixtures, flat, MockServer, Route};
 use yukti_cli::cli::Cli;
+use yukti_cli::commands::evidence::sha256_hex;
 use yukti_cli::config::EnvVars;
 use yukti_cli::output::Rendered;
 
@@ -46,10 +47,12 @@ impl Drop for Scratch {
     }
 }
 
-/// A fixture receipt with `file_size_bytes` set to the real size of the uploaded bytes.
-fn receipt(fixture: &str, size: usize) -> Value {
+/// A fixture receipt with `file_size_bytes` and `sha256_hash` set to those of the uploaded
+/// bytes, as the API computes them from what it stored.
+fn receipt(fixture: &str, bytes: &[u8]) -> Value {
     let mut v: Value = serde_json::from_str(fixture).unwrap();
-    v["file_size_bytes"] = json!(size);
+    v["file_size_bytes"] = json!(bytes.len());
+    v["sha256_hash"] = json!(sha256_hex(bytes));
     v
 }
 
@@ -113,10 +116,7 @@ async fn csv_upload_checks_the_case_then_sends_the_file_unmodified() {
     let scratch = Scratch::new();
     let path = scratch.file("cdr.csv", CDR_CSV);
     let before = std::fs::metadata(&path).unwrap().modified().unwrap();
-    let server = upload_api(
-        201,
-        &receipt(fixtures::RECEIPT_CSV, CDR_CSV.len()).to_string(),
-    );
+    let server = upload_api(201, &receipt(fixtures::RECEIPT_CSV, CDR_CSV).to_string());
 
     let r = yukti(
         &server.base_url,
@@ -179,15 +179,14 @@ async fn csv_upload_checks_the_case_then_sends_the_file_unmodified() {
 
     for expected in [
         format!("Ingested evidence {}", fixtures::RECEIPT_CSV_ID),
-        format!(
-            "SHA-256         {} (computed by the API)",
-            fixtures::RECEIPT_CSV_SHA
-        ),
-        "Source type     TABULAR_CSV".to_string(),
-        format!("Size            {} bytes", CDR_CSV.len()),
-        "Timezone        Asia/Kolkata (declared)".to_string(),
-        "Clock offset    -30.0 (declared)".to_string(),
-        "Auto-extract    not requested".to_string(),
+        format!("Recorded by API   ● {}", sha256_hex(CDR_CSV)),
+        format!("Computed locally  ✓ {}", sha256_hex(CDR_CSV)),
+        "Integrity         ✓ VERIFIED MATCH".to_string(),
+        "Source type       TABULAR_CSV".to_string(),
+        format!("Size              {} bytes", CDR_CSV.len()),
+        "Timezone          ◇ Asia/Kolkata (declared)".to_string(),
+        "Clock offset      ◇ -30.0 (declared)".to_string(),
+        "Auto-extract      not requested".to_string(),
     ] {
         assert!(
             r.stdout.contains(&expected),
@@ -201,10 +200,7 @@ async fn csv_upload_checks_the_case_then_sends_the_file_unmodified() {
 async fn json_upload_without_options_sends_no_optional_fields() {
     let scratch = Scratch::new();
     let path = scratch.file("chat.json", CHAT_JSON);
-    let server = upload_api(
-        201,
-        &receipt(fixtures::RECEIPT_CHAT, CHAT_JSON.len()).to_string(),
-    );
+    let server = upload_api(201, &receipt(fixtures::RECEIPT_CHAT, CHAT_JSON).to_string());
 
     let r = yukti(
         &server.base_url,
@@ -220,9 +216,9 @@ async fn json_upload_without_options_sends_no_optional_fields() {
     assert_eq!(r.exit_code, 0, "{}{}", r.stdout, r.stderr);
     // Nothing is defaulted: no timezone, no clock offset, no auto_extract, no metadata.
     assert_eq!(part_names(&server), ["case_id", "file"]);
-    assert!(r.stdout.contains("Timezone        not declared"));
-    assert!(r.stdout.contains("Clock offset    not declared"));
-    assert!(r.stdout.contains("Source type     CHAT_EXPORT"));
+    assert!(r.stdout.contains("Timezone          ◆ not declared"));
+    assert!(r.stdout.contains("Clock offset      ◆ not declared"));
+    assert!(r.stdout.contains("Source type       CHAT_EXPORT"));
 
     let v = parse(
         &yukti(
@@ -247,10 +243,7 @@ async fn json_upload_without_options_sends_no_optional_fields() {
     assert_eq!(v["request"]["file_size_bytes"], CHAT_JSON.len());
     assert_eq!(v["auto_extract_requested"], false);
     assert_eq!(v["extraction"], Value::Null);
-    assert_eq!(
-        v["response"],
-        receipt(fixtures::RECEIPT_CHAT, CHAT_JSON.len())
-    );
+    assert_eq!(v["response"], receipt(fixtures::RECEIPT_CHAT, CHAT_JSON));
 }
 
 #[tokio::test]
@@ -258,7 +251,7 @@ async fn every_supplied_option_is_sent_exactly_once() {
     let scratch = Scratch::new();
     let video: &[u8] = b"\x00\x00\x00\x18ftypmp42 fake video bytes";
     let path = scratch.file("recording.mp4", video);
-    let mut body = receipt(fixtures::RECEIPT_CSV, video.len());
+    let mut body = receipt(fixtures::RECEIPT_CSV, video);
     body["source_type"] = json!("CCTV_VIDEO");
     body["original_filename"] = json!("recording.mp4");
     let response = json!({"receipt": body, "extraction": extraction("SUCCESS", None)});
@@ -313,7 +306,7 @@ async fn auto_extract_success_is_reported() {
     let scratch = Scratch::new();
     let path = scratch.file("cdr.csv", CDR_CSV);
     let response = json!({
-        "receipt": receipt(fixtures::RECEIPT_CSV, CDR_CSV.len()),
+        "receipt": receipt(fixtures::RECEIPT_CSV, CDR_CSV),
         "extraction": extraction("SUCCESS", None)
     });
     let server = upload_api(201, &response.to_string());
@@ -330,11 +323,11 @@ async fn auto_extract_success_is_reported() {
     assert_eq!(r.exit_code, 0);
     assert!(r
         .stdout
-        .contains("Auto-extract    requested; extraction succeeded (status SUCCESS)"));
-    assert!(r.stdout.contains("Run ID        run-0001"));
+        .contains("Auto-extract      ✓ SUCCESS  extraction succeeded"));
+    assert!(r.stdout.contains("Run ID            run-0001"));
     assert!(r
         .stdout
-        .contains("2 processed, 2 valid, 0 rejected, 0 validation issue(s)"));
+        .contains("2 processed, 2 valid · 0 rejected · 0 validation issue(s)"));
 
     let mut json_args = vec!["--json"];
     json_args.extend_from_slice(&args);
@@ -346,7 +339,9 @@ async fn auto_extract_success_is_reported() {
         json!({"status": "SUCCESS", "succeeded": true})
     );
     assert_eq!(v["response"], response, "complete response passed through");
-    assert_eq!(v["sha256_hash"], fixtures::RECEIPT_CSV_SHA);
+    assert_eq!(v["sha256_hash"], sha256_hex(CDR_CSV));
+    assert_eq!(v["local_sha256"], sha256_hex(CDR_CSV));
+    assert_eq!(v["hash_match"], true);
 }
 
 #[tokio::test]
@@ -354,7 +349,7 @@ async fn failed_auto_extraction_is_explicit_but_ingestion_still_succeeded() {
     let scratch = Scratch::new();
     let path = scratch.file("cdr.csv", CDR_CSV);
     let response = json!({
-        "receipt": receipt(fixtures::RECEIPT_CSV, CDR_CSV.len()),
+        "receipt": receipt(fixtures::RECEIPT_CSV, CDR_CSV),
         "extraction": extraction("FAILED", Some("Extraction failed with 1 validation issue(s)."))
     });
     let server = upload_api(201, &response.to_string());
@@ -374,10 +369,10 @@ async fn failed_auto_extraction_is_explicit_but_ingestion_still_succeeded() {
     );
     assert!(r
         .stdout
-        .contains("extraction did NOT succeed (status FAILED)"));
+        .contains("Auto-extract      ✕ FAILED  extraction did NOT succeed"));
     assert!(r
         .stdout
-        .contains("Error         Extraction failed with 1 validation issue(s)."));
+        .contains("Error             Extraction failed with 1 validation issue(s)."));
 
     let mut json_args = vec!["--json"];
     json_args.extend_from_slice(&args);
@@ -392,10 +387,7 @@ async fn failed_auto_extraction_is_explicit_but_ingestion_still_succeeded() {
 async fn missing_extraction_after_request_is_flagged() {
     let scratch = Scratch::new();
     let path = scratch.file("cdr.csv", CDR_CSV);
-    let server = upload_api(
-        201,
-        &receipt(fixtures::RECEIPT_CSV, CDR_CSV.len()).to_string(),
-    );
+    let server = upload_api(201, &receipt(fixtures::RECEIPT_CSV, CDR_CSV).to_string());
     let r = yukti(
         &server.base_url,
         &[
@@ -709,15 +701,15 @@ async fn list_shows_every_receipt_in_server_order() {
     let chat = r.stdout.find(fixtures::RECEIPT_CHAT_ID).unwrap();
     let csv = r.stdout.find(fixtures::RECEIPT_CSV_ID).unwrap();
     assert!(chat < csv, "server order preserved");
-    assert!(r
-        .stdout
-        .contains("CHAT_EXPORT  37 bytes  2026-11-21T09:31:00Z  INGESTED"));
-    assert!(r.stdout.contains("  file    cdr.csv"));
-    assert!(r
-        .stdout
-        .contains(&format!("  sha256  {}", fixtures::RECEIPT_CSV_SHA)));
-    assert!(r
-        .stdout
+    assert!(r.stdout.contains(&format!(
+        "  {}  CHAT_EXPORT  ✓ INGESTED     37  2026-11-21T09:31:00Z  chat.json",
+        fixtures::RECEIPT_CHAT_ID
+    )));
+    assert!(r.stdout.contains(&format!(
+        "  5b1f0c2e…  {}  text/csv",
+        fixtures::RECEIPT_CSV_SHA
+    )));
+    assert!(flat(&r.stdout)
         .contains("2 evidence item(s) for case 3f2b8c1e-7a4d-4e1b-9c3a-5d6e7f8a9b0c"));
 
     let requests = server.requests();
@@ -746,10 +738,9 @@ async fn empty_evidence_list_is_success() {
     )
     .await;
     assert_eq!(r.exit_code, 0);
-    assert_eq!(
-        r.stdout,
-        "No evidence returned by the API for case 3f2b8c1e-7a4d-4e1b-9c3a-5d6e7f8a9b0c.\n"
-    );
+    assert!(r.stdout.contains(
+        "\n  No evidence returned by the API for case 3f2b8c1e-7a4d-4e1b-9c3a-5d6e7f8a9b0c.\n"
+    ));
     let v = parse(
         &yukti(
             &server.base_url,

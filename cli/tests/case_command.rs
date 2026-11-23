@@ -49,7 +49,8 @@ async fn list_shows_every_case_in_server_order() {
     let b = r.stdout.find(fixtures::CASE_B_ID).expect("case B listed");
     let a = r.stdout.find(fixtures::CASE_A_ID).expect("case A listed");
     assert!(b < a, "server order preserved");
-    assert!(r.stdout.starts_with("CASE ID"));
+    assert!(r.stdout.starts_with(" ▌ YUKTI │ CASE › LIST"));
+    assert!(r.stdout.contains("  CASE ID "));
     assert!(r.stdout.contains("ATM skimming"));
     assert!(r.stdout.contains("DRAFT"));
     assert!(r.stdout.contains("2026-11-21T09:15:00Z"));
@@ -75,7 +76,11 @@ async fn empty_list_is_success() {
     let server = list_api("[]", fixtures::READY);
     let r = yukti(&server.base_url, &["case", "list"]).await;
     assert_eq!(r.exit_code, 0);
-    assert_eq!(r.stdout, "No cases returned by the API.\n");
+    assert!(
+        r.stdout.contains("\n  No cases returned by the API.\n"),
+        "{}",
+        r.stdout
+    );
 
     let v = parse(&yukti(&server.base_url, &["case", "list", "--json"]).await);
     assert_eq!(v["count"], 0);
@@ -194,10 +199,11 @@ async fn create_sends_only_the_title_and_prints_the_returned_uuid() {
     )
     .await;
     assert_eq!(r.exit_code, 0, "{}{}", r.stdout, r.stderr);
-    assert!(r
-        .stdout
-        .starts_with(&format!("Created case {}\n", fixtures::CASE_B_ID)));
-    assert!(r.stdout.contains("Description   (none)"));
+    assert!(r.stdout.contains(&format!(
+        "✓ CREATED  Created case {}\n",
+        fixtures::CASE_B_ID
+    )));
+    assert!(r.stdout.contains("Description       (none)"));
 
     let requests = server.requests();
     assert_eq!(requests.len(), 1);
@@ -350,14 +356,14 @@ async fn show_displays_the_returned_fields() {
     .await;
     assert_eq!(r.exit_code, 0, "{}{}", r.stdout, r.stderr);
     for expected in [
-        "Case ID       3f2b8c1e-7a4d-4e1b-9c3a-5d6e7f8a9b0c",
-        "Title         Warehouse burglary",
-        "Status        ACTIVE",
-        "Description   Night-time break-in",
-        "FIR number    FIR-112/2026",
-        "Investigator  INV-7",
-        "Created       2026-11-21T09:15:00Z",
-        r#"Metadata      {"station":"Saket"}"#,
+        "Case ID           3f2b8c1e-7a4d-4e1b-9c3a-5d6e7f8a9b0c",
+        "Title             Warehouse burglary",
+        "Status            ACTIVE",
+        "Description       Night-time break-in",
+        "FIR number        FIR-112/2026",
+        "Investigator      INV-7",
+        "Created           2026-11-21T09:15:00Z",
+        r#"Metadata          {"station":"Saket"}"#,
     ] {
         assert!(
             r.stdout.contains(expected),

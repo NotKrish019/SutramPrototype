@@ -24,6 +24,9 @@ pub mod exit {
     pub const SERVER_ERROR: u8 = 5;
     /// The API answered, but the response was not what the CLI expects (bad JSON, wrong shape).
     pub const BAD_RESPONSE: u8 = 6;
+    /// A local integrity check failed: a SHA-256 computed by the CLI does not match the hash
+    /// the API recorded (`evidence verify`, `evidence ingest`).
+    pub const VERIFICATION_FAILED: u8 = 7;
     /// The requested functionality is not yet available in the API.
     pub const UNSUPPORTED: u8 = 69;
 }

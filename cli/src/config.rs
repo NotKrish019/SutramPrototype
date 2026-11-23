@@ -9,6 +9,7 @@ use reqwest::Url;
 use serde::Serialize;
 
 use crate::error::CliError;
+use crate::ui::TerminalEnv;
 
 /// Default API base URL (the Rust API's default `HOST`/`PORT` in `backend-rust/src/config.rs`).
 pub const DEFAULT_API_URL: &str = "http://127.0.0.1:8080";
@@ -41,10 +42,14 @@ impl ValueSource {
 }
 
 /// Configuration-relevant environment variables, captured once so resolution is testable.
+/// The default has no variables set and describes a non-terminal (uncoloured) output.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct EnvVars {
     pub api_url: Option<String>,
     pub timeout_secs: Option<String>,
+    /// `YUKTI_CASE`, shown by `yukti config` (clap reads it for `--case` itself).
+    pub case_id: Option<String>,
+    pub terminal: TerminalEnv,
 }
 
 impl EnvVars {
@@ -54,6 +59,8 @@ impl EnvVars {
         Self {
             api_url: read(ENV_API_URL),
             timeout_secs: read(ENV_TIMEOUT_SECS),
+            case_id: read(crate::cli::ENV_CASE),
+            terminal: TerminalEnv::from_process(),
         }
     }
 }
@@ -176,6 +183,7 @@ mod tests {
         EnvVars {
             api_url: url.map(str::to_string),
             timeout_secs: timeout.map(str::to_string),
+            ..EnvVars::default()
         }
     }
 
