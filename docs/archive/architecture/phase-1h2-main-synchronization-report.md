@@ -136,7 +136,7 @@ During `git stash apply`, Git's default Windows checkout normalized LF newlines 
 
 ## 8. Member 3 Canonical Contract Compatibility Findings
 
-We audited Member 3's proposal ([`docs/member-3/phase-0-5-canonical-contract-proposal.md`](file:///c:/Users/krish/Desktop/SutramPrototype/docs/member-3/phase-0-5-canonical-contract-proposal.md)) against the Rust backend implementation:
+We audited Member 3's proposal ([`docs/member-3/phase-0-5-canonical-contract-proposal.md`](../member-3/phase-0-5-canonical-contract-proposal.md)) against the Rust backend implementation:
 
 | Proposal ID | Entity / Topic | Member 3 Proposal | Rust Backend Implementation | Alignment Status |
 | :--- | :--- | :--- | :--- | :---: |

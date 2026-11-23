@@ -37,11 +37,11 @@ Key milestones achieved:
 
 ## 3. Audit of Member 1's Integration Proposal
 
-Member 2 conducted a detailed engineering review of Member 1's [docs/member-1/phase-1c-integration-interface-proposal.md](file:///c:/Users/krish/Desktop/SutramPrototype/docs/member-1/phase-1c-integration-interface-proposal.md):
+Member 2 conducted a detailed engineering review of Member 1's [docs/member-1/phase-1c-integration-interface-proposal.md](../member-1/phase-1c-integration-interface-proposal.md):
 
 ### 3.1 Function Naming & Interface Alignment
 - **Discrepancy:** Member 1's proposal referenced `extract_cdr_from_csv` and `extract_chat_from_json`.
-- **Actual Code:** The existing, tested functions in Member 1's codebase are `parse_cdr_csv` ([backend/app/modules/extraction/cdr.py](file:///c:/Users/krish/Desktop/SutramPrototype/backend/app/modules/extraction/cdr.py#L34)) and `parse_chat_json` ([backend/app/modules/extraction/chat.py](file:///c:/Users/krish/Desktop/SutramPrototype/backend/app/modules/extraction/chat.py#L28)).
+- **Actual Code:** The existing, tested functions in Member 1's codebase are `parse_cdr_csv` ([backend/app/modules/extraction/cdr.py](../../../backend/app/modules/extraction/cdr.py#L34)) and `parse_chat_json` ([backend/app/modules/extraction/chat.py](../../../backend/app/modules/extraction/chat.py#L28)).
 - **Resolution:** Member 2's ingestion service binds directly to `parse_cdr_csv` and `parse_chat_json`. When Member 1 creates the unified `extract_evidence()` dispatcher, Member 2 will migrate to it.
 
 ### 3.2 Elimination of Destructive Deletion
@@ -189,7 +189,7 @@ Evidence Item: "ev-001" (sample_cdr.csv)
 
 ## 8. Test Execution & Verification
 
-A dedicated test suite was implemented in [backend/tests/ingestion/test_ingestion.py](file:///c:/Users/krish/Desktop/SutramPrototype/backend/tests/ingestion/test_ingestion.py):
+A dedicated test suite was implemented in [backend/tests/ingestion/test_ingestion.py](../../../backend/tests/ingestion/test_ingestion.py):
 
 ```powershell
 uv run --directory backend pytest tests/ingestion/test_ingestion.py -v
@@ -229,17 +229,17 @@ The following decisions remain formally documented in `PROPOSED` status:
 ## 10. Changed & Created Files
 
 ### Created Files:
-- [backend/app/schemas/ingestion.py](file:///c:/Users/krish/Desktop/SutramPrototype/backend/app/schemas/ingestion.py): Ingestion request/response models and extraction run DTOs.
-- [backend/app/modules/ingestion/storage.py](file:///c:/Users/krish/Desktop/SutramPrototype/backend/app/modules/ingestion/storage.py): Safe storage manager, streaming hash calculator, path traversal shield.
-- [backend/app/modules/ingestion/validation.py](file:///c:/Users/krish/Desktop/SutramPrototype/backend/app/modules/ingestion/validation.py): Content sniffing and magic byte validation.
-- [backend/app/modules/ingestion/service.py](file:///c:/Users/krish/Desktop/SutramPrototype/backend/app/modules/ingestion/service.py): Ingestion service and versioned extraction run coordinator.
-- [backend/app/api/routes/evidence.py](file:///c:/Users/krish/Desktop/SutramPrototype/backend/app/api/routes/evidence.py): FastAPI evidence upload and management routes.
-- [backend/tests/ingestion/test_ingestion.py](file:///c:/Users/krish/Desktop/SutramPrototype/backend/tests/ingestion/test_ingestion.py): 10 unit and integration tests.
-- [docs/member-2/phase-1d-backend-ingestion-foundation.md](file:///c:/Users/krish/Desktop/SutramPrototype/docs/member-2/phase-1d-backend-ingestion-foundation.md): This report.
+- [backend/app/schemas/ingestion.py](../../../backend/app/schemas/ingestion.py): Ingestion request/response models and extraction run DTOs.
+- [backend/app/modules/ingestion/storage.py](../../../backend/app/modules/ingestion/storage.py): Safe storage manager, streaming hash calculator, path traversal shield.
+- [backend/app/modules/ingestion/validation.py](../../../backend/app/modules/ingestion/validation.py): Content sniffing and magic byte validation.
+- [backend/app/modules/ingestion/service.py](../../../backend/app/modules/ingestion/service.py): Ingestion service and versioned extraction run coordinator.
+- [backend/app/api/routes/evidence.py](../../../backend/app/api/routes/evidence.py): FastAPI evidence upload and management routes.
+- [backend/tests/ingestion/test_ingestion.py](../../../backend/tests/ingestion/test_ingestion.py): 10 unit and integration tests.
+- [docs/member-2/phase-1d-backend-ingestion-foundation.md](phase-1d-backend-ingestion-foundation.md): This report.
 
 ### Modified Files:
-- [backend/pyproject.toml](file:///c:/Users/krish/Desktop/SutramPrototype/backend/pyproject.toml): Added `python-multipart>=0.0.9`.
-- [backend/app/core/config.py](file:///c:/Users/krish/Desktop/SutramPrototype/backend/app/core/config.py): Added `MAX_UPLOAD_SIZE_BYTES` and `ALLOWED_EVIDENCE_EXTENSIONS`.
-- [backend/app/main.py](file:///c:/Users/krish/Desktop/SutramPrototype/backend/app/main.py): Registered `evidence.router` and preserved `HTTPException` status codes in exception handler.
-- [backend/app/api/routes/__init__.py](file:///c:/Users/krish/Desktop/SutramPrototype/backend/app/api/routes/__init__.py): Exported `evidence` route module.
-- [backend/app/modules/ingestion/__init__.py](file:///c:/Users/krish/Desktop/SutramPrototype/backend/app/modules/ingestion/__init__.py): Exported ingestion service and storage helpers.
+- [backend/pyproject.toml](../../../backend/pyproject.toml): Added `python-multipart>=0.0.9`.
+- [backend/app/core/config.py](../../../backend/app/core/config.py): Added `MAX_UPLOAD_SIZE_BYTES` and `ALLOWED_EVIDENCE_EXTENSIONS`.
+- [backend/app/main.py](../../../backend/app/main.py): Registered `evidence.router` and preserved `HTTPException` status codes in exception handler.
+- [backend/app/api/routes/__init__.py](../../../backend/app/api/routes/__init__.py): Exported `evidence` route module.
+- [backend/app/modules/ingestion/__init__.py](../../../backend/app/modules/ingestion/__init__.py): Exported ingestion service and storage helpers.

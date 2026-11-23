@@ -201,12 +201,12 @@ Re-verification following test execution confirmed that test execution did not t
 ## 8. Files Changed & Preserved
 
 ### Modified Files:
-- [backend/app/schemas/extraction.py](file:///c:/Users/krish/Desktop/SutramPrototype/backend/app/schemas/extraction.py): Added `extraction_confidence` field and `.confidence` property to `ExtractedIdentifier`, explicitly decoupled from `is_checksum_valid`.
-- [backend/tests/extraction/test_ner.py](file:///c:/Users/krish/Desktop/SutramPrototype/backend/tests/extraction/test_ner.py): Added unit tests verifying confidence decoupling and model independence.
-- [docs/member-1/phase-1b2-hardening-notes.md](file:///c:/Users/krish/Desktop/SutramPrototype/docs/member-1/phase-1b2-hardening-notes.md): Reconciled decision register, separated M1-PROP series, corrected confidence narrative, and corrected fixture hashes.
+- [backend/app/schemas/extraction.py](../../../backend/app/schemas/extraction.py): Added `extraction_confidence` field and `.confidence` property to `ExtractedIdentifier`, explicitly decoupled from `is_checksum_valid`.
+- [backend/tests/extraction/test_ner.py](../../../backend/tests/extraction/test_ner.py): Added unit tests verifying confidence decoupling and model independence.
+- [docs/member-1/phase-1b2-hardening-notes.md](phase-1b2-hardening-notes.md): Reconciled decision register, separated M1-PROP series, corrected confidence narrative, and corrected fixture hashes.
 
 ### New Documentation Created:
-- [docs/member-1/phase-1b3-consistency-review.md](file:///c:/Users/krish/Desktop/SutramPrototype/docs/member-1/phase-1b3-consistency-review.md): Complete Phase 1B.3 audit report.
+- [docs/member-1/phase-1b3-consistency-review.md](phase-1b3-consistency-review.md): Complete Phase 1B.3 audit report.
 
 ### Preserved Files (Untouched):
 - `shared/schemas/README.md`, `shared/enums/README.md`, `shared/examples/README.md`: Canonical shared contracts preserved.

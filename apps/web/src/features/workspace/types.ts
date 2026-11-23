@@ -3,7 +3,7 @@
  *
  * Field names follow `shared/schemas/README.md` (snake_case) and enum values follow
  * `shared/enums/README.md`. They live here, not in `src/types`, until the team adopts
- * the Phase 0.5 contract proposal (docs/member-3/phase-0-5-canonical-contract-proposal.md).
+ * the Phase 0.5 contract proposal (docs/archive/member-3/phase-0-5-canonical-contract-proposal.md).
  * Where the canonical enums have no suitable value the field is `null` and a
  * human-readable `*_label` explains it — enum values are never invented.
  */

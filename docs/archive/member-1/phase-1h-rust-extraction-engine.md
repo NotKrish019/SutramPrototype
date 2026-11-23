@@ -174,7 +174,7 @@ The canonical dispatcher `extract_evidence` enforces:
 
 ## 10. Behavioral Parity Test Results (25 Forensic Scenarios)
 
-All 25 mandated parity scenarios were implemented in [`backend-rust/tests/extraction.rs`](file:///c:/Users/krish/Desktop/SutramPrototype/backend-rust/tests/extraction.rs) and passed:
+All 25 mandated parity scenarios were implemented in [`backend-rust/tests/extraction.rs`](../../../backend-rust/tests/extraction.rs) and passed:
 
 | # | Forensic Scenario | Verification Status |
 |---|---|---|

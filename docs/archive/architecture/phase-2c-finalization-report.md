@@ -166,7 +166,7 @@ In `apps/web/src/features/workspace/pages/ReportsWorkspace.tsx`:
 
 ## 8. Summary of Findings
 
-All findings identified during the Phase 2C integration and finalization audit have been recorded in [phase-2c-findings-register.md](file:///c:/Users/krish/Desktop/SutramPrototype/docs/architecture/phase-2c-findings-register.md):
+All findings identified during the Phase 2C integration and finalization audit have been recorded in [phase-2c-findings-register.md](phase-2c-findings-register.md):
 - **FND-2C-001:** Clock drift offset directionality reconciled to additive (`UTC = raw_timestamp + offset`).
 - **FND-2C-002:** Interval semantics reconciled to half-open $[start, end)$.
 - **FND-2C-003:** Null weight semantics preserved on observed forensic edges.

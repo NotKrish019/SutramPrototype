@@ -70,9 +70,9 @@ Phase 1E introduces the canonical, centralized extraction dispatcher for the SUT
 ## 2. Dispatcher Location & Module Exports
 
 The canonical dispatcher is implemented directly inside the extraction module domain:
-- **Service Implementation:** [`backend/app/modules/extraction/service.py`](file:///c:/Users/krish/Desktop/SutramPrototype/backend/app/modules/extraction/service.py)
+- **Service Implementation:** [`backend/app/modules/extraction/service.py`](../../../backend/app/modules/extraction/service.py)
 - **Canonical Public Entrypoint:** `extract_evidence(request: EvidenceExtractionRequest) -> UnifiedExtractionResult`
-- **Module Interface:** Re-exported cleanly in [`backend/app/modules/extraction/__init__.py`](file:///c:/Users/krish/Desktop/SutramPrototype/backend/app/modules/extraction/__init__.py):
+- **Module Interface:** Re-exported cleanly in [`backend/app/modules/extraction/__init__.py`](../../../backend/app/modules/extraction/__init__.py):
   ```python
   from app.modules.extraction.service import extract_evidence
   from app.schemas.extraction import (
@@ -90,7 +90,7 @@ All models adhere to strict Pydantic v2 conventions (`model_config = ConfigDict(
 
 ### 3.1. Request DTO (`EvidenceExtractionRequest`)
 
-Defined in [`backend/app/schemas/extraction.py`](file:///c:/Users/krish/Desktop/SutramPrototype/backend/app/schemas/extraction.py):
+Defined in [`backend/app/schemas/extraction.py`](../../../backend/app/schemas/extraction.py):
 
 | Field Name | Type | Required | Description |
 |---|---|---|---|
@@ -140,12 +140,12 @@ In Phase 1E, the dispatcher accepts and routes two primary forensic evidence mod
    - File format: CSV (UTF-8 / ASCII).
    - Mandatory columns: `record_id`, `caller_phone`, `receiver_phone`, `call_timestamp`, `duration_seconds`.
    - Optional columns: `cell_tower_id`, `call_type`.
-   - Extractor: `parse_cdr_csv` in [`backend/app/modules/extraction/cdr.py`](file:///c:/Users/krish/Desktop/SutramPrototype/backend/app/modules/extraction/cdr.py).
+   - Extractor: `parse_cdr_csv` in [`backend/app/modules/extraction/cdr.py`](../../../backend/app/modules/extraction/cdr.py).
 
 2. **Chat & Instant Messaging Exports (`CHAT_EXPORT`, `CHAT`):**
    - File format: JSON (UTF-8).
    - Expected structure: Root JSON object containing `messages` list with message attributes (`id`/`message_id`, `sender_id`/`sender`, `timestamp`, `content`/`text`, optional `recipients`).
-   - Extractor: `parse_chat_json` in [`backend/app/modules/extraction/chat.py`](file:///c:/Users/krish/Desktop/SutramPrototype/backend/app/modules/extraction/chat.py).
+   - Extractor: `parse_chat_json` in [`backend/app/modules/extraction/chat.py`](../../../backend/app/modules/extraction/chat.py).
    - Embedded NER: Extracts embedded phone numbers, emails, IMEIs, and IMSIs from message text.
 
 ### 4.1. Defense Against Premature CSV Classification
@@ -236,7 +236,7 @@ Member 2 maps the returned `UnifiedExtractionResult` directly into an `Extractio
 
 ## 8. Test Execution & Verification Matrix
 
-The test suite covers all 12 mandatory Phase 1E scenarios in [`backend/tests/extraction/test_service.py`](file:///c:/Users/krish/Desktop/SutramPrototype/backend/tests/extraction/test_service.py):
+The test suite covers all 12 mandatory Phase 1E scenarios in [`backend/tests/extraction/test_service.py`](../../../backend/tests/extraction/test_service.py):
 
 | # | Test Function | Scenario Tested | Outcome |
 |---|---|---|---|

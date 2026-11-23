@@ -27,7 +27,7 @@ However, the default Rust toolchain installed was `stable-x86_64-pc-windows-gnu`
 2. **Missing GCC Archives:** LLVM-MinGW does not contain `libgcc.a` or `libgcc_eh.a`, causing LLD linker errors (`unable to find library -lgcc_eh`).
 
 ### Why the Previous Workaround Was Unsafe
-To unblock Phase 1F, `libunwind.a` was copied into `backend-rust/.cargo/lib/libgcc.a` and `libgcc_eh.a`, and an absolute path `C:/Users/krish/Desktop/SutramPrototype/backend-rust/.cargo/lib` was added to `rustflags`:
+To unblock Phase 1F, `libunwind.a` was copied into `backend-rust/.cargo/lib/libgcc.a` and `libgcc_eh.a`, and an absolute path `<repo>/backend-rust/.cargo/lib` was added to `rustflags`:
 - **Machine-Specific:** The absolute path broke builds on any other machine or directory location.
 - **Symbol Incompleteness:** `libunwind` provides unwinding symbols but lacks GCC compiler intrinsics, risking runtime undefined behavior in C FFI dependencies.
 - **Target Incoherence:** Using GCC flags with an LLVM-based toolchain bypassed Rust’s standard target architecture.
@@ -74,7 +74,7 @@ A full repository scan confirmed **zero occurrences** of machine-specific paths 
 
 ## 5. Build, Test, and Runtime Verification Results
 
-All commands executed from [`backend-rust/`](file:///c:/Users/krish/Desktop/SutramPrototype/backend-rust) using `--locked`:
+All commands executed from [`backend-rust/`](../../backend-rust) using `--locked`:
 
 | Verification Step | Command | Exit Code | Result |
 | :--- | :--- | :---: | :--- |
@@ -100,7 +100,7 @@ The compiled GNULLVM binary was launched locally:
 
 ## 6. GitHub Actions CI Pipeline Status
 
-The workflow [`.github/workflows/backend-rust.yml`](file:///c:/Users/krish/Desktop/SutramPrototype/.github/workflows/backend-rust.yml) was updated to provide multi-platform CI verification:
+The workflow [`.github/workflows/backend-rust.yml`](../../.github/workflows/backend-rust.yml) was updated to provide multi-platform CI verification:
 
 1. **`backend-rust-linux` (Linux CI):**
    - Runs on `ubuntu-latest` with `dtolnay/rust-toolchain@stable`.

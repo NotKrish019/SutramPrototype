@@ -55,7 +55,7 @@ The Git repository state was audited to verify compliance with hackathon operati
 
 ## 3. Phase 1J.1 Audit: PostgreSQL Schema Design & Relational Contracts
 
-The database migration file [20261118000001_initial_forensic_schema.sql](file:///c:/Users/krish/Desktop/SutramPrototype/backend-rust/migrations/20261118000001_initial_forensic_schema.sql) and architecture specification [phase-1j1-postgresql-schema-design.md](file:///c:/Users/krish/Desktop/SutramPrototype/docs/architecture/phase-1j1-postgresql-schema-design.md) were inspected line-by-line:
+The database migration file [20261118000001_initial_forensic_schema.sql](../../../backend-rust/migrations/20261118000001_initial_forensic_schema.sql) and architecture specification [phase-1j1-postgresql-schema-design.md](phase-1j1-postgresql-schema-design.md) were inspected line-by-line:
 
 1. **Relational Normalization (3NF):**
    * Tables: `cases`, `evidence`, `extraction_runs`, `extracted_identifiers`, `resolved_entities`, `events`, `relationships`, `validation_issues`, `custody_events`, `reconstruction_runs`, `contradictions`, `spatial_trajectories`, `video_artifacts`.
@@ -93,13 +93,13 @@ The database migration file [20261118000001_initial_forensic_schema.sql](file://
 
 Source code under `backend-rust/src/persistence/` was audited for architectural compliance:
 
-1. **Dependency Configuration ([Cargo.toml](file:///c:/Users/krish/Desktop/SutramPrototype/backend-rust/Cargo.toml)):**
+1. **Dependency Configuration ([Cargo.toml](../../../backend-rust/Cargo.toml)):**
    * `sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "tls-rustls", "postgres", "uuid", "chrono", "json", "migrate", "macros"] }`
    * Pure-Rust TLS avoids native OpenSSL DLL linking on Windows MinGW.
-2. **Connection Pool Management ([database.rs](file:///c:/Users/krish/Desktop/SutramPrototype/backend-rust/src/persistence/database.rs)):**
+2. **Connection Pool Management ([database.rs](../../../backend-rust/src/persistence/database.rs)):**
    * Configurable pool parameters: `database_max_connections` (default 10), `database_min_connections` (default 1), `database_connect_timeout_seconds` (default 5).
    * Migrations are executed at startup via `sqlx::migrate!("./migrations").run(&self.pool)`.
-3. **Transactional Multi-Table Writes & Row Locking ([extraction_run_repository.rs](file:///c:/Users/krish/Desktop/SutramPrototype/backend-rust/src/persistence/extraction_run_repository.rs)):**
+3. **Transactional Multi-Table Writes & Row Locking ([extraction_run_repository.rs](../../../backend-rust/src/persistence/extraction_run_repository.rs)):**
    * `complete_run_transactional` executes inside an atomic `self.pool.begin().await` transaction.
    * Acquires an explicit row-level lock on the parent exhibit:
      ```sql
@@ -107,7 +107,7 @@ Source code under `backend-rust/src/persistence/` was audited for architectural 
      ```
    * Deactivates the previous active run and promotes the new run only when `promote_active` is true and run status is `Success` or `PartialSuccess`.
    * Inserts normalized identifiers, entities, events, relationships, and validation issues in the same transaction.
-4. **CI Pipeline Configuration ([.github/workflows/backend-rust.yml](file:///c:/Users/krish/Desktop/SutramPrototype/.github/workflows/backend-rust.yml)):**
+4. **CI Pipeline Configuration ([.github/workflows/backend-rust.yml](../../../.github/workflows/backend-rust.yml)):**
    * Linux CI includes a dedicated `postgres:16-alpine` service container with credentials `yukti_user:yukti_password@localhost:5432/yukti_test` and health check `pg_isready`.
 
 ---
@@ -116,18 +116,18 @@ Source code under `backend-rust/src/persistence/` was audited for architectural 
 
 Integration code between Axum handlers, persistence repositories, and filesystem storage was verified:
 
-1. **Resilient Dual-Mode Application State ([app.rs](file:///c:/Users/krish/Desktop/SutramPrototype/backend-rust/src/app.rs)):**
+1. **Resilient Dual-Mode Application State ([app.rs](../../../backend-rust/src/app.rs)):**
    * `AppState` holds optional references (`Option<Arc<Database>>`, `Option<Arc<EvidenceRepository>>`, etc.).
    * If `DATABASE_URL` is omitted or unconfigured, the application logs a warning and boots cleanly in filesystem fallback mode without crashing or hanging.
-2. **Readiness Probe ([health.rs](file:///c:/Users/krish/Desktop/SutramPrototype/backend-rust/src/api/routes/health.rs)):**
+2. **Readiness Probe ([health.rs](../../../backend-rust/src/api/routes/health.rs)):**
    * `GET /health`: Returns `{ "status": "ok", "service": "sutram-backend-rust" }` (Liveness).
    * `GET /health/ready`:
      * If database is connected and `db.ping().await` succeeds: `200 OK` with `database: "connected"`.
      * If database is unconfigured: `200 OK` with `database: "unconfigured_filesystem_mode"`.
      * If database is configured but unreachable: `503 Service Unavailable` with `database: "disconnected"`.
-3. **Automated Synchronization on Evidence Upload & Extraction ([evidence.rs](file:///c:/Users/krish/Desktop/SutramPrototype/backend-rust/src/api/routes/evidence.rs)):**
+3. **Automated Synchronization on Evidence Upload & Extraction ([evidence.rs](../../../backend-rust/src/api/routes/evidence.rs)):**
    * Handlers call `sync_evidence_to_db` upon ingestion and `sync_run_to_db` upon extraction completion, keeping PostgreSQL synchronized whenever the pool is active.
-4. **Idempotent Filesystem Reconciliation ([reconciliation.rs](file:///c:/Users/krish/Desktop/SutramPrototype/backend-rust/src/persistence/reconciliation.rs)):**
+4. **Idempotent Filesystem Reconciliation ([reconciliation.rs](../../../backend-rust/src/persistence/reconciliation.rs)):**
    * `ReconciliationService::reconcile_all` scans the raw storage hierarchy, verifies existing database records, creates missing case entries, backfills untracked exhibits, and replays extraction run manifests.
 5. **Raw Evidence Immutability:**
    * Streaming file upload verifies SHA-256 digests before writing manifests. Storage paths are strictly isolated and never overwritten.
@@ -219,7 +219,7 @@ Frontend Build        tsc && vite build                     SUCCESS (8.88s)
 
 ## 8. Findings Register Review & Unreported Problems
 
-Every finding in [phase-1-master-findings-register.md](file:///c:/Users/krish/Desktop/SutramPrototype/docs/architecture/phase-1-master-findings-register.md) was audited against actual source code:
+Every finding in [phase-1-master-findings-register.md](phase-1-master-findings-register.md) was audited against actual source code:
 
 * **FIND-001 (Host PostgreSQL Absence):** Accurately recorded as an environment limitation. Handled via pure-Rust TLS, resilient dual-mode `AppState`, and GitHub Actions CI container.
 * **FIND-002 (Host FFmpeg Absence):** Accurately recorded. Handled via safe subprocess boundaries, streaming SHA-256, and error propagation.

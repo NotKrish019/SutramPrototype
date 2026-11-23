@@ -7,7 +7,7 @@
 
 This document consolidates every contract discrepancy found across the five places the data model is
 currently described, and proposes one canonical answer per item. It builds on, and is consistent with,
-Member 4's [`phase-3c-contract-decisions.md`](../member-4/phase-3c-contract-decisions.md) (DEC-001 … DEC-006).
+Member 4's [`phase-3c-contract-decisions.md`](../../member-4/phase-3c-contract-decisions.md) (DEC-001 … DEC-006).
 
 Sources compared:
 
