@@ -255,34 +255,45 @@ flowchart LR
 
 ## ⌨️ Using the `yukti` CLI
 
-`yukti` drives the API from a terminal, using the same endpoints as the web app. Install it once with `cargo install --path cli`, then run it from any folder.
+`yukti` drives the API from a terminal, using the same endpoints as the web app. Install it on macOS or Linux with
+`curl -fsSL https://raw.githubusercontent.com/NotKrish019/SutramPrototype/main/cli/install/install.sh | sh`, or on Windows with
+`irm https://raw.githubusercontent.com/NotKrish019/SutramPrototype/main/cli/install/install.ps1 | iex`. Then type `yukti`: it starts the bundled local engine and opens an interactive session. The step-by-step guide for Mac and Windows users is [`docs/guides/YUKTI-Installation-and-Usage-Guide.pdf`](docs/guides/YUKTI-Installation-and-Usage-Guide.pdf).
+
+**Try it in one command:** `yukti demo` runs a guided tour on a synthetic case. It covers ingest, reconstruction, breaking-point analysis, a what-if, cross-examination, a cited question and the court package.
 
 ```mermaid
 flowchart TD
-    Y(["yukti"]) --> ST["status<br/>is the API up?"]
-    Y --> DR["doctor<br/>full setup checklist"]
-    Y --> CA["case"]
-    Y --> EV["evidence"]
-    Y --> RC["reconstruction"]
-    CA --> CA1["list"] & CA2["create"] & CA3["show"]
-    EV --> EV1["ingest"] & EV2["list"]
-    RC --> RC1["run"] & RC2["explain"] & RC3["compare<br/>(not yet available)"]
+    Y(["yukti"]) --> SETUP["status · doctor · config · server"]
+    Y --> CA["case<br/>list · create · show · overview"]
+    Y --> EV["evidence<br/>ingest · list · show · verify<br/>extract · reprocess · extraction · runs"]
+    Y --> AN["reconstruction · timeline · spatial<br/>contradictions · gaps · provenance · graph"]
+    Y --> AS["robustness · challenge · whatif<br/>ask · replay"]
+    Y --> CT["custody verify · certificate · report"]
+    Y --> TOUR["demo · shell"]
 ```
 
 ### Command reference
 
-| Command | What it does | Example |
-|---|---|---|
-| `yukti doctor` | Checks the CLI version, the configuration, the API, readiness, database, graph and the case API. Each line shows `PASS`, `WARN`, `FAIL` or `SKIP`, with a fix hint for every problem. Read-only. | `yukti doctor` |
-| `yukti status` | Quick check: is the API reachable, and are the database and graph ready? | `yukti status` |
-| `yukti case list` | Lists every case: UUID, status, creation time and title. | `yukti case list` |
-| `yukti case create` | Opens a new case and prints the UUID the API assigned. `--title` is required. Optional: `--description`, `--fir-number`, `--investigator-id`, `--metadata '{json}'`. | `yukti case create --title "ATM skimming"` |
-| `yukti case show` | Shows one case's fields. | `yukti case show --case <UUID>` |
-| `yukti evidence ingest` | Uploads one file to a case, unmodified. The case is checked first, so nothing is uploaded to a case that doesn't exist. Prints the API-computed SHA-256. | `yukti evidence ingest --case <UUID> cdr.csv --source-timezone Asia/Kolkata --auto-extract` |
-| `yukti evidence list` | Lists a case's evidence: ID, type, size, status, file name and SHA-256. | `yukti evidence list --case <UUID>` |
-| `yukti reconstruction run` | Rebuilds the case: timeline, spatial picture, contradiction leads and labelled assumptions, plus the export safeguard status. | `yukti reconstruction run --case <UUID>` |
-| `yukti reconstruction explain` | Shows the full ordered timeline, every assumption with its basis, spatial findings and leads, then the judicial report and dossier. | `yukti reconstruction explain --case <UUID>` |
-| `yukti reconstruction compare` | Reserved for scenario comparison. Not available in the API yet, so it exits with code `69`. | n/a |
+Commands that take `--case` also read `YUKTI_CASE`, so `export YUKTI_CASE=<uuid>` sets a working case.
+
+| Command | What it does |
+|---|---|
+| `yukti` / `yukti shell` | Interactive session; `use <uuid>` sets the working case. Starts the bundled local engine if needed. |
+| `yukti demo` | Guided demonstration on the synthetic case in `data/synthetic/demo/`. |
+| `yukti doctor` · `status` · `config` · `server start\|stop\|status\|logs` | Setup checklist, health, settings and the local engine. |
+| `yukti case list\|create\|show\|overview` | Cases; `overview` is a one-screen investigative brief. |
+| `yukti evidence ingest FILE` | Uploads one exhibit unmodified, then compares the API's SHA-256 with the bytes sent (exit `7` on mismatch). Reads CDR CSV, chat JSON and **WhatsApp `.txt` exports**. |
+| `yukti evidence list\|show\|verify\|extract\|reprocess\|extraction\|runs` | Exhibits, chain of custody, local-copy verification and versioned extraction. |
+| `yukti reconstruction run\|explain` · `timeline` · `spatial` · `contradictions` · `gaps` · `provenance` | The reconstruction and each of its parts. |
+| `yukti robustness` (alias `breaking-point`) | **How wrong an assumption must be before each lead dissolves**: clock, location and threshold margins, each verified by recomputation, classed ROBUST / SENSITIVE / FRAGILE. |
+| `yukti challenge` | **The case as defence counsel would attack it**: weakest points first, each with what would close it. |
+| `yukti whatif` | Hypothetical scenario (clock offsets, timezone, threshold, excluded evidence) compared with the baseline; nothing is stored. |
+| `yukti ask "…"` | Plain-English questions answered only from the evidence, citing file, record and the timestamp as written; refuses when the evidence does not answer. No language model. |
+| `yukti replay` | The timeline played back event by event on a terminal map, with leads flagged. |
+| `yukti custody verify` | Re-hashes every stored exhibit, checks the custody ledger (PostgreSQL) and prints the **case seal** with a QR code. |
+| `yukti certificate` | Drafts the **Section 63 certificate (Bharatiya Sakshya Adhiniyam, 2023)** for the case's exhibits, with hashes, audit result and seal, for an officer and an expert to complete and sign. |
+| `yukti report --out FILE` | Exports the judicial dossier and prints its SHA-256. |
+| `yukti graph summary\|neighbors\|path` | Knowledge-graph queries. |
 
 **`evidence ingest` options**
 
@@ -312,6 +323,7 @@ flowchart TD
 | `4` | The API answered 4xx (for example, case not found) | Check the ID |
 | `5` | The API answered 5xx, or a dependency isn't ready | Check the API's log, PostgreSQL and Neo4j |
 | `6` | Unexpected response | Check that `--api-url` points at the YUKTI API |
+| `7` | Integrity check failed: a SHA-256 does not match the recorded one (`evidence ingest`, `evidence verify`, `custody verify`) | Re-acquire the exhibit and compare with the seizure record |
 | `69` | Feature not available in the API yet | n/a |
 
 The full reference is in [`cli/README.md`](cli/README.md), and the step-by-step guide is [`cli/GETTING_STARTED.md`](cli/GETTING_STARTED.md).
@@ -340,6 +352,8 @@ Everything the web app and CLI do is available over plain HTTP at `http://127.0.
 | **Traceability** | `GET …/reconstruction/provenance` · `GET …/findings/:finding_id/provenance` | Trace any finding back to its evidence and SHA-256 |
 | **Gaps** | `GET …/reconstruction/gaps` · `GET …/gaps` | Evidence that's missing or would strengthen the case |
 | **What-if** | `POST …/reconstruction/simulate` · `POST …/what-if` | Re-run under alternative assumptions without changing any stored result |
+| **Robustness** | `GET …/robustness` | Breaking point of every contradiction lead (clock, location, threshold margins), verified by recomputation |
+| **Custody** | `GET …/custody/verify` | Re-hash every stored exhibit, check the custody ledger, and return the case seal |
 | **Graph** | `GET …/graph/summary` · `GET …/graph/entities/:entity_id/neighbors` · `GET …/graph/path` | Knowledge-graph queries (needs Neo4j) |
 
 Paths starting with `…/` are under `/api/v1/cases/:case_id` or `/api/v1/evidence/:evidence_id`.
