@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/assets/cover.svg" alt="YUKTI: digital evidence correlation and crime reconstruction" width="100%"/>
+<img src="docs/assets/yukti-logo.png" alt="YUKTI logo" width="100%"/>
 
 <br/>
 
@@ -9,6 +9,8 @@
 [![CLI CI](https://github.com/NotKrish019/SutramPrototype/actions/workflows/cli.yml/badge.svg)](https://github.com/NotKrish019/SutramPrototype/actions/workflows/cli.yml)
 
 **[Quick start](#-quick-start)** · **[How it works](#-how-it-works)** · **[Web workspace](#-using-the-web-workspace)** · **[CLI](#-using-the-yukti-cli)** · **[API](#-using-the-api-directly)** · **[Docs](#-documentation)**
+
+📦 **[Requirements](REQUIREMENTS.md)** · 📘 **[Full project documentation](docs/PROJECT_DOCUMENTATION.md)**
 
 </div>
 
@@ -117,7 +119,7 @@ With the bundled sample data the report is **BLOCKED**, and that's intended. The
 
 ## 🚀 Quick start
 
-**You need:** Git, [Rust](https://rustup.rs) (stable) and [Node.js 22 LTS](https://nodejs.org). Docker is optional.
+**You need:** Git, [Rust](https://rustup.rs) (stable, 1.82+) and [Node.js 22 LTS](https://nodejs.org). Docker is optional. The full list of software, libraries and hardware is in **[REQUIREMENTS.md](REQUIREMENTS.md)**.
 
 ```mermaid
 flowchart LR
@@ -386,20 +388,22 @@ Request and response formats are in the [Reconstruction API guide](docs/api/reco
 
 ## 🧪 Testing
 
-Every component has its own test suite, and every suite runs in GitHub Actions CI.
+Every component has its own test suite, and every suite runs in GitHub Actions CI. At the last full run (24 November 2026), **all 1,236 tests passed**.
 
 | Component | Command |
 |---|---|
 | Rust API | `cd backend-rust && cargo test` |
 | CLI | `cd cli && cargo test` |
 | Web workspace | `cd apps/web && npm test && npm run build` |
-| Python service | `cd backend && uv run pytest` |
+| Python service | `cd backend && uv run pytest` (or `pip install -r requirements.txt`, then `pytest` in `backend/`) |
 | Decision service | `cd decision-service && npm test` |
 
 ## 📚 Documentation
 
 | | |
 |---|---|
+| 📘 [**Project documentation**](docs/PROJECT_DOCUMENTATION.md) ([PDF](docs/YUKTI-Project-Documentation.pdf)) | Problem, objectives, solution, architecture, methodology, implementation, results and future scope, in one document |
+| 📦 [**Requirements**](REQUIREMENTS.md) | Software, hardware and every library, with what each is for |
 | [Documentation index](docs/README.md) | Everything, organised by topic |
 | [System overview](docs/architecture/system-overview.md) | Components, pipeline and implementation status |
 | [Setup guide](docs/development/setup-guide.md) | Every component, its configuration and the optional databases |
