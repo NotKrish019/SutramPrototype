@@ -259,12 +259,17 @@ pub fn simulate_scenario(
                 kind: AssumptionKind::CoordinatesInferredFromTowerId,
                 field: "coordinates".to_string(),
                 assumed_value: format!("{},{}", coord.lat, coord.lon),
-                basis: "Investigator what-if scenario coordinate override (hypothetical position).".to_string(),
+                basis: "Investigator what-if scenario coordinate override (hypothetical position)."
+                    .to_string(),
             });
         }
 
         // Apply uncertainty window override
-        if let Some(win) = req.assumptions.event_uncertainty_overrides.get(&ev.event_id) {
+        if let Some(win) = req
+            .assumptions
+            .event_uncertainty_overrides
+            .get(&ev.event_id)
+        {
             cloned_ev.uncertainty_window_start = Some(win.start_utc.clone());
             cloned_ev.uncertainty_window_end = Some(win.end_utc.clone());
             // Anchor nominal timestamp inside the explicit window if it fell outside
@@ -286,7 +291,11 @@ pub fn simulate_scenario(
         }
 
         // Apply clock offset overrides
-        if let Some(offset) = req.assumptions.exhibit_clock_offsets.get(&ev.source_evidence_id) {
+        if let Some(offset) = req
+            .assumptions
+            .exhibit_clock_offsets
+            .get(&ev.source_evidence_id)
+        {
             cloned_ev.clock_offset_seconds = Some(*offset);
             cloned_ev.assumptions.push(ReconstructionAssumption {
                 kind: AssumptionKind::ClockOffsetNotDeclaredOnEvent,
@@ -400,7 +409,10 @@ pub fn compare_baseline_and_scenario(
         applied_summary.push(format!("Default clock offset set to {:+.2}s", offset));
     }
     for (evi, off) in &assumptions.exhibit_clock_offsets {
-        applied_summary.push(format!("Exhibit '{}' clock offset set to {:+.2}s", evi, off));
+        applied_summary.push(format!(
+            "Exhibit '{}' clock offset set to {:+.2}s",
+            evi, off
+        ));
     }
     if let Some(ref tz) = assumptions.default_timezone {
         applied_summary.push(format!("Default timezone changed to '{}'", tz));
@@ -409,7 +421,10 @@ pub fn compare_baseline_and_scenario(
         applied_summary.push(format!("Speed threshold set to {:.1} km/h", speed));
     }
     if let Some(hw) = assumptions.estimated_half_width_seconds {
-        applied_summary.push(format!("Estimated uncertainty half-width set to {:.1}s", hw));
+        applied_summary.push(format!(
+            "Estimated uncertainty half-width set to {:.1}s",
+            hw
+        ));
     }
     if !assumptions.excluded_evidence_ids.is_empty() {
         applied_summary.push(format!(

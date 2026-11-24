@@ -995,7 +995,10 @@ fn test_phase1_cell_tower_centroid_labeled_as_inferred_assumption() {
         assumption.is_some(),
         "Inferred cell tower centroid must carry CoordinatesInferredFromTowerId assumption"
     );
-    assert!(assumption.unwrap().basis.contains("not an observed position"));
+    assert!(assumption
+        .unwrap()
+        .basis
+        .contains("not an observed position"));
 }
 
 // 15. Phase 1 Hardening: UTC-Stored Events Have No Double Clock Offset
@@ -1031,7 +1034,9 @@ async fn test_phase3_stateless_what_if_does_not_mutate_baseline_or_fs() {
     use sutram_backend_rust::{
         create_router,
         reconstruction::{
-            scenario::{ScenarioAssumptions, ScenarioSimulationRequest, ScenarioSimulationResponse},
+            scenario::{
+                ScenarioAssumptions, ScenarioSimulationRequest, ScenarioSimulationResponse,
+            },
             FullCaseReconstructionResult, GeoPoint,
         },
         AppConfig,
@@ -1139,7 +1144,10 @@ async fn test_phase3_stateless_what_if_does_not_mutate_baseline_or_fs() {
     assert!(sim_response.scenario_run_id.starts_with("sim-"));
     assert_ne!(sim_response.scenario_run_id, baseline_run_id);
     assert_eq!(
-        sim_response.simulated_reconstruction.export_safeguard.status,
+        sim_response
+            .simulated_reconstruction
+            .export_safeguard
+            .status,
         sutram_backend_rust::reconstruction::ExportSafeguardStatus::Blocked
     );
 
@@ -1175,7 +1183,9 @@ async fn test_phase3_what_if_disappearing_contradiction() {
     use sutram_backend_rust::{
         create_router,
         reconstruction::{
-            scenario::{ScenarioAssumptions, ScenarioSimulationRequest, ScenarioSimulationResponse},
+            scenario::{
+                ScenarioAssumptions, ScenarioSimulationRequest, ScenarioSimulationResponse,
+            },
             FullCaseReconstructionResult, GeoPoint,
         },
         AppConfig,
@@ -1287,7 +1297,9 @@ async fn test_phase3_what_if_newly_appearing_contradiction() {
     use sutram_backend_rust::{
         create_router,
         reconstruction::{
-            scenario::{ScenarioAssumptions, ScenarioSimulationRequest, ScenarioSimulationResponse},
+            scenario::{
+                ScenarioAssumptions, ScenarioSimulationRequest, ScenarioSimulationResponse,
+            },
             FullCaseReconstructionResult, GeoPoint,
         },
         AppConfig,
@@ -1383,15 +1395,17 @@ async fn test_phase3_what_if_robustness_changed() {
         http::{Request, StatusCode},
     };
     use http_body_util::BodyExt;
+    use std::collections::HashMap;
     use sutram_backend_rust::{
         create_router,
         reconstruction::{
-            scenario::{ScenarioAssumptions, ScenarioSimulationRequest, ScenarioSimulationResponse},
+            scenario::{
+                ScenarioAssumptions, ScenarioSimulationRequest, ScenarioSimulationResponse,
+            },
             FullCaseReconstructionResult, GeoPoint,
         },
         AppConfig,
     };
-    use std::collections::HashMap;
     use tower::ServiceExt;
 
     let app = create_router(AppConfig::default());
@@ -1484,12 +1498,14 @@ async fn test_phase3_what_if_invalid_assumptions_rejected() {
         body::Body,
         http::{Request, StatusCode},
     };
+    use std::collections::HashMap;
     use sutram_backend_rust::{
         create_router,
-        reconstruction::scenario::{ExplicitWindowOverride, ScenarioAssumptions, ScenarioSimulationRequest},
+        reconstruction::scenario::{
+            ExplicitWindowOverride, ScenarioAssumptions, ScenarioSimulationRequest,
+        },
         AppConfig,
     };
-    use std::collections::HashMap;
     use tower::ServiceExt;
 
     let app = create_router(AppConfig::default());
@@ -1721,7 +1737,9 @@ async fn test_phase4_full_finding_to_source_trace_with_multiple_evidence_items()
         .uri(format!("/api/v1/cases/{}/reconstruction", case_id))
         .method("POST")
         .header("Content-Type", "application/json")
-        .body(Body::from(serde_json::to_vec(&reconstruction_payload).unwrap()))
+        .body(Body::from(
+            serde_json::to_vec(&reconstruction_payload).unwrap(),
+        ))
         .unwrap();
 
     let resp_recon = app.clone().oneshot(req_recon).await.unwrap();
@@ -1779,11 +1797,11 @@ async fn test_phase4_full_finding_to_source_trace_with_multiple_evidence_items()
         anchor_cctv.extraction_run_id,
         Some("ext-cctv-run-001".to_string())
     );
+    assert_eq!(anchor_cctv.source_record_id, Some("frame_0042".to_string()));
     assert_eq!(
-        anchor_cctv.source_record_id,
-        Some("frame_0042".to_string())
+        anchor_cctv.original_source_timestamp,
+        "2026-11-18T10:00:00Z"
     );
-    assert_eq!(anchor_cctv.original_source_timestamp, "2026-11-18T10:00:00Z");
     assert_eq!(
         anchor_cctv.normalized_timestamp_utc,
         Some("2026-11-18T10:00:00+00:00".to_string())
@@ -1812,7 +1830,10 @@ async fn test_phase4_full_finding_to_source_trace_with_multiple_evidence_items()
 
     // 4. Query full case provenance report
     let req_report = Request::builder()
-        .uri(format!("/api/v1/cases/{}/reconstruction/provenance", case_id))
+        .uri(format!(
+            "/api/v1/cases/{}/reconstruction/provenance",
+            case_id
+        ))
         .method("GET")
         .body(Body::empty())
         .unwrap();
@@ -2281,15 +2302,17 @@ async fn test_phase4_epistemic_distinction_observed_inferred_simulated() {
     use http_body_util::BodyExt;
     use sutram_backend_rust::{
         create_router,
+        extraction::model::ExtractedEventCandidate,
         reconstruction::{
             adapters::event_candidate_to_timeline_event_with_context,
-            scenario::{ScenarioAssumptions, ScenarioSimulationRequest, ScenarioSimulationResponse},
+            scenario::{
+                ScenarioAssumptions, ScenarioSimulationRequest, ScenarioSimulationResponse,
+            },
             traceability::{
                 resolve_finding_provenance, EpistemicClassification, FindingProvenanceTrace,
             },
             FullCaseReconstructionResult,
         },
-        extraction::model::ExtractedEventCandidate,
         AppConfig,
     };
     use tower::ServiceExt;
@@ -2433,7 +2456,8 @@ async fn test_phase4_epistemic_distinction_observed_inferred_simulated() {
     let sim_bytes = resp_sim.into_body().collect().await.unwrap().to_bytes();
     let sim_res: ScenarioSimulationResponse = serde_json::from_slice(&sim_bytes).unwrap();
 
-    let storage = sutram_backend_rust::ingestion::StorageManager::new(std::path::PathBuf::from("/tmp"));
+    let storage =
+        sutram_backend_rust::ingestion::StorageManager::new(std::path::PathBuf::from("/tmp"));
     let sim_trace = resolve_finding_provenance(
         case_id,
         lead_id,
@@ -2483,7 +2507,8 @@ async fn test_phase5_gap_evidence_excluded() {
     };
 
     let options = ReconstructionOptions::default();
-    let service = sutram_backend_rust::reconstruction::service::ForensicReconstructionService::new();
+    let service =
+        sutram_backend_rust::reconstruction::service::ForensicReconstructionService::new();
     let recon = service.reconstruct_case(&[], &options).unwrap();
 
     let report = analyze_evidence_gaps("c1", &recon, &[manifest_corrupted], None);
@@ -2499,8 +2524,12 @@ async fn test_phase5_gap_evidence_excluded() {
     assert_eq!(gap.rule_id, "GAP-RULE-001-EVIDENCE-EXCLUDED");
     assert!(gap.is_confirmed_missing);
     assert!(gap.explanation.contains("corrupted_drive.img"));
-    assert!(gap.impact_on_reconstruction.contains("absent from the timeline"));
-    assert!(gap.suggested_corroborating_evidence.contains("custody checksum"));
+    assert!(gap
+        .impact_on_reconstruction
+        .contains("absent from the timeline"));
+    assert!(gap
+        .suggested_corroborating_evidence
+        .contains("custody checksum"));
 }
 
 // 28. Phase 5: Gap Category - Evidence Without Accepted Events
@@ -2530,7 +2559,8 @@ async fn test_phase5_gap_evidence_without_events() {
     };
 
     let options = ReconstructionOptions::default();
-    let service = sutram_backend_rust::reconstruction::service::ForensicReconstructionService::new();
+    let service =
+        sutram_backend_rust::reconstruction::service::ForensicReconstructionService::new();
     let recon = service.reconstruct_case(&[], &options).unwrap();
 
     let report = analyze_evidence_gaps("c2", &recon, &[manifest_orphan], None);
@@ -2544,7 +2574,9 @@ async fn test_phase5_gap_evidence_without_events() {
     assert_eq!(gap.subject_id, "evi-orphan-01");
     assert!(!gap.is_confirmed_missing); // Exists in storage, but unextracted
     assert!(gap.explanation.contains("zero accepted timeline events"));
-    assert!(gap.suggested_corroborating_evidence.contains("extraction pipeline"));
+    assert!(gap
+        .suggested_corroborating_evidence
+        .contains("extraction pipeline"));
 }
 
 // 29. Phase 5: Gap Category - Candidate Excluded
@@ -2555,7 +2587,8 @@ async fn test_phase5_gap_candidate_excluded() {
     };
 
     let options = ReconstructionOptions::default();
-    let service = sutram_backend_rust::reconstruction::service::ForensicReconstructionService::new();
+    let service =
+        sutram_backend_rust::reconstruction::service::ForensicReconstructionService::new();
 
     // Event with malformed timestamp
     let bad_event = RawTimelineEvent {
@@ -2589,7 +2622,9 @@ async fn test_phase5_gap_candidate_excluded() {
     assert_eq!(gap.subject_type, "EVENT_CANDIDATE");
     assert_eq!(gap.subject_id, "evt-malformed-01");
     assert!(gap.is_confirmed_missing);
-    assert!(gap.impact_on_reconstruction.contains("cannot be positioned"));
+    assert!(gap
+        .impact_on_reconstruction
+        .contains("cannot be positioned"));
 }
 
 // 30. Phase 5: Gap Category - Event Without Coordinates
@@ -2600,7 +2635,8 @@ async fn test_phase5_gap_event_without_coordinates() {
     };
 
     let options = ReconstructionOptions::default();
-    let service = sutram_backend_rust::reconstruction::service::ForensicReconstructionService::new();
+    let service =
+        sutram_backend_rust::reconstruction::service::ForensicReconstructionService::new();
 
     // Valid timestamp, but coordinates are None
     let unlocated_event = RawTimelineEvent {
@@ -2623,7 +2659,9 @@ async fn test_phase5_gap_event_without_coordinates() {
         assumptions: vec![],
     };
 
-    let recon = service.reconstruct_case(&[unlocated_event], &options).unwrap();
+    let recon = service
+        .reconstruct_case(&[unlocated_event], &options)
+        .unwrap();
     let report = analyze_evidence_gaps("c4", &recon, &[], None);
 
     let gap = report
@@ -2634,20 +2672,24 @@ async fn test_phase5_gap_event_without_coordinates() {
 
     assert_eq!(gap.subject_id, "evt-nocoords-01");
     assert!(gap.is_confirmed_missing);
-    assert!(gap.impact_on_reconstruction.contains("cannot be placed on spatial maps"));
-    assert!(gap.suggested_corroborating_evidence.contains("Incoming voice call"));
+    assert!(gap
+        .impact_on_reconstruction
+        .contains("cannot be placed on spatial maps"));
+    assert!(gap
+        .suggested_corroborating_evidence
+        .contains("Incoming voice call"));
 }
 
 // 31. Phase 5: Gap Category - Unresolved Entity Reference
 #[tokio::test]
 async fn test_phase5_gap_unresolved_entity_reference() {
     use sutram_backend_rust::reconstruction::{
-        analyze_evidence_gaps, EvidenceGapType, GeoPoint, RawTimelineEvent,
-        ReconstructionOptions,
+        analyze_evidence_gaps, EvidenceGapType, GeoPoint, RawTimelineEvent, ReconstructionOptions,
     };
 
     let options = ReconstructionOptions::default();
-    let service = sutram_backend_rust::reconstruction::service::ForensicReconstructionService::new();
+    let service =
+        sutram_backend_rust::reconstruction::service::ForensicReconstructionService::new();
 
     let p = GeoPoint::new(28.5244, 77.2066).unwrap();
     let anon_event = RawTimelineEvent {
@@ -2688,12 +2730,12 @@ async fn test_phase5_gap_unresolved_entity_reference() {
 #[tokio::test]
 async fn test_phase5_gap_spatial_continuity_gap() {
     use sutram_backend_rust::reconstruction::{
-        analyze_evidence_gaps, EvidenceGapType, GeoPoint, RawTimelineEvent,
-        ReconstructionOptions,
+        analyze_evidence_gaps, EvidenceGapType, GeoPoint, RawTimelineEvent, ReconstructionOptions,
     };
 
     let options = ReconstructionOptions::default();
-    let service = sutram_backend_rust::reconstruction::service::ForensicReconstructionService::new();
+    let service =
+        sutram_backend_rust::reconstruction::service::ForensicReconstructionService::new();
 
     let p1 = GeoPoint::new(28.5244, 77.2066).unwrap();
     let p2 = GeoPoint::new(28.6000, 77.2200).unwrap();
@@ -2750,7 +2792,9 @@ async fn test_phase5_gap_spatial_continuity_gap() {
         assumptions: vec![],
     };
 
-    let recon = service.reconstruct_case(&[ev1, ev2_unlocated, ev3], &options).unwrap();
+    let recon = service
+        .reconstruct_case(&[ev1, ev2_unlocated, ev3], &options)
+        .unwrap();
     let report = analyze_evidence_gaps("c6", &recon, &[], None);
 
     let gap = report
@@ -2793,7 +2837,8 @@ async fn test_phase5_gap_video_without_frames() {
     };
 
     let options = ReconstructionOptions::default();
-    let service = sutram_backend_rust::reconstruction::service::ForensicReconstructionService::new();
+    let service =
+        sutram_backend_rust::reconstruction::service::ForensicReconstructionService::new();
     let recon = service.reconstruct_case(&[], &options).unwrap();
     // No video handoff records attached
 
@@ -2807,17 +2852,19 @@ async fn test_phase5_gap_video_without_frames() {
 
     assert_eq!(gap.subject_id, "evi-vid-01");
     assert!(gap.explanation.contains("traffic_cam.mp4"));
-    assert!(gap.suggested_corroborating_evidence.contains("I-frame keyframes"));
+    assert!(gap
+        .suggested_corroborating_evidence
+        .contains("I-frame keyframes"));
 }
 
 // 34. Phase 5: Gap Category - Uncalibrated Device Clock
 #[tokio::test]
 async fn test_phase5_gap_uncalibrated_clock() {
-    use sutram_backend_rust::reconstruction::{
-        adapters::event_candidate_to_timeline_event_with_context,
-        analyze_evidence_gaps, EvidenceGapType, ReconstructionOptions,
-    };
     use sutram_backend_rust::extraction::model::ExtractedEventCandidate;
+    use sutram_backend_rust::reconstruction::{
+        adapters::event_candidate_to_timeline_event_with_context, analyze_evidence_gaps,
+        EvidenceGapType, ReconstructionOptions,
+    };
 
     let candidate = ExtractedEventCandidate {
         candidate_id: "evt-clk-01".to_string(),
@@ -2836,10 +2883,16 @@ async fn test_phase5_gap_uncalibrated_clock() {
     };
 
     // When context has None for clock_offset, adapters.rs generates ClockOffsetNotDeclaredOnEvent assumption
-    let event = event_candidate_to_timeline_event_with_context(&candidate, Some("EXACT_SECOND"), Some("UTC"), None);
+    let event = event_candidate_to_timeline_event_with_context(
+        &candidate,
+        Some("EXACT_SECOND"),
+        Some("UTC"),
+        None,
+    );
 
     let options = ReconstructionOptions::default();
-    let service = sutram_backend_rust::reconstruction::service::ForensicReconstructionService::new();
+    let service =
+        sutram_backend_rust::reconstruction::service::ForensicReconstructionService::new();
     let recon = service.reconstruct_case(&[event], &options).unwrap();
 
     let report = analyze_evidence_gaps("c8", &recon, &[], None);
@@ -2851,7 +2904,9 @@ async fn test_phase5_gap_uncalibrated_clock() {
         .expect("Must identify UncalibratedClock gap");
 
     assert_eq!(gap.subject_id, "evt-clk-01");
-    assert!(gap.explanation.contains("uncalibrated clock offset assumption"));
+    assert!(gap
+        .explanation
+        .contains("uncalibrated clock offset assumption"));
     assert!(gap.suggested_corroborating_evidence.contains("NTP"));
 }
 
@@ -2859,8 +2914,7 @@ async fn test_phase5_gap_uncalibrated_clock() {
 #[tokio::test]
 async fn test_phase5_gap_unresolved_source_record() {
     use sutram_backend_rust::reconstruction::{
-        analyze_evidence_gaps, EvidenceGapType, GeoPoint, RawTimelineEvent,
-        ReconstructionOptions,
+        analyze_evidence_gaps, EvidenceGapType, GeoPoint, RawTimelineEvent, ReconstructionOptions,
     };
 
     let p = GeoPoint::new(28.5244, 77.2066).unwrap();
@@ -2885,7 +2939,8 @@ async fn test_phase5_gap_unresolved_source_record() {
     };
 
     let options = ReconstructionOptions::default();
-    let service = sutram_backend_rust::reconstruction::service::ForensicReconstructionService::new();
+    let service =
+        sutram_backend_rust::reconstruction::service::ForensicReconstructionService::new();
     let recon = service.reconstruct_case(&[ev], &options).unwrap();
 
     let report = analyze_evidence_gaps("c9", &recon, &[], None);
@@ -2897,15 +2952,16 @@ async fn test_phase5_gap_unresolved_source_record() {
         .expect("Must identify UnresolvedSourceRecord gap");
 
     assert_eq!(gap.subject_id, "evt-nosource-01");
-    assert!(gap.explanation.contains("lacks a specific source record identifier"));
+    assert!(gap
+        .explanation
+        .contains("lacks a specific source record identifier"));
 }
 
 // 36. Phase 5: Gap Category - Missing Extraction Provenance
 #[tokio::test]
 async fn test_phase5_gap_missing_extraction_provenance() {
     use sutram_backend_rust::reconstruction::{
-        analyze_evidence_gaps, EvidenceGapType, GeoPoint, RawTimelineEvent,
-        ReconstructionOptions,
+        analyze_evidence_gaps, EvidenceGapType, GeoPoint, RawTimelineEvent, ReconstructionOptions,
     };
 
     let p = GeoPoint::new(28.5244, 77.2066).unwrap();
@@ -2930,7 +2986,8 @@ async fn test_phase5_gap_missing_extraction_provenance() {
     };
 
     let options = ReconstructionOptions::default();
-    let service = sutram_backend_rust::reconstruction::service::ForensicReconstructionService::new();
+    let service =
+        sutram_backend_rust::reconstruction::service::ForensicReconstructionService::new();
     let recon = service.reconstruct_case(&[ev], &options).unwrap();
 
     let report = analyze_evidence_gaps("c10", &recon, &[], None);
@@ -2942,22 +2999,24 @@ async fn test_phase5_gap_missing_extraction_provenance() {
         .expect("Must identify MissingExtractionProvenance gap");
 
     assert_eq!(gap.subject_id, "evt-noext-01");
-    assert!(gap.explanation.contains("lacks an associated extraction run ID"));
+    assert!(gap
+        .explanation
+        .contains("lacks an associated extraction run ID"));
 }
 
 // 37. Phase 5: Gap Category - Missing Corroboration for Contradiction Lead
 #[tokio::test]
 async fn test_phase5_gap_missing_corroboration() {
     use sutram_backend_rust::reconstruction::{
-        analyze_evidence_gaps, EvidenceGapType, GeoPoint, RawTimelineEvent,
-        ReconstructionOptions,
+        analyze_evidence_gaps, EvidenceGapType, GeoPoint, RawTimelineEvent, ReconstructionOptions,
     };
 
     let options = ReconstructionOptions {
         speed_threshold_kmh: 180.0,
         ..Default::default()
     };
-    let service = sutram_backend_rust::reconstruction::service::ForensicReconstructionService::new();
+    let service =
+        sutram_backend_rust::reconstruction::service::ForensicReconstructionService::new();
 
     // 2 events separated by 1000 km in 5 minutes, but both from the EXACT SAME EXHIBIT ("evi-cdr-single")
     let p1 = GeoPoint::new(28.5244, 77.2066).unwrap();
@@ -3009,8 +3068,12 @@ async fn test_phase5_gap_missing_corroboration() {
         .expect("Must identify MissingCorroboration gap");
 
     assert_eq!(gap.subject_type, "CONTRADICTION_LEAD");
-    assert!(gap.explanation.contains("single evidence exhibit 'evi-cdr-single'"));
-    assert!(gap.suggested_corroborating_evidence.contains("independent secondary evidence"));
+    assert!(gap
+        .explanation
+        .contains("single evidence exhibit 'evi-cdr-single'"));
+    assert!(gap
+        .suggested_corroborating_evidence
+        .contains("independent secondary evidence"));
 }
 
 // 38. Phase 5: False-Positive Prevention
@@ -3085,10 +3148,16 @@ async fn test_phase5_gap_false_positive_prevention() {
     };
 
     let options = ReconstructionOptions::default();
-    let service = sutram_backend_rust::reconstruction::service::ForensicReconstructionService::new();
+    let service =
+        sutram_backend_rust::reconstruction::service::ForensicReconstructionService::new();
     let recon = service.reconstruct_case(&[ev1, ev2], &options).unwrap();
 
-    let report = analyze_evidence_gaps("c-clean", &recon, &[manifest], Some(&["suspect-1".to_string()]));
+    let report = analyze_evidence_gaps(
+        "c-clean",
+        &recon,
+        &[manifest],
+        Some(&["suspect-1".to_string()]),
+    );
 
     // Fully calibrated, valid coordinates, full provenance, resolved entity, no continuity jump
     assert_eq!(
@@ -3101,12 +3170,11 @@ async fn test_phase5_gap_false_positive_prevention() {
 // 39. Phase 5: Missing-Data Handling (Empty inputs do not panic)
 #[tokio::test]
 async fn test_phase5_gap_missing_data_handling() {
-    use sutram_backend_rust::reconstruction::{
-        analyze_evidence_gaps, ReconstructionOptions,
-    };
+    use sutram_backend_rust::reconstruction::{analyze_evidence_gaps, ReconstructionOptions};
 
     let options = ReconstructionOptions::default();
-    let service = sutram_backend_rust::reconstruction::service::ForensicReconstructionService::new();
+    let service =
+        sutram_backend_rust::reconstruction::service::ForensicReconstructionService::new();
     let recon = service.reconstruct_case(&[], &options).unwrap();
 
     let report = analyze_evidence_gaps("c-empty", &recon, &[], None);
@@ -3123,7 +3191,8 @@ async fn test_phase5_gap_duplicate_gap_handling() {
     };
 
     let options = ReconstructionOptions::default();
-    let service = sutram_backend_rust::reconstruction::service::ForensicReconstructionService::new();
+    let service =
+        sutram_backend_rust::reconstruction::service::ForensicReconstructionService::new();
 
     let ev = RawTimelineEvent {
         event_id: "evt-dup-01".to_string(),
@@ -3152,7 +3221,11 @@ async fn test_phase5_gap_duplicate_gap_handling() {
         .filter(|g| g.gap_id == "gap-nocoord-evt-dup-01")
         .collect();
 
-    assert_eq!(coord_gaps.len(), 1, "Duplicate gap IDs must be strictly deduplicated");
+    assert_eq!(
+        coord_gaps.len(),
+        1,
+        "Duplicate gap IDs must be strictly deduplicated"
+    );
 }
 
 // 41. Phase 5: Deterministic Output
@@ -3163,7 +3236,8 @@ async fn test_phase5_gap_deterministic_output() {
     };
 
     let options = ReconstructionOptions::default();
-    let service = sutram_backend_rust::reconstruction::service::ForensicReconstructionService::new();
+    let service =
+        sutram_backend_rust::reconstruction::service::ForensicReconstructionService::new();
 
     let ev = RawTimelineEvent {
         event_id: "evt-det-01".to_string(),
@@ -3198,7 +3272,8 @@ async fn test_phase5_gap_resolved_when_evidence_added() {
     use sutram_backend_rust::{
         ingestion::{EvidenceManifest, EvidenceUploadReceipt, IngestionStatus},
         reconstruction::{
-            analyze_evidence_gaps, video_handoff::{VideoHandoffRecord, VideoHandoffStatus},
+            analyze_evidence_gaps,
+            video_handoff::{VideoHandoffRecord, VideoHandoffStatus},
             EvidenceGapType, ReconstructionOptions,
         },
     };
@@ -3222,11 +3297,13 @@ async fn test_phase5_gap_resolved_when_evidence_added() {
     };
 
     let options = ReconstructionOptions::default();
-    let service = sutram_backend_rust::reconstruction::service::ForensicReconstructionService::new();
+    let service =
+        sutram_backend_rust::reconstruction::service::ForensicReconstructionService::new();
 
     // 1. Initial reconstruction: video has NO frames extracted
     let recon_initial = service.reconstruct_case(&[], &options).unwrap();
-    let report_initial = analyze_evidence_gaps("c-res", &recon_initial, &[video_manifest.clone()], None);
+    let report_initial =
+        analyze_evidence_gaps("c-res", &recon_initial, &[video_manifest.clone()], None);
     assert!(report_initial
         .gaps
         .iter()
@@ -3265,9 +3342,7 @@ async fn test_phase5_gap_api_endpoint() {
     };
     use http_body_util::BodyExt;
     use sutram_backend_rust::{
-        create_router,
-        reconstruction::gaps::EvidenceGapAnalysisReport,
-        AppConfig,
+        create_router, reconstruction::gaps::EvidenceGapAnalysisReport, AppConfig,
     };
     use tower::ServiceExt;
 
@@ -3319,10 +3394,7 @@ async fn test_phase5_gap_api_endpoint() {
 
     assert_eq!(report.case_id, case_id);
     assert!(report.total_gaps_count >= 1);
-    assert!(report
-        .gaps
-        .iter()
-        .any(|g| g.subject_id == "evt-api-gap-01"));
+    assert!(report.gaps.iter().any(|g| g.subject_id == "evt-api-gap-01"));
 
     // 3. Query via alias GET /api/v1/cases/:case_id/gaps
     let req_alias = Request::builder()
@@ -3334,6 +3406,3 @@ async fn test_phase5_gap_api_endpoint() {
     let resp_alias = app.clone().oneshot(req_alias).await.unwrap();
     assert_eq!(resp_alias.status(), StatusCode::OK);
 }
-
-
-

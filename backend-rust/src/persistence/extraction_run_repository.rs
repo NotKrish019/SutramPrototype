@@ -332,7 +332,9 @@ impl ExtractionRunRepository {
                 payload_map.insert("coordinates_inferred".to_string(), serde_json::json!(true));
                 payload_map.insert(
                     "coordinates_inference_basis".to_string(),
-                    serde_json::json!("Representative centroid looked up from cell tower identifier"),
+                    serde_json::json!(
+                        "Representative centroid looked up from cell tower identifier"
+                    ),
                 );
             }
             let is_observed = !coords_inferred

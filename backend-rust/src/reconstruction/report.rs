@@ -409,7 +409,8 @@ pub fn generate_case_report(
     let evidence_gaps = if !reconstruction.evidence_gaps.is_empty() {
         reconstruction.evidence_gaps.clone()
     } else {
-        crate::reconstruction::gaps::analyze_evidence_gaps(case_id, reconstruction, exhibits, None).gaps
+        crate::reconstruction::gaps::analyze_evidence_gaps(case_id, reconstruction, exhibits, None)
+            .gaps
     };
 
     if !evidence_gaps.is_empty() {

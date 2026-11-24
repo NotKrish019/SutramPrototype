@@ -86,7 +86,10 @@ pub struct FullCaseReconstructionResult {
 
 impl FullCaseReconstructionResult {
     /// Attaches computed evidence gaps to the reconstruction result.
-    pub fn with_evidence_gaps(mut self, gaps: Vec<crate::reconstruction::gaps::EvidenceGap>) -> Self {
+    pub fn with_evidence_gaps(
+        mut self,
+        gaps: Vec<crate::reconstruction::gaps::EvidenceGap>,
+    ) -> Self {
         self.evidence_gaps = gaps;
         self
     }

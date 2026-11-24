@@ -155,11 +155,7 @@ pub async fn resolve_evidence_integrity(
     evidence_repo: Option<&EvidenceRepository>,
 ) -> (Option<String>, Option<String>, EvidenceIntegrityStatus) {
     // 1. Try to load manifest from storage or relational store
-    let mut manifest = if let Ok(m) = storage.load_manifest(case_id, evidence_id).await {
-        Some(m)
-    } else {
-        None
-    };
+    let mut manifest = storage.load_manifest(case_id, evidence_id).await.ok();
 
     if manifest.is_none() {
         if let Ok(ev_dir) = storage.get_evidence_dir(case_id, evidence_id) {
@@ -196,7 +192,10 @@ pub async fn resolve_evidence_integrity(
                             metadata: ev.metadata,
                             created_at: ev.created_at.to_rfc3339(),
                         },
-                        relative_raw_path: format!("{}/{}/{}.raw", case_id, evidence_id, evidence_id),
+                        relative_raw_path: format!(
+                            "{}/{}/{}.raw",
+                            case_id, evidence_id, evidence_id
+                        ),
                         stored_at: ev.created_at.to_rfc3339(),
                     });
                 }
@@ -460,7 +459,10 @@ pub async fn resolve_finding_provenance(
                 check_anchor_missing_provenance(&anchor_orig, &mut missing_fields);
                 source_anchors.push(anchor_orig);
             } else {
-                missing_fields.push(format!("missing_timeline_entry:{}", segment.origin_event_id));
+                missing_fields.push(format!(
+                    "missing_timeline_entry:{}",
+                    segment.origin_event_id
+                ));
             }
 
             if let Some(entry_dest) = entries_by_id.get(segment.destination_event_id.as_str()) {
@@ -481,8 +483,12 @@ pub async fn resolve_finding_provenance(
                 EpistemicClassification::Inferred
             };
 
-            let seg_id = format!("seg-{}-{}", segment.origin_event_id, segment.destination_event_id);
-            let summary = format!(
+            let seg_id = format!(
+                "seg-{}-{}",
+                segment.origin_event_id, segment.destination_event_id
+            );
+            let summary =
+                format!(
                 "Entity '{}' transit segment from '{}' to '{}' ({:.2} km, min speed {:.1} km/h).",
                 segment.entity_id,
                 segment.origin_event_id,
@@ -519,10 +525,12 @@ pub async fn resolve_finding_provenance(
             anchor.epistemic_level
         };
 
-        let summary = entry
-            .raw_description
-            .clone()
-            .unwrap_or_else(|| format!("Timeline event '{}' at {}", entry.event_id, entry.raw_timestamp));
+        let summary = entry.raw_description.clone().unwrap_or_else(|| {
+            format!(
+                "Timeline event '{}' at {}",
+                entry.event_id, entry.raw_timestamp
+            )
+        });
 
         return Ok(FindingProvenanceTrace {
             finding_id: entry.event_id.clone(),
@@ -564,8 +572,14 @@ pub async fn resolve_case_reconstruction_provenance(
 
     // Evaluate all contradiction leads
     for lead in &reconstruction.contradictions.leads {
-        if let Ok(trace) =
-            resolve_finding_provenance(case_id, &lead.lead_id, reconstruction, storage, evidence_repo).await
+        if let Ok(trace) = resolve_finding_provenance(
+            case_id,
+            &lead.lead_id,
+            reconstruction,
+            storage,
+            evidence_repo,
+        )
+        .await
         {
             if trace.missing_provenance_fields.is_empty() {
                 intact_count += 1;

@@ -970,7 +970,8 @@ fn test_phase6_international_numbers_no_regression() {
 #[test]
 fn test_phase6_cdr_indian_telecom_profiles() {
     // Airtel format: Calling_Number, Called_Number, Call_Date_Time, Call_Duration, First_CGI, Call_Type
-    let airtel_csv = "Calling_Number,Called_Number,Call_Date_Time,Call_Duration,First_CGI,Call_Type\n\
+    let airtel_csv =
+        "Calling_Number,Called_Number,Call_Date_Time,Call_Duration,First_CGI,Call_Type\n\
                       9811002233,9899887766,2026-11-10 20:15:30,120,404-45-12345-6789,OUTGOING\n\
                       +919876543210,09811002233,2026-11-10 21:00:00,45,404-45-12345-6790,INCOMING";
 

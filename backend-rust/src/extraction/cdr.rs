@@ -29,7 +29,7 @@ pub const REQUIRED_CDR_HEADERS: [&str; 5] = [
 ];
 
 /// Supported Call Detail Record schema profiles.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum CdrProfile {
     /// Standard canonical YUKTI CDR schema:
     /// record_id, caller_phone, receiver_phone, call_timestamp, duration_seconds
@@ -45,13 +45,8 @@ pub enum CdrProfile {
     /// BSNL specific column mappings
     Bsnl,
     /// Automatic detection based on header analysis
+    #[default]
     AutoDetect,
-}
-
-impl Default for CdrProfile {
-    fn default() -> Self {
-        CdrProfile::AutoDetect
-    }
 }
 
 /// Normalized column header matching helper.
@@ -370,7 +365,9 @@ pub fn parse_cdr_csv_with_profile(
         }
     }
 
-    let schema: ResolvedCdrSchema = if profile == CdrProfile::Standard || (profile == CdrProfile::AutoDetect && has_all_standard_headers) {
+    let schema: ResolvedCdrSchema = if profile == CdrProfile::Standard
+        || (profile == CdrProfile::AutoDetect && has_all_standard_headers)
+    {
         let header_indices: HashMap<&str, usize> = raw_header
             .iter()
             .enumerate()
@@ -396,7 +393,8 @@ pub fn parse_cdr_csv_with_profile(
         }
     } else {
         // Resolve using flexible carrier profile aliases
-        let normalized_headers: Vec<String> = raw_rows[0].iter().map(|h| normalize_header(h)).collect();
+        let normalized_headers: Vec<String> =
+            raw_rows[0].iter().map(|h| normalize_header(h)).collect();
         let mut caller_opt = None;
         let mut callee_opt = None;
         let mut timestamp_opt = None;
@@ -490,11 +488,20 @@ pub fn parse_cdr_csv_with_profile(
             CdrProfile::IndianTelecom => "IndianTelecom".to_string(),
             _ => {
                 // Auto-detect specific Indian telecom provider flavor if possible
-                if normalized_headers.iter().any(|h| h.contains("cgi") || h.contains("calling_party")) {
+                if normalized_headers
+                    .iter()
+                    .any(|h| h.contains("cgi") || h.contains("calling_party"))
+                {
                     "IndianTelecom (Airtel/Standard)".to_string()
-                } else if normalized_headers.iter().any(|h| h.contains("ecgi") || h.contains("party_number")) {
+                } else if normalized_headers
+                    .iter()
+                    .any(|h| h.contains("ecgi") || h.contains("party_number"))
+                {
                     "IndianTelecom (Jio)".to_string()
-                } else if normalized_headers.iter().any(|h| h.contains("a_party") || h.contains("b_party")) {
+                } else if normalized_headers
+                    .iter()
+                    .any(|h| h.contains("a_party") || h.contains("b_party"))
+                {
                     "IndianTelecom (Vi)".to_string()
                 } else {
                     "IndianTelecom (Generic)".to_string()
@@ -528,7 +535,7 @@ pub fn parse_cdr_csv_with_profile(
     let mut relationship_candidates = Vec::new();
 
     // In Indian CDR profiles, default country code is 91 unless explicitly overridden
-    let effective_country_prefix = default_country_prefix.or_else(|| {
+    let effective_country_prefix = default_country_prefix.or({
         if schema.is_indian_profile {
             Some("91")
         } else {
@@ -764,7 +771,9 @@ pub fn parse_cdr_csv_with_profile(
                 is_ambiguous: false,
                 ambiguity_reason: None,
                 context_snippet: None,
-                is_checksum_valid: Some(crate::extraction::identifiers::luhn_checksum_valid(&imei_val)),
+                is_checksum_valid: Some(crate::extraction::identifiers::luhn_checksum_valid(
+                    &imei_val,
+                )),
                 extraction_confidence: None,
                 extraction_method: "cdr_column_imei".to_string(),
             });
@@ -795,9 +804,15 @@ pub fn parse_cdr_csv_with_profile(
             evt_meta.insert("cell_tower_id".to_string(), serde_json::json!(tower));
         }
         evt_meta.insert("row_index".to_string(), serde_json::json!(row_idx));
-        evt_meta.insert("detected_profile".to_string(), serde_json::json!(schema.profile_name));
+        evt_meta.insert(
+            "detected_profile".to_string(),
+            serde_json::json!(schema.profile_name),
+        );
         if schema.is_indian_profile {
-            evt_meta.insert("carrier_timezone".to_string(), serde_json::json!("Asia/Kolkata"));
+            evt_meta.insert(
+                "carrier_timezone".to_string(),
+                serde_json::json!("Asia/Kolkata"),
+            );
         }
 
         let desc = format!(

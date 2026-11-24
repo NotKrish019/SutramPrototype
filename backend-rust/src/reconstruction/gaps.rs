@@ -11,9 +11,9 @@
 //! - Distinguishes confirmed missing information from unsupplied/unprocessed information.
 //! - Never fabricates facts or asserts guilt.
 
-use std::collections::{BTreeMap, HashSet};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
+use std::collections::{BTreeMap, HashSet};
 
 use crate::ingestion::{EvidenceManifest, IngestionStatus};
 use crate::reconstruction::model::AssumptionKind;
@@ -294,15 +294,17 @@ pub fn analyze_evidence_gaps(
 
     // 5. RULE-005: Unresolved Entity References
     for entry in &reconstruction.timeline.entries {
-        let is_unresolved = if entry.entity_ids.is_empty() {
-            true
-        } else if entry.entity_ids.iter().any(|id| {
-            let lower = id.trim().to_lowercase();
-            lower == "unknown" || lower == "unidentified" || lower.is_empty()
-        }) {
+        let is_unresolved = if entry.entity_ids.is_empty()
+            || entry.entity_ids.iter().any(|id| {
+                let lower = id.trim().to_lowercase();
+                lower == "unknown" || lower == "unidentified" || lower.is_empty()
+            }) {
             true
         } else if let Some(ref known) = known_entity_set {
-            entry.entity_ids.iter().any(|id| !known.contains(id.as_str()))
+            entry
+                .entity_ids
+                .iter()
+                .any(|id| !known.contains(id.as_str()))
         } else {
             false
         };
@@ -341,7 +343,10 @@ pub fn analyze_evidence_gaps(
                 && segment.transit_metrics.nominal_elapsed_seconds > 3600.0;
 
             if has_unlocated || is_massive_jump {
-                let seg_id = format!("seg-{}-{}", segment.origin_event_id, segment.destination_event_id);
+                let seg_id = format!(
+                    "seg-{}-{}",
+                    segment.origin_event_id, segment.destination_event_id
+                );
                 let gap_id = format!("gap-spatialcont-{}", seg_id);
                 if seen_keys.insert(gap_id.clone()) {
                     let explanation = format!(
@@ -570,8 +575,12 @@ pub fn analyze_evidence_gaps(
     let mut gaps_by_type = BTreeMap::new();
 
     for gap in &gaps {
-        *gaps_by_severity.entry(gap.severity.as_str().to_string()).or_insert(0) += 1;
-        *gaps_by_type.entry(gap.gap_type.as_str().to_string()).or_insert(0) += 1;
+        *gaps_by_severity
+            .entry(gap.severity.as_str().to_string())
+            .or_insert(0) += 1;
+        *gaps_by_type
+            .entry(gap.gap_type.as_str().to_string())
+            .or_insert(0) += 1;
     }
 
     EvidenceGapAnalysisReport {

@@ -97,16 +97,12 @@ fn test_reconstruction_result_run_id_serde_roundtrip() {
     assert_eq!(serialized["reconstruction_run_id"], test_run_id);
     assert_eq!(serialized["run_id"], test_run_id);
 
-    let deserialized: FullCaseReconstructionResult =
-        serde_json::from_value(serialized).unwrap();
+    let deserialized: FullCaseReconstructionResult = serde_json::from_value(serialized).unwrap();
     assert_eq!(
         deserialized.reconstruction_run_id.as_deref(),
         Some(test_run_id.as_str())
     );
-    assert_eq!(
-        deserialized.run_id.as_deref(),
-        Some(test_run_id.as_str())
-    );
+    assert_eq!(deserialized.run_id.as_deref(), Some(test_run_id.as_str()));
 }
 
 #[test]
@@ -128,6 +124,12 @@ fn test_raw_evidence_integrity_verification() {
     hasher_tampered.update(raw_bytes_tampered);
     let digest_tampered = hasher_tampered.finalize_hex();
 
-    assert_eq!(digest_1, digest_repeat, "Identical raw bytes must produce identical SHA-256");
-    assert_ne!(digest_1, digest_tampered, "Any byte change in raw evidence must produce distinct SHA-256");
+    assert_eq!(
+        digest_1, digest_repeat,
+        "Identical raw bytes must produce identical SHA-256"
+    );
+    assert_ne!(
+        digest_1, digest_tampered,
+        "Any byte change in raw evidence must produce distinct SHA-256"
+    );
 }

@@ -604,10 +604,16 @@ async fn sync_evidence_to_db(
         state.custody_repo.as_ref(),
     ) {
         let case_uuid = Uuid::parse_str(&receipt.case_id).map_err(|e| {
-            AppError::BadRequest(format!("Invalid case UUID '{}' in receipt: {}", receipt.case_id, e))
+            AppError::BadRequest(format!(
+                "Invalid case UUID '{}' in receipt: {}",
+                receipt.case_id, e
+            ))
         })?;
         let evidence_uuid = Uuid::parse_str(&receipt.evidence_id).map_err(|e| {
-            AppError::BadRequest(format!("Invalid evidence UUID '{}' in receipt: {}", receipt.evidence_id, e))
+            AppError::BadRequest(format!(
+                "Invalid evidence UUID '{}' in receipt: {}",
+                receipt.evidence_id, e
+            ))
         })?;
 
         case_repo
@@ -682,7 +688,10 @@ async fn sync_evidence_to_db(
             )
             .await?;
             tx.commit().await.map_err(|e| {
-                AppError::Internal(anyhow::anyhow!("Failed to commit outbox transaction: {}", e))
+                AppError::Internal(anyhow::anyhow!(
+                    "Failed to commit outbox transaction: {}",
+                    e
+                ))
             })?;
         }
     }
@@ -698,13 +707,22 @@ async fn sync_run_to_db(
         (state.extraction_repo.as_ref(), state.custody_repo.as_ref())
     {
         let case_uuid = Uuid::parse_str(&run_manifest.case_id).map_err(|e| {
-            AppError::BadRequest(format!("Invalid case UUID '{}' in run manifest: {}", run_manifest.case_id, e))
+            AppError::BadRequest(format!(
+                "Invalid case UUID '{}' in run manifest: {}",
+                run_manifest.case_id, e
+            ))
         })?;
         let evidence_uuid = Uuid::parse_str(&run_manifest.evidence_id).map_err(|e| {
-            AppError::BadRequest(format!("Invalid evidence UUID '{}' in run manifest: {}", run_manifest.evidence_id, e))
+            AppError::BadRequest(format!(
+                "Invalid evidence UUID '{}' in run manifest: {}",
+                run_manifest.evidence_id, e
+            ))
         })?;
         let run_uuid = Uuid::parse_str(&run_manifest.extraction_run_id).map_err(|e| {
-            AppError::BadRequest(format!("Invalid extraction_run_id '{}' in run manifest: {}", run_manifest.extraction_run_id, e))
+            AppError::BadRequest(format!(
+                "Invalid extraction_run_id '{}' in run manifest: {}",
+                run_manifest.extraction_run_id, e
+            ))
         })?;
 
         let started_at = chrono::DateTime::parse_from_rfc3339(&run_manifest.started_at)
@@ -719,14 +737,12 @@ async fn sync_run_to_db(
             extractor_name: run_manifest.extractor_name.clone(),
             extractor_version: run_manifest.extractor_version.clone(),
             configuration_hash: run_manifest.configuration_hash.clone(),
-            configuration: serde_json::to_value(&run_manifest.configuration)
-                .unwrap_or_default(),
+            configuration: serde_json::to_value(&run_manifest.configuration).unwrap_or_default(),
             status: run_manifest.status.to_string(),
             is_active: false,
             result_sha256: run_manifest.result_sha256.clone(),
             error_message: run_manifest.error_message.clone(),
-            records_processed: i32::try_from(run_manifest.records_processed)
-                .unwrap_or(i32::MAX),
+            records_processed: i32::try_from(run_manifest.records_processed).unwrap_or(i32::MAX),
             valid_records_count: i32::try_from(run_manifest.valid_records_count)
                 .unwrap_or(i32::MAX),
             rejected_records_count: i32::try_from(run_manifest.rejected_records_count)
@@ -748,8 +764,7 @@ async fn sync_run_to_db(
 
         let is_success = run_manifest.status
             == crate::extraction::model::ExtractionRunStatus::Success
-            || run_manifest.status
-                == crate::extraction::model::ExtractionRunStatus::PartialSuccess;
+            || run_manifest.status == crate::extraction::model::ExtractionRunStatus::PartialSuccess;
 
         if is_success {
             let result = state

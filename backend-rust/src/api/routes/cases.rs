@@ -116,12 +116,11 @@ pub async fn create_case(
     })?;
 
     let case_file = case_dir.join("case.json");
-    let content = serde_json::to_vec_pretty(&entity).map_err(|e| {
-        AppError::Internal(anyhow::anyhow!("Failed to serialize case: {}", e))
-    })?;
-    tokio::fs::write(&case_file, content).await.map_err(|e| {
-        AppError::Internal(anyhow::anyhow!("Failed to write case.json: {}", e))
-    })?;
+    let content = serde_json::to_vec_pretty(&entity)
+        .map_err(|e| AppError::Internal(anyhow::anyhow!("Failed to serialize case: {}", e)))?;
+    tokio::fs::write(&case_file, content)
+        .await
+        .map_err(|e| AppError::Internal(anyhow::anyhow!("Failed to write case.json: {}", e)))?;
 
     Ok((StatusCode::CREATED, Json(CaseDto::from(entity))))
 }

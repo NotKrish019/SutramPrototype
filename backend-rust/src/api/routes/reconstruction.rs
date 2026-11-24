@@ -23,14 +23,10 @@ use crate::{
         },
         model::GeoPoint,
         model::{AssumptionKind, ReconstructionAssumption},
-        scenario::{
-            simulate_scenario, validate_scenario_assumptions, ScenarioSimulationRequest,
-        },
+        scenario::{simulate_scenario, validate_scenario_assumptions, ScenarioSimulationRequest},
         service::ReconstructionOptions,
         temporal::RawTimelineEvent,
-        traceability::{
-            resolve_case_reconstruction_provenance, resolve_finding_provenance,
-        },
+        traceability::{resolve_case_reconstruction_provenance, resolve_finding_provenance},
         video_handoff::{
             handoff_case_video_frames, VideoHandoffRecord, DEFAULT_FRAME_TIMEOUT,
             DEFAULT_MAX_FRAMES,
@@ -268,10 +264,17 @@ pub async fn get_case_evidence_gaps(
                         storage_uri: e.storage_uri,
                         status: crate::ingestion::IngestionStatus::Ingested,
                         metadata: e.metadata,
-                        created_at: e.created_at.to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+                        created_at: e
+                            .created_at
+                            .to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
                     },
-                    relative_raw_path: format!("{}/{}/{}.raw", case_id, e.evidence_id, e.evidence_id),
-                    stored_at: e.created_at.to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+                    relative_raw_path: format!(
+                        "{}/{}/{}.raw",
+                        case_id, e.evidence_id, e.evidence_id
+                    ),
+                    stored_at: e
+                        .created_at
+                        .to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
                 })
                 .collect()
         } else {
@@ -623,7 +626,10 @@ async fn load_case_events_with_video(
                 let storage = state.ingestion_service.storage();
                 let case_id_str = case_id.to_string();
                 let manifests = if let Some(ref ev_repo) = state.evidence_repo {
-                    let db_evidence = ev_repo.list_evidence_for_case(case_id).await.unwrap_or_default();
+                    let db_evidence = ev_repo
+                        .list_evidence_for_case(case_id)
+                        .await
+                        .unwrap_or_default();
                     if !db_evidence.is_empty() {
                         db_evidence
                             .into_iter()
@@ -639,24 +645,41 @@ async fn load_case_events_with_video(
                                     storage_uri: e.storage_uri,
                                     status: match e.ingestion_status.as_str() {
                                         "INGESTED" => crate::ingestion::IngestionStatus::Ingested,
-                                        "EXTRACTION_PENDING" => crate::ingestion::IngestionStatus::ExtractionPending,
+                                        "EXTRACTION_PENDING" => {
+                                            crate::ingestion::IngestionStatus::ExtractionPending
+                                        }
                                         "EXTRACTED" => crate::ingestion::IngestionStatus::Extracted,
-                                        "EXTRACTION_FAILED" => crate::ingestion::IngestionStatus::ExtractionFailed,
+                                        "EXTRACTION_FAILED" => {
+                                            crate::ingestion::IngestionStatus::ExtractionFailed
+                                        }
                                         "CORRUPTED" => crate::ingestion::IngestionStatus::Corrupted,
                                         _ => crate::ingestion::IngestionStatus::Ingested,
                                     },
                                     metadata: e.metadata,
-                                    created_at: e.created_at.to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+                                    created_at: e
+                                        .created_at
+                                        .to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
                                 },
-                                relative_raw_path: format!("{}/{}/{}.raw", case_id_str, e.evidence_id, e.evidence_id),
-                                stored_at: e.created_at.to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+                                relative_raw_path: format!(
+                                    "{}/{}/{}.raw",
+                                    case_id_str, e.evidence_id, e.evidence_id
+                                ),
+                                stored_at: e
+                                    .created_at
+                                    .to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
                             })
                             .collect()
                     } else {
-                        storage.list_manifests_for_case(&case_id_str).await.unwrap_or_default()
+                        storage
+                            .list_manifests_for_case(&case_id_str)
+                            .await
+                            .unwrap_or_default()
                     }
                 } else {
-                    storage.list_manifests_for_case(&case_id_str).await.unwrap_or_default()
+                    storage
+                        .list_manifests_for_case(&case_id_str)
+                        .await
+                        .unwrap_or_default()
                 };
                 handoff_case_video_frames(
                     storage,
@@ -717,8 +740,13 @@ async fn load_case_events_with_video(
                                 );
                                 for ev in &mut events_from_run {
                                     if let serde_json::Value::Object(ref mut map) = ev.metadata {
-                                        map.entry("extraction_run_id".to_string())
-                                            .or_insert_with(|| serde_json::Value::String(pointer.active_run_id.clone()));
+                                        map.entry("extraction_run_id".to_string()).or_insert_with(
+                                            || {
+                                                serde_json::Value::String(
+                                                    pointer.active_run_id.clone(),
+                                                )
+                                            },
+                                        );
                                     }
                                 }
                                 all_events.extend(events_from_run);
@@ -749,7 +777,11 @@ async fn load_case_events_with_video(
     }));
     all_events.sort_by(|a, b| a.event_id.cmp(&b.event_id));
 
-    Ok((all_events, video_records, contributing_run_ids.into_iter().collect()))
+    Ok((
+        all_events,
+        video_records,
+        contributing_run_ids.into_iter().collect(),
+    ))
 }
 
 /// Helper to persist the latest reconstruction run to filesystem derived storage for offline/restart continuity.
@@ -777,12 +809,9 @@ async fn save_reconstruction_to_fs(
             e
         ))
     })?;
-    tokio::fs::write(&file_path, json_bytes).await.map_err(|e| {
-        AppError::Internal(anyhow::anyhow!(
-            "Failed to write latest.json: {}",
-            e
-        ))
-    })?;
+    tokio::fs::write(&file_path, json_bytes)
+        .await
+        .map_err(|e| AppError::Internal(anyhow::anyhow!("Failed to write latest.json: {}", e)))?;
     Ok(())
 }
 
@@ -824,7 +853,10 @@ pub async fn get_case_report(
 
     // 2. Load evidence manifests (checking relational evidence repository first if available)
     let exhibits = if let Some(ref repo) = state.evidence_repo {
-        let db_evidence = repo.list_evidence_for_case(case_id).await.unwrap_or_default();
+        let db_evidence = repo
+            .list_evidence_for_case(case_id)
+            .await
+            .unwrap_or_default();
         if !db_evidence.is_empty() {
             db_evidence
                 .into_iter()
@@ -840,17 +872,28 @@ pub async fn get_case_report(
                         storage_uri: e.storage_uri,
                         status: match e.ingestion_status.as_str() {
                             "INGESTED" => crate::ingestion::IngestionStatus::Ingested,
-                            "EXTRACTION_PENDING" => crate::ingestion::IngestionStatus::ExtractionPending,
+                            "EXTRACTION_PENDING" => {
+                                crate::ingestion::IngestionStatus::ExtractionPending
+                            }
                             "EXTRACTED" => crate::ingestion::IngestionStatus::Extracted,
-                            "EXTRACTION_FAILED" => crate::ingestion::IngestionStatus::ExtractionFailed,
+                            "EXTRACTION_FAILED" => {
+                                crate::ingestion::IngestionStatus::ExtractionFailed
+                            }
                             "CORRUPTED" => crate::ingestion::IngestionStatus::Corrupted,
                             _ => crate::ingestion::IngestionStatus::Ingested,
                         },
                         metadata: e.metadata,
-                        created_at: e.created_at.to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+                        created_at: e
+                            .created_at
+                            .to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
                     },
-                    relative_raw_path: format!("{}/{}/{}.raw", case_id, e.evidence_id, e.evidence_id),
-                    stored_at: e.created_at.to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+                    relative_raw_path: format!(
+                        "{}/{}/{}.raw",
+                        case_id, e.evidence_id, e.evidence_id
+                    ),
+                    stored_at: e
+                        .created_at
+                        .to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
                 })
                 .collect()
         } else {

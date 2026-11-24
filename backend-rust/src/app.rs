@@ -283,10 +283,7 @@ pub fn create_router_with_state(state: AppState) -> Router {
             "/api/v1/cases/:case_id/reconstruction/gaps",
             get(get_case_evidence_gaps),
         )
-        .route(
-            "/api/v1/cases/:case_id/gaps",
-            get(get_case_evidence_gaps),
-        )
+        .route("/api/v1/cases/:case_id/gaps", get(get_case_evidence_gaps))
         .route(
             "/api/v1/cases/:case_id/robustness",
             get(get_case_robustness),

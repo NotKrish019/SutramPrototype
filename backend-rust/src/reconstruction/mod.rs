@@ -43,12 +43,6 @@ pub use scenario::{
     ExplicitWindowOverride, FindingComparisonItem, FindingRobustnessDelta, ScenarioAssumptions,
     ScenarioComparisonResult, ScenarioSimulationRequest, ScenarioSimulationResponse,
 };
-pub use traceability::{
-    resolve_case_reconstruction_provenance, resolve_evidence_integrity,
-    resolve_finding_provenance, resolve_source_anchor, CaseProvenanceReport,
-    EpistemicClassification, EvidenceIntegrityStatus, FindingProvenanceTrace,
-    SourceEvidenceAnchor, SpatialAnchorInterpretation, TimeWindowBounds,
-};
 pub use service::{
     evaluate_export_safeguard, ForensicReconstructionService, FullCaseReconstructionResult,
     ReconstructionOptions,
@@ -61,6 +55,11 @@ pub use temporal::{
     compute_uncertainty_window, intervals_overlap, normalize_time_precision,
     parse_and_normalize_timestamp, reconstruct_timeline, validate_timezone, RawTimelineEvent,
     DEFAULT_ESTIMATED_HALF_WIDTH_SECONDS,
+};
+pub use traceability::{
+    resolve_case_reconstruction_provenance, resolve_evidence_integrity, resolve_finding_provenance,
+    resolve_source_anchor, CaseProvenanceReport, EpistemicClassification, EvidenceIntegrityStatus,
+    FindingProvenanceTrace, SourceEvidenceAnchor, SpatialAnchorInterpretation, TimeWindowBounds,
 };
 pub use video::{
     compute_file_sha256, extract_keyframes, parse_showinfo_pts_times, probe_video_metadata,

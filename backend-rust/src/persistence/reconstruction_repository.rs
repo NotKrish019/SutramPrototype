@@ -239,7 +239,10 @@ impl ReconstructionRunRepository {
             .execute(&mut *tx)
             .await
             .map_err(|e| {
-                AppError::Internal(anyhow::anyhow!("Failed to insert spatial_trajectory row: {}", e))
+                AppError::Internal(anyhow::anyhow!(
+                    "Failed to insert spatial_trajectory row: {}",
+                    e
+                ))
             })?;
         }
 
@@ -306,8 +309,8 @@ impl ReconstructionRunRepository {
         })?;
 
         if let Some((run_id, Some(snapshot))) = row {
-            let mut res =
-                serde_json::from_value::<FullCaseReconstructionResult>(snapshot).map_err(|e| {
+            let mut res = serde_json::from_value::<FullCaseReconstructionResult>(snapshot)
+                .map_err(|e| {
                     AppError::Internal(anyhow::anyhow!(
                         "Failed to parse reconstruction snapshot: {}",
                         e

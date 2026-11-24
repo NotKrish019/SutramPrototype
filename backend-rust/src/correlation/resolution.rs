@@ -93,7 +93,7 @@ pub fn normalize_phone_number(
     // Case 1: Explicit leading '+'
     if has_plus {
         // Check for Indian country code (+91)
-        if digits.starts_with("91") {
+        if let Some(after_country_code) = digits.strip_prefix("91") {
             // Handle +91 (0) XXXXXXXXXX formatting (13 digits: 91 + trunk 0 + 10 digits)
             if digits.len() == 13 && digits.chars().nth(2) == Some('0') {
                 let national = &digits[3..];
@@ -120,7 +120,7 @@ pub fn normalize_phone_number(
                     };
                 }
             } else if digits.len() == 12 {
-                let national = &digits[2..];
+                let national = after_country_code;
                 if is_valid_indian_mobile_series(national) {
                     return PhoneNormalizationResult {
                         raw_input: cleaned.to_string(),
@@ -172,11 +172,10 @@ pub fn normalize_phone_number(
 
     // Case 2: International trunk '00'
     if cleaned.starts_with("00") && digits.len() >= 9 {
-        if digits.starts_with("0091") {
-            if digits.len() == 14 {
-                let national = &digits[4..];
-                if is_valid_indian_mobile_series(national) {
-                    return PhoneNormalizationResult {
+        if digits.starts_with("0091") && digits.len() == 14 {
+            let national = &digits[4..];
+            if is_valid_indian_mobile_series(national) {
+                return PhoneNormalizationResult {
                         raw_input: cleaned.to_string(),
                         normalized_e164: Some(format!("+91{}", national)),
                         is_normalized: true,
@@ -184,8 +183,8 @@ pub fn normalize_phone_number(
                         reason: "Normalized Indian mobile number by replacing leading international trunk prefix '0091' with '+91'.".to_string(),
                         country_prefix_applied: Some("91".to_string()),
                     };
-                } else {
-                    return PhoneNormalizationResult {
+            } else {
+                return PhoneNormalizationResult {
                         raw_input: cleaned.to_string(),
                         normalized_e164: None,
                         is_normalized: false,
@@ -196,7 +195,6 @@ pub fn normalize_phone_number(
                         ),
                         country_prefix_applied: Some("91".to_string()),
                     };
-                }
             }
         }
 
@@ -248,7 +246,8 @@ pub fn normalize_phone_number(
                 normalized_e164: Some(format!("+91{}", national)),
                 is_normalized: true,
                 resolution_status: "INDIAN_COUNTRY_CODE_PREFIX".to_string(),
-                reason: "Normalized Indian mobile number using leading '91' country code.".to_string(),
+                reason: "Normalized Indian mobile number using leading '91' country code."
+                    .to_string(),
                 country_prefix_applied: Some("91".to_string()),
             };
         } else {
