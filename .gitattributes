@@ -1,0 +1,5 @@
+# Evidence fixtures are fingerprinted with SHA-256 and the hashes are pinned in
+# tests and *.sha256 files. Git must never rewrite their bytes (for example
+# LF -> CRLF on a Windows checkout), or every integrity check would correctly
+# report the evidence as altered. Keep them byte-exact on every platform.
+data/** -text
