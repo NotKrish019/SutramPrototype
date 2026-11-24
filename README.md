@@ -421,11 +421,55 @@ Every component has its own test suite, and every suite runs in GitHub Actions C
 
 ## 👥 Team
 
-| Role | Focus |
-|---|---|
-| **Member 1:** AI/ML and evidence intelligence | Extraction, entity resolution, cross-source similarity |
-| **Member 2:** Backend and data engineering | API, PostgreSQL, Neo4j, ingestion, graph persistence |
-| **Member 3:** Frontend and visualisation | Investigator workspace, graph and timeline UI |
-| **Member 4:** Forensic intelligence and integration | Reconstruction, contradiction detection, video intelligence |
+<div align="center">
+
+### Team NeuralX
+
+<sub>Built for <b>SUTRAM 2026</b> · ISEA–IGDTUW National Hackathon</sub>
+
+<br/><br/>
+
+<table>
+  <tr>
+    <td align="center" valign="top" width="25%">
+      <a href="https://github.com/NotKrish019">
+        <img src="https://github.com/NotKrish019.png?size=240" width="120" height="120" alt="Krish Jagya"/>
+      </a>
+      <h3>Krish Jagya</h3>
+      <img src="https://img.shields.io/badge/AI%2FML%20%26%20Evidence%20Intelligence-FF3B4E?style=flat-square" alt="AI/ML & Evidence Intelligence"/>
+      <p><sub>Extraction · entity resolution<br/>cross-source similarity</sub></p>
+      <a href="https://github.com/NotKrish019"><img src="https://img.shields.io/badge/NotKrish019-181717?style=flat-square&logo=github&logoColor=white" alt="GitHub: NotKrish019"/></a>
+    </td>
+    <td align="center" valign="top" width="25%">
+      <a href="https://github.com/Kirti-799">
+        <img src="https://github.com/Kirti-799.png?size=240" width="120" height="120" alt="Kirti Antil"/>
+      </a>
+      <h3>Kirti Antil</h3>
+      <img src="https://img.shields.io/badge/Backend%20%26%20Data%20Engineering-5AB0FF?style=flat-square" alt="Backend & Data Engineering"/>
+      <p><sub>API · PostgreSQL · Neo4j<br/>ingestion · graph persistence</sub></p>
+      <a href="https://github.com/Kirti-799"><img src="https://img.shields.io/badge/Kirti--799-181717?style=flat-square&logo=github&logoColor=white" alt="GitHub: Kirti-799"/></a>
+    </td>
+    <td align="center" valign="top" width="25%">
+      <a href="https://github.com/anikabin-lang">
+        <img src="https://github.com/anikabin-lang.png?size=240" width="120" height="120" alt="Anika Jain"/>
+      </a>
+      <h3>Anika Jain</h3>
+      <img src="https://img.shields.io/badge/Frontend%20%26%20Visualisation-FFA445?style=flat-square" alt="Frontend & Visualisation"/>
+      <p><sub>Investigator workspace<br/>graph &amp; timeline UI</sub></p>
+      <a href="https://github.com/anikabin-lang"><img src="https://img.shields.io/badge/anikabin--lang-181717?style=flat-square&logo=github&logoColor=white" alt="GitHub: anikabin-lang"/></a>
+    </td>
+    <td align="center" valign="top" width="25%">
+      <a href="https://github.com/swastikparmar987">
+        <img src="https://github.com/swastikparmar987.png?size=240" width="120" height="120" alt="Swastik Parmar"/>
+      </a>
+      <h3>Swastik Parmar</h3>
+      <img src="https://img.shields.io/badge/Forensic%20Intelligence%20%26%20Integration-8B5CF6?style=flat-square" alt="Forensic Intelligence & Integration"/>
+      <p><sub>Reconstruction · contradictions<br/>robustness · custody · video</sub></p>
+      <a href="https://github.com/swastikparmar987"><img src="https://img.shields.io/badge/swastikparmar987-181717?style=flat-square&logo=github&logoColor=white" alt="GitHub: swastikparmar987"/></a>
+    </td>
+  </tr>
+</table>
+
+</div>
 
 Contributions follow a single-branch workflow on `main`. See [CONTRIBUTING.md](CONTRIBUTING.md) and [AGENTS.md](AGENTS.md).
