@@ -2,6 +2,8 @@
 
 Start with the [system overview](architecture/system-overview.md), then the [setup guide](development/setup-guide.md).
 
+**New here?** Read the 📘 [**project documentation**](PROJECT_DOCUMENTATION.md) — the whole project in one document, from the problem to the results — and 📦 [**requirements**](../REQUIREMENTS.md) for what to install.
+
 ## Architecture
 
 | Document | About |
