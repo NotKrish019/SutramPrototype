@@ -1,0 +1,38 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  YUKTI — Python requirements
+# ─────────────────────────────────────────────────────────────────────────────
+#
+#  This file covers ONLY the optional Python reference service in `backend/`.
+#  The main application is written in Rust and TypeScript, and their libraries
+#  are installed automatically by cargo and npm. For the full list of software,
+#  versions and hardware, read REQUIREMENTS.md.
+#
+#  Python 3.12 or newer is required.
+#
+#  Install:
+#      python3 -m venv .venv && source .venv/bin/activate     # Windows: .venv\Scripts\activate
+#      pip install -r requirements.txt
+#
+#  Run the service and its tests (from the backend/ folder):
+#      uvicorn app.main:app --reload --port 8000             # http://localhost:8000/docs
+#      pytest
+#
+#  The source of truth is backend/pyproject.toml (used by `uv sync`).
+#  Keep this file in step with it.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Web API
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+python-multipart>=0.0.9
+
+# Data validation and settings
+pydantic>=2.8.0
+pydantic-settings>=2.4.0
+
+# Time-zone database
+tzdata>=2024.1
+
+# Tests
+pytest>=8.3.0
+httpx>=0.27.0
