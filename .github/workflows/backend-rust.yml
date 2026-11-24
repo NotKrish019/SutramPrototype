@@ -96,6 +96,12 @@ jobs:
         with:
           targets: x86_64-pc-windows-msvc
 
+      # The live video handoff tests run real FFmpeg/ffprobe, so a missing binary is a failure.
+      - name: Install System Dependencies (FFmpeg)
+        run: |
+          choco install ffmpeg -y --no-progress
+          ffmpeg -version
+
       - name: Cache Cargo Dependencies
         uses: Swatinem/rust-cache@v2
         with:
