@@ -2,6 +2,8 @@ import React from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Link } from '../../router/Link';
 import { useInView } from '../../features/landing/hooks/useInView';
+import yuktiLogoUrl from '../../assets/brand/yukti-logo.png';
+import yuktiMarkUrl from '../../assets/brand/yukti-mark.png';
 import {
   PROVENANCE_DESCRIPTION,
   PROVENANCE_LABEL,
@@ -208,22 +210,20 @@ export const ProvenanceLegend: React.FC<{ className?: string }> = ({ className =
 
 /* ------------------------------------------------------------------- Brand */
 
-/** Original YUKTI mark: a single red-anchored thread joining three evidence points. */
+/** YUKTI mark: a Y on a clock face with a crimson centre (one corrected timeline, sealed). */
 export const YuktiMark: React.FC<{ className?: string }> = ({ className = 'h-6 w-6' }) => (
-  <svg viewBox="0 0 24 24" className={className} aria-hidden="true" fill="none">
-    <rect x="0.5" y="0.5" width="23" height="23" stroke="currentColor" strokeOpacity="0.35" />
-    <path d="M5 7 C 12 7, 12 12, 12 12 S 12 17, 19 17" stroke="currentColor" strokeWidth="1.5" />
-    <rect x="3.5" y="5.5" width="3" height="3" fill="#E5243B" />
-    <rect x="10.5" y="10.5" width="3" height="3" fill="currentColor" />
-    <rect x="17.5" y="15.5" width="3" height="3" fill="currentColor" />
-  </svg>
+  <img src={yuktiMarkUrl} alt="" aria-hidden="true" draggable={false} className={`object-contain ${className}`} />
 );
 
+/** Full YUKTI logo: the mark followed by the wordmark. Decorative; links that wrap it carry the label. */
 export const YuktiWordmark: React.FC<{ className?: string }> = ({ className = '' }) => (
-  <span className={`inline-flex items-center gap-2.5 ${className}`}>
-    <YuktiMark className="h-7 w-7 text-fg" />
-    <span className="font-serif text-[1.375rem] font-semibold uppercase leading-none tracking-[0.1em] text-fg-bright">Yukti</span>
-  </span>
+  <img
+    src={yuktiLogoUrl}
+    alt=""
+    aria-hidden="true"
+    draggable={false}
+    className={`block h-8 w-auto ${className}`}
+  />
 );
 
 /** Thin labelled frame used for product windows and diagrams. */
