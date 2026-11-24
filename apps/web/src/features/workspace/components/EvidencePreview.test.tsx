@@ -25,4 +25,17 @@ describe('EvidencePreview', () => {
     render(<EvidencePreview evidence={other} synthetic />);
     expect(screen.getByRole('img', { name: 'Unclassified file, LOG' })).toBeInTheDocument();
   });
+
+  it('falls back to a generic glyph for source types the UI does not know (e.g. TABULAR_CSV)', () => {
+    const csv = {
+      ...ev01,
+      case_id: 'CASE-999',
+      evidence_id: 'EV-78',
+      source_type: 'TABULAR_CSV',
+      source_type_label: 'Tabular CSV',
+      original_filename: 'carrier_a_cdr.csv',
+    } as unknown as WorkspaceEvidence;
+    render(<EvidencePreview evidence={csv} synthetic />);
+    expect(screen.getByRole('img', { name: 'Tabular CSV file, CSV' })).toBeInTheDocument();
+  });
 });

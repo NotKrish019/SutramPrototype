@@ -74,7 +74,8 @@ export const EvidencePreview: React.FC<{
   className?: string;
 }> = ({ evidence, synthetic, className = '' }) => {
   const artwork = synthetic ? SYNTHETIC_ARTWORK[`${evidence.case_id}/${evidence.evidence_id}`] : undefined;
-  const Glyph = evidence.source_type ? TYPE_GLYPH[evidence.source_type] : FileText;
+  // The API can report source types the UI has no glyph for (e.g. TABULAR_CSV); fall back instead of crashing.
+  const Glyph: LucideIcon = (evidence.source_type && TYPE_GLYPH[evidence.source_type]) || FileText;
   return (
     <div
       className={`relative aspect-[16/11] overflow-hidden bg-ink-950 ${className}`}
