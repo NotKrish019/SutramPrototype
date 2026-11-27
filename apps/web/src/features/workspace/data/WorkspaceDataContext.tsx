@@ -1,17 +1,57 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { getErrorMessage, isAbortError } from '../../../services/apiError';
+import { fetchCases } from '../../../services/casesApi';
 import type { CaseDetail, WorkspaceCase } from '../types';
-import { syntheticRepository, type WorkspaceRepository } from './repository';
+import { liveRepository, syntheticRepository, type WorkspaceRepository } from './repository';
+import { useOptionalBackendHealth } from './BackendHealthContext';
 
 const RepositoryContext = createContext<WorkspaceRepository>(syntheticRepository);
 
+/**
+ * Without an explicit repository the workspace follows the shared health monitor: live API data
+ * (plus the labelled synthetic demo cases) while the Rust API answers, synthetic fixtures otherwise.
+ */
 export const WorkspaceDataProvider: React.FC<{ repository?: WorkspaceRepository; children: React.ReactNode }> = ({
-  repository = syntheticRepository,
+  repository,
   children,
-}) => <RepositoryContext.Provider value={repository}>{children}</RepositoryContext.Provider>;
+}) => {
+  const caseApi = useCaseApiAvailable();
+  const automatic = caseApi ? liveRepository : syntheticRepository;
+  return <RepositoryContext.Provider value={repository ?? automatic}>{children}</RepositoryContext.Provider>;
+};
 
 export function useWorkspaceRepository(): WorkspaceRepository {
   return useContext(RepositoryContext);
+}
+
+/**
+ * True once the API's case endpoint has answered with a case list. `/health` alone is not enough:
+ * an older or partial API can be healthy without serving cases.
+ */
+function useCaseApiAvailable(): boolean {
+  const health = useOptionalBackendHealth();
+  const connected = health?.status === 'connected';
+  const [available, setAvailable] = useState(false);
+  useEffect(() => {
+    if (!connected) {
+      setAvailable(false);
+      return;
+    }
+    const controller = new AbortController();
+    fetchCases({ signal: controller.signal, timeoutMs: 4000 })
+      .then(() => setAvailable(true))
+      .catch(() => {
+        if (!controller.signal.aborted) setAvailable(false);
+      });
+    return () => controller.abort();
+  }, [connected]);
+  return available;
+}
+
+/** Whether the records on screen are synthetic: decided per case, falling back to the repository. */
+export function useIsSynthetic(item?: { source?: WorkspaceCase['source'] } | null): boolean {
+  const repository = useWorkspaceRepository();
+  return (item?.source ?? repository.source) === 'synthetic';
 }
 
 export type ResourceState<T> =
@@ -22,6 +62,8 @@ export type ResourceState<T> =
 export interface Resource<T> {
   state: ResourceState<T>;
   retry: () => void;
+  /** Reload in the background, keeping the current data on screen (no loading state). */
+  refresh: () => void;
 }
 
 /** Load async data with cancellation on unmount / dependency change and a retry action. */
@@ -47,7 +89,17 @@ export function useResource<T>(load: (signal: AbortSignal) => Promise<T>, deps: 
   }, [...deps, attempt]);
 
   const retry = useCallback(() => setAttempt((value) => value + 1), []);
-  return { state, retry };
+  const loadRef = React.useRef(load);
+  loadRef.current = load;
+  const refresh = useCallback(() => {
+    const controller = new AbortController();
+    loadRef.current(controller.signal)
+      .then((data) => setState({ status: 'success', data, error: null }))
+      .catch(() => {
+        // A failed background refresh keeps what is on screen; the next poll tries again.
+      });
+  }, []);
+  return { state, retry, refresh };
 }
 
 export function useCaseList(): Resource<WorkspaceCase[]> {

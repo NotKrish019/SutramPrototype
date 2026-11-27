@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FileDown, Lock, Printer } from 'lucide-react';
-import { useWorkspaceRepository } from '../data/WorkspaceDataContext';
+import { useIsSynthetic } from '../data/WorkspaceDataContext';
 import { ProvenanceBadge } from '../../../components/ui/primitives';
 import { CaseStatusBadge, FilterChip, Panel, WsButton } from '../components/ui';
 import { formatDateTime, formatEventTime, formatUtc, REVIEW_CATEGORY_LABEL, shortHash } from '../format';
@@ -23,7 +23,7 @@ const ReportHeading: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
 /** Report preview assembled in the browser from the loaded case records. */
 export const ReportsWorkspace: React.FC<{ detail: CaseDetail }> = ({ detail }) => {
-  const synthetic = useWorkspaceRepository().source === 'synthetic';
+  const synthetic = useIsSynthetic(detail.case);
   const openReview = detail.review_items.filter((item) => item.status !== 'verified');
   const conflicting = openReview.filter((item) => item.category === 'conflicting').length;
   const exportReasons = [

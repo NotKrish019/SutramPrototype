@@ -11,6 +11,7 @@ import { WorkspaceSearch } from './WorkspaceSearch';
 import { WorkspaceShellProvider, useWorkspaceShell } from './WorkspaceShellContext';
 import { WorkspaceSidebar } from './WorkspaceSidebar';
 import { caseSectionLabel } from './navigation';
+import { CliBridge } from '../../cli-bridge/CliBridge';
 
 export const COLLAPSE_KEY = 'yukti.workspace.sidebarCollapsed';
 /** Key used before the SUTRAM → YUKTI rename; migrated once so saved preferences survive. */
@@ -25,9 +26,10 @@ function readCollapsed(): boolean {
       window.localStorage.setItem(COLLAPSE_KEY, legacy);
       window.localStorage.removeItem(LEGACY_COLLAPSE_KEY);
     }
-    return legacy === '1';
+    // No saved preference: start as a slim icon rail so the case visuals get the room.
+    return legacy === null ? true : legacy === '1';
   } catch {
-    return false;
+    return true;
   }
 }
 
@@ -132,7 +134,23 @@ const Topbar: React.FC<{ onOpenMenu: () => void; menuButtonRef: React.RefObject<
   );
 };
 
+/** Full-screen surfaces (the reconstruction theatre) render without the sidebar and top bar. */
+const CinemaShell: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="site-root ws-theme min-h-screen bg-ink-950 text-fg">
+    <main id="workspace-main" className="min-h-screen">
+      {children}
+    </main>
+    <CliBridge />
+  </div>
+);
+
 const Shell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { route } = useWorkspaceShell();
+  if (route.kind === 'case' && route.section === 'theatre') return <CinemaShell>{children}</CinemaShell>;
+  return <StandardShell>{children}</StandardShell>;
+};
+
+const StandardShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(readCollapsed);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -166,7 +184,7 @@ const Shell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   }, [drawerOpen, closeDrawer]);
 
   return (
-    <div className="site-root min-h-screen bg-ink-950 text-fg lg:flex">
+    <div className="site-root ws-theme min-h-screen bg-ink-950 text-fg lg:flex">
       <a
         href="#workspace-main"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:bg-signal-accent focus:px-4 focus:py-2 focus:font-mono focus:text-xs focus:uppercase focus:text-ink-950"
@@ -211,6 +229,7 @@ const Shell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           {children}
         </main>
       </div>
+      <CliBridge />
     </div>
   );
 };

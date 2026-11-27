@@ -8,7 +8,7 @@ import { FilterChip, KeyValueList, Panel, SelectField } from '../components/ui';
 import { CASE_TIME_ZONE, PRECISION_LABEL, durationLabel, formatEventTime, formatUtc } from '../format';
 import type { CaseDetail, WorkspaceEvent } from '../types';
 import { EvidencePreview } from '../components/EvidencePreview';
-import { useWorkspaceRepository } from '../data/WorkspaceDataContext';
+import { useIsSynthetic } from '../data/WorkspaceDataContext';
 
 const MONO = 'JetBrains Mono, ui-monospace, monospace';
 
@@ -252,7 +252,7 @@ const EventDetailPanel: React.FC<{ event: WorkspaceEvent; detail: CaseDetail }> 
   const caseId = detail.case.case_id;
   const reviews = detail.review_items.filter((item) => item.related_event_ids.includes(event.event_id));
   const evidence = index.evidence.get(event.source_evidence_id);
-  const synthetic = useWorkspaceRepository().source === 'synthetic';
+  const synthetic = useIsSynthetic(detail.case);
   return (
     <Panel as="aside" title={`${event.event_id} · event`} className="ws-inspector-enter">
       <div className="border-b border-ink-line px-4 py-4">

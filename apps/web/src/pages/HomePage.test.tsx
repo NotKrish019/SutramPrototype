@@ -2,6 +2,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { renderAppAt } from '../test/renderApp';
 
+/** Health requests only (the workspace also probes the case API once the backend answers). */
+function healthCalls(mock: { mock: { calls: unknown[][] } }): number {
+  return mock.mock.calls.filter(([url]) => String(url).endsWith('/health')).length;
+}
+
 const BASE = 'http://backend.test:9000';
 
 const healthyResponse = (): Response =>
@@ -93,14 +98,14 @@ describe('Workspace overview — backend telemetry (integration)', () => {
     expect(await within(card()).findByText('sutram-digital-forensics (Status: ok)')).toBeInTheDocument();
     expect(within(card()).getByRole('status')).toHaveTextContent('Connected');
     // One shared monitor for the whole workspace: exactly one initial check + one retry.
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(healthCalls(fetchMock)).toBe(2);
   });
 
   it('aborts the in-flight request on unmount', async () => {
     const fetchMock = vi.fn((_input: string, _init?: RequestInit) => new Promise<Response>(() => {}));
     vi.stubGlobal('fetch', fetchMock);
     await renderAppAt('/workspace');
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(healthCalls(fetchMock)).toBe(1);
     const signal = fetchMock.mock.calls[0]![1]?.signal;
     expect(signal?.aborted).toBe(false);
     cleanup();

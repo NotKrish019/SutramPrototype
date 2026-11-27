@@ -146,3 +146,154 @@
 }
 @keyframes ws-fade { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .ws-fade { animation: none; } }
+
+/* ======================================================================================
+ * Reconstruction theatre
+ * ====================================================================================== */
+.theatre-stage {
+  background:
+    radial-gradient(1100px 620px at 50% 42%, rgba(229, 36, 59, 0.09), transparent 65%),
+    radial-gradient(800px 500px at 90% 100%, rgba(64, 98, 160, 0.10), transparent 70%),
+    radial-gradient(700px 500px at 5% 0%, rgba(64, 98, 160, 0.07), transparent 70%),
+    #06070a;
+}
+.theatre-vignette {
+  background: radial-gradient(ellipse at 50% 45%, transparent 58%, rgba(0, 0, 0, 0.55) 100%);
+}
+.theatre-caption {
+  background: linear-gradient(180deg, transparent, rgba(6, 7, 10, 0.85) 30%, #06070a);
+}
+.theatre-rec {
+  box-shadow: 0 0 0 0 rgba(229, 36, 59, 0.6);
+  animation: theatre-rec 1.8s ease-out infinite;
+}
+@keyframes theatre-rec {
+  0% { box-shadow: 0 0 0 0 rgba(229, 36, 59, 0.6); }
+  100% { box-shadow: 0 0 0 8px rgba(229, 36, 59, 0); }
+}
+.theatre-narrate > * {
+  animation: ws-rise 560ms var(--ws-ease) both;
+}
+.theatre-narrate > :nth-child(2) { animation-delay: 60ms; }
+.theatre-narrate > :nth-child(3) { animation-delay: 140ms; }
+.theatre-narrate > :nth-child(4) { animation-delay: 220ms; }
+.theatre-btn {
+  display: inline-flex;
+  height: 2.25rem;
+  width: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: #a1a1aa;
+  transition: color var(--ws-fast), border-color var(--ws-fast), background var(--ws-fast);
+}
+.theatre-btn:hover { color: #fff; border-color: #3a3a41; }
+.theatre-btn:focus-visible { outline: none; box-shadow: 0 0 0 1px #c8cad0; }
+.theatre-btn--primary {
+  width: 3rem;
+  height: 3rem;
+  border-color: #e5243b;
+  background: #e5243b;
+  color: #fff;
+  box-shadow: 0 0 24px -6px rgba(229, 36, 59, 0.8);
+}
+.theatre-btn--primary:hover { background: #a3172b; border-color: #a3172b; }
+@media (prefers-reduced-motion: reduce) {
+  .theatre-rec, .theatre-narrate > * { animation: none; }
+}
+
+/* Web ↔ terminal bridge */
+.bridge-toast { animation: bridge-in 520ms var(--ws-ease) both; }
+.bridge-dock { animation: bridge-in 300ms var(--ws-ease) both; transform-origin: bottom right; }
+@keyframes bridge-in {
+  from { opacity: 0; transform: translate3d(0, 12px, 0) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+.bridge-pulse { animation: theatre-rec 2s ease-out infinite; }
+.theatre-cta { box-shadow: 0 0 28px -10px rgba(229, 36, 59, 0.9); }
+@media (prefers-reduced-motion: reduce) {
+  .bridge-toast, .bridge-dock, .bridge-pulse { animation: none; }
+}
+
+/* Workspace home hero */
+.hero-band {
+  background:
+    radial-gradient(800px 380px at 88% 0%, rgba(229, 36, 59, 0.16), transparent 70%),
+    radial-gradient(700px 400px at 0% 100%, rgba(64, 98, 160, 0.12), transparent 70%),
+    #07080b;
+}
+.hero-orbit { animation: hero-spin 60s linear infinite; }
+.hero-orbit--slow { animation-duration: 120s; animation-direction: reverse; }
+@keyframes hero-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .hero-orbit { animation: none; } }
+
+/* ======================================================================================
+ * Cinematic theme (2026-11): calm surfaces, visuals first.
+ * Scoped to the workspace shell (.ws-theme) so the public site keeps its own material language.
+ * Rules: no grain, no grids behind content, few uppercase labels, rounded soft cards,
+ * one accent (crimson) reserved for what needs attention.
+ * ====================================================================================== */
+.ws-theme {
+  --cin-bg: #07080b;
+  --cin-card: rgba(255, 255, 255, 0.028);
+  --cin-card-strong: rgba(255, 255, 255, 0.045);
+  --cin-border: rgba(255, 255, 255, 0.07);
+  background: var(--cin-bg);
+}
+.ws-theme.site-root::after { display: none; }
+
+.ws-theme .ws-canvas {
+  background:
+    radial-gradient(1100px 520px at 78% -8%, rgba(229, 36, 59, 0.10), transparent 62%),
+    radial-gradient(900px 600px at 8% 108%, rgba(64, 98, 160, 0.10), transparent 60%),
+    var(--cin-bg);
+}
+
+/* Cards */
+.ws-theme .ws-card {
+  border: 1px solid var(--cin-border);
+  border-radius: 1.1rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 24px 48px -28px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+}
+
+/* Calm the micro labels: tiny uppercase monospace becomes small sentence-case sans. */
+.ws-theme .font-mono.uppercase.text-micro,
+.ws-theme .font-mono.uppercase.text-eyebrow {
+  font-family: Inter, system-ui, sans-serif;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.78rem;
+  line-height: 1.1rem;
+}
+.ws-theme p.font-mono.uppercase.text-eyebrow > span[aria-hidden='true'] { display: none; }
+
+/* Soften hard rules and give boxed elements gentle corners. */
+.ws-theme .border-ink-line { border-color: var(--cin-border); }
+.ws-theme .border-ink-strong { border-color: rgba(255, 255, 255, 0.12); }
+.ws-theme .divide-ink-line > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.05); }
+.ws-theme .border.border-ink-line,
+.ws-theme .border.border-ink-strong { border-radius: 0.75rem; }
+.ws-theme .bg-ink-950 { background-color: var(--cin-bg); }
+.ws-theme .bg-ink-900\/80, .ws-theme .bg-ink-900\/70 { background-color: var(--cin-card); }
+
+/* Headings: wide Archivo, a little less stretched. */
+.ws-theme .font-serif { font-stretch: 108%; letter-spacing: -0.02em; }
+.ws-theme .font-display { font-stretch: 100%; }
+
+/* Command centre (case overview) */
+.cc-bg {
+  background:
+    radial-gradient(700px 380px at 50% 45%, rgba(229, 36, 59, 0.10), transparent 70%),
+    radial-gradient(500px 300px at 100% 100%, rgba(64, 98, 160, 0.12), transparent 70%),
+    linear-gradient(180deg, #0b0c11, #08090c);
+}
+.cc-card { box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.05); }
+.next-card {
+  background:
+    radial-gradient(400px 200px at 50% 0%, rgba(229, 36, 59, 0.14), transparent 70%),
+    linear-gradient(180deg, rgba(229, 36, 59, 0.05), rgba(255, 255, 255, 0.015));
+}

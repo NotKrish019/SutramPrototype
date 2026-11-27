@@ -8,7 +8,7 @@ import { EmptyState, FilterChip, Panel, ReviewCategoryBadge } from '../component
 import { REVIEW_CATEGORY_LABEL, shortHash } from '../format';
 import type { CaseDetail, ReviewCategory, ReviewItem, ReviewRecord } from '../types';
 import { EvidencePreview } from '../components/EvidencePreview';
-import { useWorkspaceRepository } from '../data/WorkspaceDataContext';
+import { useIsSynthetic } from '../data/WorkspaceDataContext';
 
 const CATEGORIES: ReviewCategory[] = ['conflicting', 'uncertain', 'missing', 'unverified', 'supporting'];
 
@@ -64,7 +64,7 @@ const ClockComparison: React.FC<{ records: ReviewRecord[] }> = ({ records }) => 
 const ReviewDetail: React.FC<{ item: ReviewItem; detail: CaseDetail }> = ({ item, detail }) => {
   const index = useCaseIndex(detail);
   const caseId = detail.case.case_id;
-  const synthetic = useWorkspaceRepository().source === 'synthetic';
+  const synthetic = useIsSynthetic(detail.case);
   const conflict = item.category === 'conflicting';
   return (
     <Panel as="aside" title={`${item.id} · review item`} className="ws-inspector-enter">
@@ -180,7 +180,7 @@ const ReviewDetail: React.FC<{ item: ReviewItem; detail: CaseDetail }> = ({ item
 };
 
 export const ContradictionReview: React.FC<{ detail: CaseDetail }> = ({ detail }) => {
-  const synthetic = useWorkspaceRepository().source === 'synthetic';
+  const synthetic = useIsSynthetic(detail.case);
   const [selectedId, setSelectedId] = useQuerySelection('item');
   const [category, setCategory] = useState<ReviewCategory | 'all'>('all');
   const items = useMemo(

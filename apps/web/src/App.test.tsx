@@ -41,7 +41,7 @@ describe('App routing', () => {
   it('renders the redesigned investigator workspace at /workspace', async () => {
     await renderAt('/workspace');
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Investigation Workspace' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: /Every source\. One clock\./ })).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: 'Workspace' })).toBeInTheDocument();
 
     // Existing backend health monitoring is still mounted.

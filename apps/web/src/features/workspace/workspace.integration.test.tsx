@@ -6,6 +6,11 @@ import { getApiBaseUrl } from '../../services/config';
 import { syntheticRepository, type WorkspaceRepository } from './data/repository';
 import { WorkspaceApp } from './WorkspaceApp';
 
+/** Health requests only (the workspace also probes the case API once the backend answers). */
+function healthCalls(mock: { mock: { calls: unknown[][] } }): number {
+  return mock.mock.calls.filter(([url]) => String(url).endsWith('/health')).length;
+}
+
 beforeEach(() => {
   stubHealth('ok');
   vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
@@ -56,12 +61,13 @@ describe('workspace shell', () => {
 
   it('collapses and expands the sidebar and remembers the choice', async () => {
     await renderAppAt('/workspace');
-    await click(screen.getByRole('button', { name: 'Collapse sidebar' }));
+    // With no saved preference the sidebar starts as an icon rail.
     expect(screen.getByRole('button', { name: 'Expand sidebar' })).toHaveAttribute('aria-expanded', 'false');
     expect(within(sidebar()).getByRole('link', { name: 'Knowledge Graph' })).toHaveAttribute('title', 'Knowledge Graph');
-    expect(window.localStorage.getItem('yukti.workspace.sidebarCollapsed')).toBe('1');
     await click(screen.getByRole('button', { name: 'Expand sidebar' }));
     expect(window.localStorage.getItem('yukti.workspace.sidebarCollapsed')).toBe('0');
+    await click(screen.getByRole('button', { name: 'Collapse sidebar' }));
+    expect(window.localStorage.getItem('yukti.workspace.sidebarCollapsed')).toBe('1');
   });
 
   it('opens the mobile drawer and closes it with Escape, restoring focus', async () => {
@@ -113,7 +119,7 @@ describe('backend connection indicator', () => {
     const panel = document.getElementById(button.getAttribute('aria-controls')!)!;
     expect(within(panel).getByText('sutram-digital-forensics')).toBeInTheDocument();
     await click(within(panel).getByRole('button', { name: 'Retry Now' }));
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(healthCalls(fetchMock)).toBe(2);
   });
 
   it('shows offline with the typed error — never a hard-coded connected state', async () => {
@@ -527,9 +533,9 @@ describe('workspace logo navigation', () => {
   });
 
   it('works when the sidebar is collapsed and does not toggle the collapse state', async () => {
+    window.localStorage.setItem('yukti.workspace.sidebarCollapsed', '1');
     await renderAppAt('/workspace');
-    await click(screen.getByRole('button', { name: 'Collapse sidebar' }));
-    expect(window.localStorage.getItem('yukti.workspace.sidebarCollapsed')).toBe('1');
+    expect(screen.getByRole('button', { name: 'Expand sidebar' })).toBeInTheDocument();
     await click(logo());
     expect(window.location.pathname).toBe('/');
     expect(window.localStorage.getItem('yukti.workspace.sidebarCollapsed')).toBe('1');

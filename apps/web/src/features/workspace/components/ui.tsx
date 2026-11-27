@@ -43,16 +43,16 @@ export const Panel: React.FC<{
   const generatedId = useId();
   const headingId = title ? labelledBy ?? generatedId : undefined;
   return (
-  <Tag className={`min-w-0 border border-ink-line bg-ink-900/80 shadow-lift ${className}`} aria-labelledby={headingId}>
+  <Tag className={`ws-card min-w-0 ${className}`} aria-labelledby={headingId}>
     {(title || meta || actions) && (
-      <div className="flex min-h-[2.75rem] items-center justify-between gap-3 border-b border-ink-line px-4 py-2">
+      <div className="flex min-h-[3.25rem] items-center justify-between gap-3 border-b border-white/[0.05] px-5 py-2.5">
         <div className="flex min-w-0 items-center gap-2">
           {title && (
-            <h2 id={headingId} className="truncate font-mono text-micro uppercase text-fg-muted">
+            <h2 id={headingId} className="truncate text-[0.95rem] font-semibold tracking-[-0.01em] text-fg-bright">
               {title}
             </h2>
           )}
-          {meta && <span className="truncate font-mono text-micro uppercase text-fg-subtle">{meta}</span>}
+          {meta && <span className="truncate text-xs text-fg-subtle">{meta}</span>}
         </div>
         {actions && <div className="flex shrink-0 items-center gap-1.5">{actions}</div>}
       </div>
@@ -66,10 +66,10 @@ export const KeyValueList: React.FC<{ items: [React.ReactNode, React.ReactNode][
   items,
   className = '',
 }) => (
-  <dl className={`divide-y divide-ink-line ${className}`}>
+  <dl className={`divide-y divide-white/[0.05] ${className}`}>
     {items.map(([key, value], index) => (
       <div key={index} className="grid grid-cols-[minmax(7rem,38%)_1fr] gap-3 px-4 py-2.5">
-        <dt className="font-mono text-micro uppercase text-fg-subtle">{key}</dt>
+        <dt className="text-xs text-fg-subtle">{key}</dt>
         <dd className="min-w-0 break-words text-sm text-fg">{value}</dd>
       </div>
     ))}
@@ -86,8 +86,8 @@ const CASE_STATUS_STYLE: Record<CaseStatus, string> = {
 };
 
 export const CaseStatusBadge: React.FC<{ status: CaseStatus }> = ({ status }) => (
-  <span className={`inline-flex items-center gap-1.5 whitespace-nowrap border px-1.5 py-0.5 font-mono text-micro uppercase ${CASE_STATUS_STYLE[status]}`}>
-    <span aria-hidden="true" className="h-1.5 w-1.5 bg-current" />
+  <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-medium ${CASE_STATUS_STYLE[status]}`}>
+    <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-current" />
     {CASE_STATUS_LABEL[status]}
   </span>
 );
@@ -111,14 +111,14 @@ const CATEGORY_STYLE: Record<ReviewCategory, string> = {
 };
 
 export const ReviewCategoryBadge: React.FC<{ category: ReviewCategory }> = ({ category }) => (
-  <span className={`inline-flex items-center border px-1.5 py-0.5 font-mono text-micro uppercase ${CATEGORY_STYLE[category]}`}>
+  <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${CATEGORY_STYLE[category]}`}>
     {REVIEW_CATEGORY_LABEL[category]}
   </span>
 );
 
 export const SyntheticTag: React.FC<{ className?: string }> = ({ className = '' }) => (
   <span
-    className={`inline-flex items-center gap-1.5 border border-signal-accent/50 bg-signal-accent/10 px-1.5 py-0.5 font-mono text-micro uppercase text-signal-accent ${className}`}
+    className={`inline-flex items-center gap-1.5 rounded-full border border-signal-warn/30 bg-signal-warn/10 px-2.5 py-0.5 text-xs font-medium text-signal-warn ${className}`}
   >
     <FlaskConical aria-hidden="true" className="h-3 w-3" />
     Synthetic demonstration data
@@ -128,7 +128,7 @@ export const SyntheticTag: React.FC<{ className?: string }> = ({ className = '' 
 /* ------------------------------------------------------------- Async states */
 
 export const LoadingState: React.FC<{ label?: string }> = ({ label = 'Loading' }) => (
-  <div role="status" className="flex items-center gap-3 px-4 py-10 font-mono text-micro uppercase text-fg-subtle">
+  <div role="status" className="flex items-center gap-3 px-5 py-10 text-sm text-fg-subtle">
     <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin motion-reduce:animate-none" />
     {label}…
   </div>
@@ -136,7 +136,7 @@ export const LoadingState: React.FC<{ label?: string }> = ({ label = 'Loading' }
 
 export const ErrorState: React.FC<{ message: string; onRetry?: () => void }> = ({ message, onRetry }) => (
   <div role="alert" className="flex flex-col items-start gap-3 px-4 py-8">
-    <p className="flex items-center gap-2 font-mono text-micro uppercase text-signal-flag">
+    <p className="flex items-center gap-2 text-sm font-medium text-signal-flag">
       <AlertTriangle aria-hidden="true" className="h-3.5 w-3.5" />
       Could not load data
     </p>
@@ -157,10 +157,10 @@ export const EmptyState: React.FC<{
   className?: string;
 }> = ({ icon: Icon, title, children, action, className = '' }) => (
   <div className={`flex flex-col items-start gap-3 px-5 py-10 sm:px-8 ${className}`}>
-    <span className="flex h-9 w-9 items-center justify-center border border-ink-strong text-fg-subtle">
+    <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-fg-subtle">
       <Icon aria-hidden="true" className="h-4 w-4" />
     </span>
-    <p className="font-display text-xl font-semibold uppercase text-fg">{title}</p>
+    <p className="font-display text-xl font-semibold text-fg-bright">{title}</p>
     {children && <div className="max-w-lg text-sm leading-relaxed text-fg-muted">{children}</div>}
     {action}
   </div>
@@ -171,9 +171,9 @@ export const EmptyState: React.FC<{
 type ButtonVariant = 'default' | 'primary' | 'ghost';
 
 const BUTTON_VARIANT: Record<ButtonVariant, string> = {
-  default: 'border border-ink-strong text-fg hover:border-fg-muted hover:bg-white/[0.03]',
-  primary: 'border border-signal-accent bg-signal-accent text-ink-950 hover:bg-[#E4E5E9]',
-  ghost: 'border border-transparent text-fg-muted hover:text-fg hover:bg-white/[0.04]',
+  default: 'border border-white/10 bg-white/[0.03] text-fg hover:border-white/20 hover:bg-white/[0.06]',
+  primary: 'border border-crimson bg-crimson text-white shadow-[0_8px_24px_-10px_rgba(229,36,59,0.8)] hover:bg-crimson-deep',
+  ghost: 'border border-transparent text-fg-muted hover:text-fg hover:bg-white/[0.05]',
 };
 
 export interface WsButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -190,8 +190,8 @@ export const WsButton = React.forwardRef<HTMLButtonElement, WsButtonProps>(funct
     <button
       ref={ref}
       type={type}
-      className={`inline-flex items-center justify-center gap-2 font-mono uppercase tracking-[0.04em] transition-colors duration-fast focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-accent disabled:cursor-not-allowed disabled:opacity-45 ${
-        size === 'sm' ? 'h-8 px-2.5 text-micro' : 'h-9 px-3.5 text-[0.75rem]'
+      className={`inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors duration-fast focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-accent disabled:cursor-not-allowed disabled:opacity-45 ${
+        size === 'sm' ? 'h-8 px-3 text-xs' : 'h-9 px-4 text-sm'
       } ${BUTTON_VARIANT[variant]} ${className}`}
       {...rest}
     >
@@ -211,8 +211,8 @@ export const FilterChip: React.FC<{
     type="button"
     aria-pressed={active}
     onClick={onClick}
-    className={`inline-flex h-8 items-center gap-2 border px-2.5 font-mono text-micro uppercase transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-signal-accent ${
-      active ? 'border-signal-accent/60 bg-signal-accent/10 text-fg' : 'border-ink-line text-fg-muted hover:border-ink-strong hover:text-fg'
+    className={`inline-flex h-8 items-center gap-2 rounded-full border px-3 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-signal-accent ${
+      active ? 'border-white/20 bg-white/10 text-fg-bright' : 'border-white/[0.06] text-fg-muted hover:border-white/15 hover:text-fg'
     }`}
   >
     {children}
@@ -235,7 +235,7 @@ export const SearchField: React.FC<{
       value={value}
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}
-      className="h-full w-full border border-ink-line bg-ink-950 pl-9 pr-8 text-sm text-fg placeholder:text-fg-subtle focus:border-signal-accent/60 focus:outline-none [&::-webkit-search-cancel-button]:hidden"
+      className="h-full w-full rounded-lg border border-white/[0.08] bg-white/[0.03] pl-9 pr-8 text-sm text-fg placeholder:text-fg-subtle focus:border-signal-accent/60 focus:outline-none [&::-webkit-search-cancel-button]:hidden"
     />
     {value && (
       <button
@@ -257,8 +257,8 @@ export const SelectField: React.FC<{
   options: { value: string; label: string }[];
   className?: string;
 }> = ({ label, value, onChange, options, className = '' }) => (
-  <label className={`flex h-9 items-center gap-2 border border-ink-line bg-ink-950 pl-3 ${className}`}>
-    <span className="shrink-0 font-mono text-micro uppercase text-fg-subtle">{label}</span>
+  <label className={`flex h-9 items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.03] pl-3 ${className}`}>
+    <span className="shrink-0 text-xs text-fg-subtle">{label}</span>
     <select
       value={value}
       onChange={(event) => onChange(event.target.value)}

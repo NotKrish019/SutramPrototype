@@ -7,6 +7,7 @@ import {
   type FullCaseReconstructionResultDto,
 } from '../../../services/reconstruction';
 import { fetchCaseEvidence, type EvidenceUploadReceipt } from '../../../services/evidenceApi';
+import { fetchCase, fetchCases, type CaseRecordDto } from '../../../services/casesApi';
 import { formatBytes } from '../format';
 import type { CaseDetail, DataSource, WorkspaceCase, WorkspaceEvidence } from '../types';
 
@@ -57,6 +58,7 @@ export function adaptFullCaseReconstructionToCaseDetail(
   caseId: string,
   res: FullCaseReconstructionResultDto,
   evidenceList: EvidenceUploadReceipt[] = [],
+  record?: CaseRecordDto,
 ): CaseDetail {
   const liveEvents = adaptTimelineEntriesToWorkspaceEvents(res.timeline.entries);
   const liveReviews = adaptContradictionLeadsToReviewItems(res.contradictions.leads);
@@ -94,12 +96,14 @@ export function adaptFullCaseReconstructionToCaseDetail(
   return {
     case: {
       case_id: caseId,
-      title: `Case ${caseId}`,
-      description: 'Live case reconstruction from YUKTI forensic engine',
-      status: 'ACTIVE',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      evidence_count: Math.max(liveEvidence.length, 2),
+      title: record?.title ?? `Case ${caseId}`,
+      fir_number: record?.fir_number ?? undefined,
+      description: record?.description ?? 'Live case reconstruction from YUKTI forensic engine',
+      status: record?.status ?? 'ACTIVE',
+      created_at: record?.created_at ?? new Date().toISOString(),
+      updated_at: record?.updated_at ?? new Date().toISOString(),
+      source: 'api',
+      evidence_count: liveEvidence.length,
       event_count: liveEvents.length,
       entity_count: res.spatial.trajectories.length,
       review_count: liveReviews.length,
@@ -161,5 +165,75 @@ export const hybridRepository: WorkspaceRepository = {
       // Fall back to synthetic fixture
     }
     return syntheticRepository.getCaseDetail(caseId, signal);
+  },
+};
+
+/* ------------------------------------------------------------------ Live repository */
+
+const SYNTHETIC_TAGGED: WorkspaceCase[] = SYNTHETIC_CASES.map((c) => ({ ...c, source: 'synthetic' }));
+
+export function adaptCaseRecord(record: CaseRecordDto): WorkspaceCase {
+  return {
+    case_id: record.case_id,
+    title: record.title,
+    fir_number: record.fir_number ?? undefined,
+    description: record.description ?? '',
+    status: record.status,
+    created_at: record.created_at,
+    updated_at: record.updated_at,
+    evidence_count: 0,
+    event_count: 0,
+    entity_count: 0,
+    review_count: 0,
+    has_detail: true,
+    source: 'api',
+  };
+}
+
+function emptyLiveDetail(record: CaseRecordDto, evidence: EvidenceUploadReceipt[]): CaseDetail {
+  return {
+    case: { ...adaptCaseRecord(record), evidence_count: evidence.length },
+    evidence: evidence.map(adaptReceiptToWorkspaceEvidence),
+    entities: [],
+    events: [],
+    relationships: [],
+    review_items: [],
+    places: [],
+  };
+}
+
+/**
+ * Used when the Rust API answers. Lists every case on the API (including those opened from the
+ * `yukti` CLI) ahead of the synthetic demonstration cases, which stay available and labelled.
+ */
+export const liveRepository: WorkspaceRepository = {
+  source: 'api',
+  defaultCaseId: DEFAULT_CASE_ID,
+  listCases: async (signal) => {
+    const records = await fetchCases({ signal, timeoutMs: 5000 });
+    const live = records
+      .map(adaptCaseRecord)
+      .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+    return [...live, ...SYNTHETIC_TAGGED];
+  },
+  getCaseDetail: async (caseId, signal) => {
+    const fixture = SYNTHETIC_CASE_DETAILS[caseId] ?? SYNTHETIC_CASE_DETAILS[normalizeCaseId(caseId)];
+    if (fixture) return { ...fixture, case: { ...fixture.case, source: 'synthetic' } };
+
+    const id = normalizeCaseId(caseId);
+    const record = await fetchCase(id, { signal }).catch((error: unknown) => {
+      if (signal.aborted) throw error;
+      return null;
+    });
+    if (!record) return null;
+    const [reconstruction, evidence] = await Promise.all([
+      getCaseReconstruction(id, { signal, timeoutMs: 20_000 }).catch((error: unknown) => {
+        if (signal.aborted) throw error;
+        return null;
+      }),
+      fetchCaseEvidence(id, { signal }).catch(() => [] as EvidenceUploadReceipt[]),
+    ]);
+    if (!reconstruction || reconstruction.timeline.entries.length === 0) return emptyLiveDetail(record, evidence);
+    return adaptFullCaseReconstructionToCaseDetail(id, reconstruction, evidence, record);
   },
 };

@@ -389,6 +389,22 @@ function adaptFrameProvenance(meta: Record<string, unknown>): WorkspaceEvent['fr
   };
 }
 
+function adaptTransit(lead: ContradictionLeadDto): ReviewItem['transit'] {
+  const basis = lead.observed_basis;
+  const inference = lead.derived_inference;
+  const distance = basis.observed_distance_km;
+  const speed = inference.post_activity_min_required_speed_kmh;
+  if (typeof distance !== 'number' || typeof speed !== 'number') return undefined;
+  return {
+    distance_km: distance,
+    required_speed_kmh: speed,
+    threshold_kmh: inference.reference_speed_threshold_kmh,
+    max_elapsed_seconds: inference.max_possible_elapsed_seconds ?? 0,
+    origin: basis.origin_coordinates ?? null,
+    destination: basis.destination_coordinates ?? null,
+  };
+}
+
 /**
  * Adapts backend `ContradictionLeadDto` items into frontend `ReviewItem` objects.
  */
@@ -433,6 +449,7 @@ export function adaptContradictionLeadsToReviewItems(
       suggested_action:
         'Verify camera clock calibration offsets, carrier cell tower centroids, and physical transit records.',
       limitations: lead.limitations,
+      transit: adaptTransit(lead),
     };
   });
 }

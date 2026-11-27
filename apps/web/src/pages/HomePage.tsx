@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { AlertTriangle, Archive, ArrowRight, Database, FolderOpen, FolderSearch, History, ListOrdered, Server, Share2, type LucideIcon } from 'lucide-react';
+import { AlertTriangle, Archive, ArrowRight, MonitorPlay, Database, FolderOpen, FolderSearch, History, ListOrdered, Server, Share2, type LucideIcon } from 'lucide-react';
 import { BackendStatusCard } from '../components/BackendStatusCard';
 import { DEFAULT_HEALTH_POLL_INTERVAL_MS } from '../hooks/useBackendHealth';
 import { Link } from '../router/Link';
@@ -8,8 +8,9 @@ import { HEALTH_PATH } from '../services/api';
 import { buildApiUrl } from '../services/config';
 import type { CaseStatus } from '../types';
 import { useSharedBackendHealth } from '../features/workspace/data/BackendHealthContext';
-import { useCaseDetail, useWorkspaceRepository } from '../features/workspace/data/WorkspaceDataContext';
+import { useCaseDetail, useIsSynthetic, useWorkspaceRepository } from '../features/workspace/data/WorkspaceDataContext';
 import { EvidencePreview } from '../features/workspace/components/EvidencePreview';
+import { CliCommand } from '../features/cli-bridge/CliCommand';
 import { useWorkspaceShell } from '../features/workspace/layout/WorkspaceShellContext';
 import {
   CaseStatusBadge,
@@ -17,7 +18,6 @@ import {
   ErrorState,
   FilterChip,
   LoadingState,
-  PageHeader,
   Panel,
   SearchField,
   SelectField,
@@ -307,8 +307,9 @@ const DataSourcesPanel: React.FC<{ synthetic: boolean }> = ({ synthetic }) => (
 /* ---------------------------------------------------------- Featured case */
 
 /** The investigation in focus, shown through its evidence rather than described. */
-const FeaturedCase: React.FC<{ caseId: string; synthetic: boolean }> = ({ caseId, synthetic }) => {
+const FeaturedCase: React.FC<{ caseId: string }> = ({ caseId }) => {
   const detail = useCaseDetail(caseId);
+  const synthetic = useIsSynthetic(detail.state.data?.case);
   if (detail.state.status === 'loading') {
     return (
       <Panel title="In focus">
@@ -362,6 +363,67 @@ const FeaturedCase: React.FC<{ caseId: string; synthetic: boolean }> = ({ caseId
 
 /* -------------------------------------------------------------------- Page */
 
+/** Opening band: what YUKTI does, the one-click replay, and the link to the terminal. */
+const WorkspaceHero: React.FC<{ caseId: string | null; live: boolean; liveCount: number }> = ({ caseId, live, liveCount }) => (
+  <header className="hero-band relative overflow-hidden border-b border-ink-line">
+    <div aria-hidden="true" className="hero-orbit pointer-events-none absolute -right-24 -top-24 h-[26rem] w-[26rem] rounded-full border border-crimson/15" />
+    <div aria-hidden="true" className="hero-orbit hero-orbit--slow pointer-events-none absolute -right-8 -top-8 h-[18rem] w-[18rem] rounded-full border border-dashed border-paper/10" />
+    <div className="relative grid gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[minmax(0,1fr)_25rem] lg:px-8 lg:py-10">
+      <div className="min-w-0">
+        <p className="ws-rise text-sm font-medium text-crimson">Investigation workspace</p>
+        <h1 className="ws-rise mt-3 font-serif text-[clamp(2.2rem,4.4vw,3.8rem)] font-semibold leading-[1.02] text-fg-bright" style={{ ['--i' as string]: 1 }}>
+          Every source. One clock.
+          <br />
+          <span className="text-crimson">One story</span> you can defend.
+        </h1>
+        <p className="ws-rise mt-4 max-w-xl text-[0.95rem] leading-relaxed text-fg-muted" style={{ ['--i' as string]: 2 }}>
+          YUKTI seals each exhibit, puts every record on one corrected clock, maps it, links it, and flags what does not add up, keeping
+          what was observed apart from what was inferred.
+        </p>
+        {caseId && (
+          <div className="ws-rise mt-6 flex flex-wrap gap-2" style={{ ['--i' as string]: 3 }}>
+            <Link
+              to={caseHref(caseId, 'theatre')}
+              className="theatre-cta inline-flex h-11 items-center gap-2.5 rounded-full bg-crimson px-5 text-sm font-semibold text-white hover:bg-crimson-deep focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            >
+              <MonitorPlay aria-hidden="true" className="h-4 w-4" /> Play the reconstruction
+            </Link>
+            <Link
+              to={caseHref(caseId)}
+              className="inline-flex h-11 items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-5 text-sm font-medium text-fg hover:border-white/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-accent"
+            >
+              Open {caseId} <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+        )}
+      </div>
+      <aside aria-label="Terminal link" className="ws-rise self-end overflow-hidden rounded-2xl border border-white/10 bg-black/40 backdrop-blur-md" style={{ ['--i' as string]: 4 }}>
+        <div className="flex items-center gap-2 border-b border-ink-line px-3 py-2">
+          <span className="flex gap-1" aria-hidden="true">
+            <span className="h-2.5 w-2.5 rounded-full bg-crimson" />
+            <span className="h-2.5 w-2.5 rounded-full bg-ink-strong" />
+            <span className="h-2.5 w-2.5 rounded-full bg-ink-strong" />
+          </span>
+          <span className="flex-1 font-mono text-xs text-fg-muted">yukti cli</span>
+          <span className={`flex items-center gap-1.5 text-xs font-medium ${live ? 'text-signal-ok' : 'text-signal-warn'}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${live ? 'bg-signal-ok bridge-pulse' : 'bg-signal-warn'}`} aria-hidden="true" />
+            {live ? 'linked' : 'not linked'}
+          </span>
+        </div>
+        <div className="space-y-2.5 p-3">
+          <p className="text-xs leading-relaxed text-fg-muted">
+            {live
+              ? `Web and terminal share one engine. ${liveCount} live ${liveCount === 1 ? 'case' : 'cases'} on it; new ones from the CLI appear here as they are created.`
+              : 'Start the local engine from the terminal; this page links itself as soon as it answers.'}
+          </p>
+          <CliCommand command="yukti demo" compact />
+          <CliCommand command={live ? 'yukti open --view theatre' : 'yukti server start'} compact />
+        </div>
+      </aside>
+    </div>
+  </header>
+);
+
 /** Workspace home (`/workspace`): case portfolio, investigations, connectivity and activity. */
 export const HomePage: React.FC = () => {
   const health = useSharedBackendHealth();
@@ -371,20 +433,10 @@ export const HomePage: React.FC = () => {
 
   return (
     <div>
-      <PageHeader
-        eyebrow="Investigation workspace"
-        title="Investigation Workspace"
-        description="Your connected view of the investigation."
-        actions={
-          repository.defaultCaseId ? (
-            <Link
-              to={caseHref(repository.defaultCaseId)}
-              className="inline-flex h-9 items-center gap-2 border border-signal-accent bg-signal-accent px-3.5 font-mono text-[0.75rem] uppercase tracking-[0.04em] text-ink-950 hover:bg-[#E4E5E9] focus:outline-none focus-visible:ring-2 focus-visible:ring-signal-accent focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950"
-            >
-              Open {repository.defaultCaseId} <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" />
-            </Link>
-          ) : null
-        }
+      <WorkspaceHero
+        caseId={repository.defaultCaseId}
+        live={!synthetic}
+        liveCount={cases.state.status === 'success' ? cases.state.data.filter((c) => c.source === 'api').length : 0}
       />
 
       {cases.state.status === 'success' && <MetricsBand cases={cases.state.data} synthetic={synthetic} />}
@@ -392,7 +444,7 @@ export const HomePage: React.FC = () => {
       <div className="grid grid-cols-1 gap-4 p-4 sm:p-6 lg:p-8 xl:grid-cols-12">
         <div className="min-w-0 space-y-4 xl:col-span-8">
           {repository.defaultCaseId && cases.state.status === 'success' && cases.state.data.length > 0 && (
-            <FeaturedCase caseId={repository.defaultCaseId} synthetic={synthetic} />
+            <FeaturedCase caseId={repository.defaultCaseId} />
           )}
           {cases.state.status === 'loading' && (
             <Panel title="Investigations">

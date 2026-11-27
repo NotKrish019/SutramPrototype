@@ -46,6 +46,8 @@ export interface WorkspaceCase {
   review_count: number;
   /** Whether detailed records are available for this case. */
   has_detail: boolean;
+  /** Where this case came from. Absent means "same as the active repository". */
+  source?: DataSource;
 }
 
 export interface WorkspaceEvidence {
@@ -151,6 +153,17 @@ export interface ReviewItem {
   status: ReviewStatus;
   suggested_action: string;
   limitations: string[];
+  /** Structured basis of a movement lead (live data only), so views can show the arithmetic. */
+  transit?: TransitBasis;
+}
+
+export interface TransitBasis {
+  distance_km: number;
+  required_speed_kmh: number;
+  threshold_kmh: number;
+  max_elapsed_seconds: number;
+  origin: { lat: number; lon: number } | null;
+  destination: { lat: number; lon: number } | null;
 }
 
 export type PlaceKind = 'site' | 'gate' | 'camera' | 'access-point' | 'off-plan';

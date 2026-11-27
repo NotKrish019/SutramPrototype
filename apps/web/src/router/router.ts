@@ -62,6 +62,7 @@ export const CASE_SECTIONS = [
   'contradictions',
   'video',
   'reports',
+  'theatre',
 ] as const;
 
 export type CaseSection = (typeof CASE_SECTIONS)[number];

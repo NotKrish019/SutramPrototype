@@ -55,6 +55,7 @@ export default {
         serif: ['Archivo', 'Inter', 'system-ui', 'sans-serif'],
         display: ['Archivo', 'Inter', 'system-ui', 'sans-serif'],
         sans: ['Inter', 'system-ui', 'Avenir', 'Helvetica', 'Arial', 'sans-serif'],
+        editorial: ['Fraunces', 'Georgia', 'serif'],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       fontSize: {

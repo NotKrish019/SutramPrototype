@@ -9,6 +9,7 @@ import {
   Globe,
   HelpCircle,
   LayoutGrid,
+  MonitorPlay,
   ListOrdered,
   Map,
   Settings,
@@ -37,6 +38,8 @@ export interface CaseNavItem {
 export const CASE_NAV: CaseNavItem[] = [
   { section: 'overview', label: 'Investigation Overview', short: 'Overview', icon: FolderOpen, group: 'case',
     purpose: 'What happened, what conflicts, what to do next' },
+  { section: 'theatre', label: 'Reconstruction Theatre', short: 'Theatre', icon: MonitorPlay, group: 'case',
+    purpose: 'Watch the whole investigation replay, step by step, with explanations' },
   { section: 'evidence', label: 'Evidence Intake', short: 'Intake', icon: Archive, group: 'workflow', step: 1,
     purpose: 'Exhibits, hashes and chain of custody' },
   { section: 'timeline', label: 'Temporal Reconstruction', short: 'Timeline', icon: ListOrdered, group: 'workflow', step: 2,

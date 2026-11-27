@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ArrowRight, Box, Map as MapIcon, MapPinOff, MousePointerClick } from 'lucide-react';
 import { WireframeModel } from '../../landing/board/wireframe/WireframeModel';
 import { EvidencePreview } from '../components/EvidencePreview';
-import { useWorkspaceRepository } from '../data/WorkspaceDataContext';
+import { useIsSynthetic } from '../data/WorkspaceDataContext';
 import { Link } from '../../../router/Link';
 import { caseHref } from '../../../router/router';
 import { useCaseIndex, useQuerySelection } from '../caseIndex';
@@ -167,7 +167,7 @@ export const SpatialReconstruction: React.FC<{ detail: CaseDetail }> = ({ detail
   const index = useCaseIndex(detail);
   const caseId = detail.case.case_id;
   const [placeId, setPlaceId] = useQuerySelection('place');
-  const synthetic = useWorkspaceRepository().source === 'synthetic';
+  const synthetic = useIsSynthetic(detail.case);
   const modelAvailable = synthetic && caseId === MODEL_CASE_ID;
   const [mode, setMode] = useState<'plan' | 'model'>('plan');
   const places = detail.places;

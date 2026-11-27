@@ -4,7 +4,7 @@ import { ProvenanceBadge, ReviewBadge } from '../../../components/ui/primitives'
 import { Link } from '../../../router/Link';
 import { caseHref } from '../../../router/router';
 import { useCaseIndex, useQuerySelection, type CaseIndex } from '../caseIndex';
-import { useWorkspaceRepository } from '../data/WorkspaceDataContext';
+import { useIsSynthetic } from '../data/WorkspaceDataContext';
 import { EvidencePreview } from '../components/EvidencePreview';
 import { EmptyState, EvidenceTypeLabel, FilterChip, KeyValueList, Panel, ReviewCategoryBadge, SearchField, SelectField, WsButton } from '../components/ui';
 import { formatBytes, formatDateTime, formatEventTime, formatUtc, shortHash } from '../format';
@@ -73,7 +73,7 @@ export const EvidenceDetailPanel: React.FC<{
   onSelect: (id: string) => void;
   onClose: () => void;
 }> = ({ evidence, detail, index, onSelect, onClose }) => {
-  const synthetic = useWorkspaceRepository().source === 'synthetic';
+  const synthetic = useIsSynthetic(detail.case);
   const caseId = detail.case.case_id;
   const related = detail.evidence.filter(
     (other) =>
@@ -222,7 +222,7 @@ export const EvidenceRepository: React.FC<{ detail: CaseDetail }> = ({ detail })
   const [review, setReview] = useState<ReviewStatus | 'all'>('all');
   const [uploadOpen, setUploadOpen] = useState(false);
   const [view, setView] = useState<'gallery' | 'list'>('gallery');
-  const synthetic = useWorkspaceRepository().source === 'synthetic';
+  const synthetic = useIsSynthetic(detail.case);
   const uploadId = useId();
 
   const typeOptions = useMemo(() => {

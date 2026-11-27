@@ -17,3 +17,8 @@ export function useSharedBackendHealth(): UseBackendHealthResult {
   if (!value) throw new Error('useSharedBackendHealth must be used inside <BackendHealthProvider>.');
   return value;
 }
+
+/** Same as {@link useSharedBackendHealth} but `null` outside the provider (tests, isolated views). */
+export function useOptionalBackendHealth(): UseBackendHealthResult | null {
+  return useContext(BackendHealthContext);
+}

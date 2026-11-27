@@ -8,14 +8,21 @@ describe('parseHealthCheckResponse', () => {
     ).toEqual({ status: 'ok', project: 'sutram-digital-forensics' });
   });
 
+  it('accepts the Rust API shape, which names itself in "service"', () => {
+    expect(parseHealthCheckResponse({ status: 'ok', service: 'sutram-backend-rust' })).toEqual({
+      status: 'ok',
+      project: 'sutram-backend-rust',
+    });
+  });
+
   it.each([
     [null, /expected an object, received null/],
     [[], /expected an object, received array/],
     ['ok', /expected an object, received string/],
     [{ project: 'p' }, /"status" must be a string, received undefined/],
     [{ status: 1, project: 'p' }, /"status" must be a string, received number/],
-    [{ status: 'ok' }, /"project" must be a string, received undefined/],
-    [{ status: 'ok', project: null }, /"project" must be a string, received null/],
+    [{ status: 'ok' }, /"project" or "service" must be a string, received undefined/],
+    [{ status: 'ok', project: null }, /"project" or "service" must be a string, received undefined/],
   ])('rejects %j', (input, message) => {
     expect(() => parseHealthCheckResponse(input)).toThrow(message);
   });
