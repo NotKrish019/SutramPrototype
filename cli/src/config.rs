@@ -49,6 +49,8 @@ pub struct EnvVars {
     pub timeout_secs: Option<String>,
     /// `YUKTI_CASE`, shown by `yukti config` (clap reads it for `--case` itself).
     pub case_id: Option<String>,
+    /// `YUKTI_WEB_URL`: where the web workspace runs (used by `yukti open`).
+    pub web_url: Option<String>,
     pub terminal: TerminalEnv,
 }
 
@@ -60,6 +62,7 @@ impl EnvVars {
             api_url: read(ENV_API_URL),
             timeout_secs: read(ENV_TIMEOUT_SECS),
             case_id: read(crate::cli::ENV_CASE),
+            web_url: read(crate::commands::open::ENV_WEB_URL),
             terminal: TerminalEnv::from_process(),
         }
     }

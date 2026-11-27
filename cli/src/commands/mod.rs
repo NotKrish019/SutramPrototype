@@ -11,6 +11,7 @@ pub mod demo;
 pub mod doctor;
 pub mod evidence;
 pub mod graph;
+pub mod open;
 pub mod reconstruction;
 pub mod replay;
 pub mod robustness;
@@ -55,6 +56,7 @@ pub async fn dispatch(command: &Command, client: &ApiClient, json: bool, ui: &Ui
         | Command::Completions(_)
         | Command::Shell
         | Command::Demo(_)
+        | Command::Open(_)
         | Command::Server(_) => {
             let err = CliError::Internal(format!("{command:?} cannot be dispatched to the API"));
             crate::output::render_error(&err, json)

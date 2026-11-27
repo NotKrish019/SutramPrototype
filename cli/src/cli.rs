@@ -49,6 +49,7 @@ const AFTER_HELP: &str = "\
   yukti timeline | contradictions | gaps        drill into the findings
   yukti whatif --clock-offset 120               test an alternative assumption
   yukti report --out dossier.md                 export the forensic dossier
+  yukti open --view theatre                     watch the case replay in the web workspace
   yukti shell                                   interactive session
 
 \x1b[38;5;242m● observed  ○ inferred  ◇ supplied  ◆ assumed  ▲ flagged for review
@@ -172,6 +173,30 @@ pub enum Command {
 
     /// Run a guided demonstration on a synthetic case (starts the local server if needed)
     Demo(DemoArgs),
+
+    /// Open the web workspace at a case and view (the browser reads the same API) [env: YUKTI_WEB_URL]
+    #[command(visible_alias = "web")]
+    Open(OpenArgs),
+}
+
+/// Arguments of `yukti open`.
+#[derive(Debug, Clone, PartialEq, Eq, Args)]
+pub struct OpenArgs {
+    /// Case UUID; omit to open the workspace home [env: YUKTI_CASE]
+    #[arg(long = "case", value_name = "UUID", env = ENV_CASE, hide_env = true)]
+    pub case_id: Option<String>,
+
+    /// Workspace view to open
+    #[arg(long, value_enum, default_value_t = crate::commands::open::WebView::Overview)]
+    pub view: crate::commands::open::WebView,
+
+    /// Address of the web workspace [env: YUKTI_WEB_URL] [default: http://127.0.0.1:5173]
+    #[arg(long, value_name = "URL")]
+    pub web_url: Option<String>,
+
+    /// Print the link without launching a browser
+    #[arg(long)]
+    pub print: bool,
 }
 
 /// `yukti custody ...` subcommands.

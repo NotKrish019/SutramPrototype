@@ -922,6 +922,10 @@ async fn overview(args: &CaseArgs, client: &ApiClient, json: bool, ui: &Ui) -> R
         "dossier",
         &format!("yukti report --case {id} --out dossier.md"),
     ));
+    out.push_str(&ui.next(
+        "in the browser",
+        &format!("yukti open --case {id} --view theatre"),
+    ));
     Rendered {
         stdout: out,
         stderr: render_warnings(&warnings),

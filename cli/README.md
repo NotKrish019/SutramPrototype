@@ -120,6 +120,7 @@ Every command that takes `--case` also reads `YUKTI_CASE`, so `export YUKTI_CASE
 | `yukti challenge --case <UUID>` | case, then reconstruction, robustness, gaps and custody audit in parallel | Weaknesses as defence counsel would raise them, by a fixed ranking (integrity failures, fragile leads and high gaps, sensitive leads and widespread assumptions, context), each with what would close it |
 | `yukti ask --case <UUID> "<question>"` | case, then reconstruction, evidence, robustness and gaps | Plain-English questions (where was a number at a time, who it contacted, what happened between two times, leads, gaps, keyword search) answered by fixed rules from the evidence only, citing file, record and the timestamp as written. Refuses when the evidence does not answer. No language model |
 | `yukti replay --case <UUID> [--delay MS] [--no-animate]` | case, then reconstruction, evidence and robustness | The timeline played back event by event on a terminal map, flagging steps that are contradiction leads with their class. Prints a summary when not on a terminal |
+| `yukti open [--case <UUID>] [--view overview\|theatre\|evidence\|timeline\|spatial\|contradictions\|video\|reports\|graph\|correlation] [--web-url URL] [--print]` (alias `web`) | case (when given) | Opens the web workspace at that case and view in the default browser (only when stdout is a terminal; `--print` never launches). The browser reads the same API, so the case is already there. `--json` prints `yukti.cli.open/v1` with the URL |
 | `yukti demo [--fast]` | everything above | Guided demonstration on the embedded synthetic case (`data/synthetic/demo/`); pauses between steps on a terminal |
 | `yukti completions <bash\|zsh\|fish\|elvish\|powershell>` | none | Shell completion script |
 | `yukti` (no arguments, in a terminal) / `yukti shell` | per command | Interactive session; `use <uuid>` sets the working case, which is added as `--case` to every command that accepts it. Without a terminal, plain `yukti` prints usage and exits `2` |
@@ -335,6 +336,7 @@ Each setting is resolved in this order: command-line flag, then environment vari
 | Request timeout (whole seconds, 1-3600) | `--timeout <SECONDS>` | `YUKTI_TIMEOUT_SECS` | `10` |
 | JSON output | `--json` | — | off |
 | Working case for `--case` | `--case <UUID>` | `YUKTI_CASE` | none |
+| Web workspace address (`yukti open`) | `--web-url <URL>` | `YUKTI_WEB_URL` | `http://127.0.0.1:5173` |
 | Colour | `--color auto\|always\|never` | `NO_COLOR` (disables in auto), `CLICOLOR_FORCE` (forces in auto) | `auto`: colour only on a terminal |
 | Glyphs | `--ascii` | `TERM=dumb` also selects ASCII | Unicode |
 

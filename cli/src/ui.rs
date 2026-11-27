@@ -589,6 +589,15 @@ impl Ui {
         )
     }
 
+    /// An OSC 8 terminal hyperlink around already-painted `text` (plain text without colour).
+    pub fn link(&self, url: &str, text: &str) -> String {
+        if self.colored() {
+            format!("\x1b]8;;{url}\x1b\\{text}\x1b]8;;\x1b\\")
+        } else {
+            text.to_string()
+        }
+    }
+
     /// `  › label  command` next-step hint with the command highlighted.
     pub fn next(&self, label: &str, command: &str) -> String {
         format!(

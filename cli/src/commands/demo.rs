@@ -140,7 +140,7 @@ pub fn run(
         ui: ui.clone(),
         pause: interactive && !args.fast,
         step: 0,
-        total: 9,
+        total: 10,
     };
     r.out(&ui.banner());
     r.out(&ui.para(
@@ -296,6 +296,13 @@ pub fn run(
     let _ = r.json(&["certificate", "--case", &case, "--out", &cert_s]);
     r.out(&ui.kv("Certificate", Tone::Strong, &cert_s));
 
+    // 10. The same case in the web workspace.
+    r.step(
+        "Watch it in the web workspace",
+        "The browser workspace reads the same engine, so this case is already there. The reconstruction theatre replays every step above as an animated, narrated story.",
+    );
+    r.show(&["open", "--case", &case, "--view", "theatre", "--print"]);
+
     r.out(&format!(
         "\n\n{MARGIN}{} {}\n",
         ui.mark(Glyph::Check, Tone::Ok),
@@ -303,6 +310,10 @@ pub fn run(
     ));
     r.out(&ui.next("explore", &format!("export YUKTI_CASE={case}")));
     r.out(&ui.next("animate it", "yukti replay"));
+    r.out(&ui.next(
+        "in the browser",
+        &format!("yukti open --case {case} --view theatre"),
+    ));
     r.out(&ui.next("interactive", "yukti"));
     ExitCode::SUCCESS
 }

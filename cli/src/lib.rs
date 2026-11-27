@@ -59,6 +59,9 @@ async fn execute_with_ui(cli: &Cli, env: &EnvVars, ui: &Ui) -> Rendered {
         Ok(client) => client,
         Err(err) => return output::render_error(&err, cli.json),
     };
+    if let Command::Open(args) = &cli.command {
+        return commands::open::run(args, env, &client, cli.json, ui).await;
+    }
     if let Command::Server(command) = &cli.command {
         return server::run(command, &config, &client, cli.json, ui).await;
     }
