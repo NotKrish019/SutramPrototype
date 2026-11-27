@@ -1,10 +1,12 @@
 //! Application State & Axum Router Assembly.
 
+use axum::http::{HeaderValue, Method};
 use axum::{
     routing::{get, post},
     Router,
 };
 use std::sync::Arc;
+use tower_http::cors::{AllowOrigin, CorsLayer};
 use tower_http::trace::TraceLayer;
 use tracing::{info, warn};
 
@@ -292,6 +294,66 @@ pub fn create_router_with_state(state: AppState) -> Router {
             "/api/v1/cases/:case_id/custody/verify",
             get(get_case_custody_audit),
         )
+        .layer(loopback_cors())
         .layer(TraceLayer::new_for_http())
         .with_state(state)
+}
+
+/// Lets the browser workspace (Vite dev server or a local preview build) call the API.
+///
+/// Only loopback origins (`localhost`, `127.0.0.1`, `[::1]`, any port) are allowed, so a page on
+/// another host cannot read case data through a user's browser. The CLI does not use CORS.
+fn loopback_cors() -> CorsLayer {
+    CorsLayer::new()
+        .allow_origin(AllowOrigin::predicate(
+            |origin: &HeaderValue, _request: &axum::http::request::Parts| {
+                is_loopback_origin(origin)
+            },
+        ))
+        .allow_methods([Method::GET, Method::POST, Method::OPTIONS])
+        .allow_headers(tower_http::cors::Any)
+}
+
+fn is_loopback_origin(origin: &HeaderValue) -> bool {
+    let Ok(origin) = origin.to_str() else {
+        return false;
+    };
+    let Some(rest) = origin
+        .strip_prefix("http://")
+        .or_else(|| origin.strip_prefix("https://"))
+    else {
+        return false;
+    };
+    let host = if let Some(v6) = rest.strip_prefix('[') {
+        v6.split(']').next().map(|h| format!("[{h}]"))
+    } else {
+        rest.split(':').next().map(str::to_string)
+    };
+    matches!(host.as_deref(), Some("localhost" | "127.0.0.1" | "[::1]"))
+}
+
+#[cfg(test)]
+mod cors_tests {
+    use super::is_loopback_origin;
+    use axum::http::HeaderValue;
+
+    #[test]
+    fn only_loopback_origins_are_allowed() {
+        for ok in [
+            "http://localhost:5173",
+            "http://127.0.0.1:5199",
+            "http://[::1]:4173",
+            "https://localhost",
+        ] {
+            assert!(is_loopback_origin(&HeaderValue::from_static(ok)), "{ok}");
+        }
+        for bad in [
+            "http://localhost.evil.com",
+            "https://example.org",
+            "http://127.0.0.1.nip.io:80",
+            "null",
+        ] {
+            assert!(!is_loopback_origin(&HeaderValue::from_static(bad)), "{bad}");
+        }
+    }
 }
